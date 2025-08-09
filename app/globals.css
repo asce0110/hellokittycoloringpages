@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  /* --- Hello Kitty Theme Colors --- */
+  --primary: 336 100% 71%; /* kitty-pink */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 187 100% 42%; /* kitty-blue */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 336 100% 97%; /* kitty-pink-light */
+  --muted-foreground: 222.2 47.4% 48.1%;
+
+  --accent: 336 100% 90%; /* Lighter pink for accents */
+  --accent-foreground: 336 84% 20%;
+
+  --destructive: 3 100% 62%; /* kitty-red */
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 336 100% 92%;
+  --input: 336 100% 92%;
+  --ring: 336 100% 71%;
+  /* --- End Theme --- */
+
+  --radius: 1rem;
+}
+
+.dark {
+  /* --- Dark Mode Palette --- */
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
+
+  --card: 224 71% 9%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 224 71% 4%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 336 100% 71%;
+  --primary-foreground: 210 40% 98%; /* Updated for high contrast */
+
+  --secondary: 187 100% 42%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 215 28% 17%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --ring: 336 100% 71%;
+  /* --- End Dark Mode --- */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* --- NEW: Smooth Theme Transitions --- */
+  body,
+  header,
+  footer,
+  main,
+  div,
+  button,
+  input,
+  textarea,
+  select,
+  nav,
+  aside {
+    /* 
+      We apply a transition to the colors that change between themes.
+      This creates a smooth cross-fade effect.
+      We avoid transitioning 'transform' or other layout properties
+      to prevent interfering with existing animations.
+    */
+    transition-property: color, background-color, border-color;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Animation keyframes remain the same */
+@keyframes scroll-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes scroll-right {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-scroll-left {
+  animation: scroll-left 40s linear infinite;
+}
+.animate-scroll-right {
+  animation: scroll-right 40s linear infinite;
+}
+@keyframes fade-in-out {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.animate-fade-in-out {
+  animation: fade-in-out 3s ease-in-out infinite;
+}
+
+/* Custom cursor styles */
+@layer utilities {
+  .cursor-brush {
+    /* A paintbrush icon. Hotspot at the tip (bottom-left). */
+    cursor: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z'/%3E%3C/svg%3E")
+      4 19, crosshair;
+  }
+  .cursor-dropper {
+    /* A simpler, more reliable dropper cursor */
+    cursor: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%234facfe' stroke='%23333' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='6' fill='white' stroke='%23666'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%23333'/%3E%3C/svg%3E")
+      12 12, crosshair;
+  }
+}
