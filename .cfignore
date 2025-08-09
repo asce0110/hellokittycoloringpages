@@ -1,0 +1,46 @@
+# Cloudflare Pages ignore file
+# 排除不需要部署的文件
+
+# Node.js dependencies
+node_modules/
+
+# Next.js cache and build artifacts  
+.next/cache/
+.next/server/
+.next/static/chunks/webpack/
+cache/
+
+# Development files
+.env*
+.vscode/
+.cursor/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Build tools
+*.log
+npm-debug.log*
+yarn-debug.log*
+.pnpm-debug.log*
+
+# Workers directory (separate deployment)
+workers/
+
+# Documentation
+*.md
+!README.md
+
+# Testing
+coverage/
+.nyc_output/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
