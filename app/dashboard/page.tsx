@@ -81,7 +81,7 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-muted-foreground">{user?.email}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Member since {user?.createdAt?.toLocaleDateString()}
+                  Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
                 </p>
               </div>
               <div className="text-right">
@@ -287,7 +287,7 @@ function GenerationCard({ generation, onToggleFavorite }: GenerationCardProps) {
           {generation.prompt}
         </p>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{generation.createdAt.toLocaleDateString()}</span>
+          <span>{generation.createdAt ? new Date(generation.createdAt).toLocaleDateString() : 'Unknown'}</span>
           <div className="flex gap-1">
             <Badge variant="outline" className="text-xs">
               {generation.style}
