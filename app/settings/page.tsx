@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +13,96 @@ import { useAuth } from "@/hooks/use-auth"
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+  })
+  const [preferences, setPreferences] = useState({
+    emailNotifications: true,
+    autoSaveFavorites: false,
+    highQualityDownloads: false,
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  // Update form data when user data loads
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+      })
+      setPreferences(prev => ({
+        ...prev,
+        highQualityDownloads: user.isProUser || false,
+      }))
+    }
+  }, [user])
+
+  const handleSaveChanges = async () => {
+    if (!user) return
+    
+    setIsSaving(true)
+    try {
+      // Here you would make an API call to update user data
+      // For now, we'll just show a success message
+      console.log('Saving changes:', { formData, preferences })
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      alert('✅ Settings saved successfully!')
+    } catch (error) {
+      console.error('Save failed:', error)
+      alert('❌ Failed to save settings. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    
+    const confirmed = confirm(
+      `⚠️ Are you sure you want to delete your account?\n\n` +
+      `This action cannot be undone. All your data will be permanently deleted:\n` +
+      `• Your account information\n` +
+      `• All generated coloring pages\n` +
+      `• Your favorites and preferences\n` +
+      `• Your subscription (if any)\n\n` +
+      `Type "DELETE" in the next prompt to confirm.`
+    )
+    
+    if (!confirmed) return
+    
+    const verification = prompt('Please type "DELETE" to confirm account deletion:')
+    if (verification !== 'DELETE') {
+      alert('Account deletion cancelled.')
+      return
+    }
+    
+    setIsDeleting(true)
+    try {
+      // Here you would make an API call to delete the account
+      console.log('Deleting account for user:', user.id)
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      alert('❌ Account deletion is not implemented yet. Please contact support.')
+      
+      // In a real implementation, you would:
+      // 1. Call API to delete user data
+      // 2. Log out the user
+      // 3. Redirect to homepage
+      
+    } catch (error) {
+      console.error('Delete failed:', error)
+      alert('❌ Failed to delete account. Please contact support.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (!user) {
     return (
@@ -50,11 +141,20 @@ export default function SettingsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Display Name</Label>
-                <Input id="name" defaultValue={user.name || ""} />
+                <Input 
+                  id="name" 
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={user.email} />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
               </div>
             </div>
             <div className="flex items-center justify-between">
@@ -81,7 +181,9 @@ export default function SettingsPage() {
                 </Button>
               )}
             </div>
-            <Button>Save Changes</Button>
+            <Button onClick={handleSaveChanges} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </CardContent>
         </Card>
 
@@ -104,7 +206,10 @@ export default function SettingsPage() {
                   Receive updates about new features and generations
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={preferences.emailNotifications}
+                onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, emailNotifications: checked }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -113,7 +218,10 @@ export default function SettingsPage() {
                   Automatically save generated images to favorites
                 </p>
               </div>
-              <Switch />
+              <Switch 
+                checked={preferences.autoSaveFavorites}
+                onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, autoSaveFavorites: checked }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -122,7 +230,11 @@ export default function SettingsPage() {
                   Download images in higher resolution (Pro feature)
                 </p>
               </div>
-              <Switch disabled={!user.isProUser} defaultChecked={user.isProUser} />
+              <Switch 
+                disabled={!user.isProUser} 
+                checked={preferences.highQualityDownloads}
+                onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, highQualityDownloads: checked }))}
+              />
             </div>
           </CardContent>
         </Card>
@@ -174,7 +286,13 @@ export default function SettingsPage() {
                   Permanently delete your account and all data
                 </p>
               </div>
-              <Button variant="destructive">Delete Account</Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Account"}
+              </Button>
             </div>
           </CardContent>
         </Card>
