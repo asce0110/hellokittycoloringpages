@@ -60,35 +60,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      // Mock login logic - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Admin login
-        const user = { ...mockAdminUser }
-        setUser(user)
-        if (typeof window !== 'undefined') {
-          localStorage.setItem("user", JSON.stringify(user))
-        }
-      } else if (email === "user@example.com" && password === "password123") {
-        // Demo user login
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
+
+      if (data.success && data.user) {
         const user: User = {
-          id: "user-1",
-          email: "user@example.com",
-          name: "Demo User",
-          role: "user",
-          isProUser: false,
-          generationsToday: 2,
-          totalGenerations: 15,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          ...data.user,
+          createdAt: new Date(data.user.createdAt),
+          updatedAt: new Date(data.user.updatedAt)
         }
+        
         setUser(user)
         if (typeof window !== 'undefined') {
           localStorage.setItem("user", JSON.stringify(user))
         }
       } else {
-        throw new Error("Invalid email or password")
+        throw new Error('Invalid response from server')
       }
     } catch (error) {
       console.error("Login failed:", error)
@@ -101,24 +99,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, password: string, name?: string) => {
     setIsLoading(true)
     try {
-      // Mock registration logic - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const user: User = {
-        id: Date.now().toString(),
-        email,
-        name: name || email.split("@")[0],
-        role: "user",
-        isProUser: false,
-        generationsToday: 0,
-        totalGenerations: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed')
       }
-      
-      setUser(user)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem("user", JSON.stringify(user))
+
+      if (data.success && data.user) {
+        const user: User = {
+          ...data.user,
+          createdAt: new Date(data.user.createdAt),
+          updatedAt: new Date(data.user.updatedAt)
+        }
+        
+        setUser(user)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("user", JSON.stringify(user))
+        }
+      } else {
+        throw new Error('Invalid response from server')
       }
     } catch (error) {
       console.error("Registration failed:", error)
