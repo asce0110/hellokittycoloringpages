@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing')
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    let supabase
+    try {
+      supabase = getSupabaseClient()
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
+    }
+    
     const body = await request.json()
     const {
       originalImageUrl,
@@ -132,6 +149,17 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    let supabase
+    try {
+      supabase = getSupabaseClient()
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const originalImageUrl = searchParams.get('originalImageUrl')
 
