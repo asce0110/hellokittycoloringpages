@@ -201,7 +201,7 @@ export function MovingImageBanner({ className }: MovingImageBannerProps) {
   return (
     <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
       {/* Top Row */}
-      <div className="absolute top-8 left-0 w-full">
+      <div className="absolute top-4 left-0 w-full">
         <div className="flex animate-scroll-left">
           {[...topRowImages, ...topRowImages].map((image, index) => (
             <div
@@ -211,16 +211,16 @@ export function MovingImageBanner({ className }: MovingImageBannerProps) {
               <Image
                 src={image.src || "/placeholder.svg"}
                 alt={image.alt}
-                width={120}
-                height={120}
-                className="rounded-lg shadow-lg"
+                width={180}
+                height={180}
+                className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48 object-cover"
               />
             </div>
           ))}
         </div>
       </div>
       {/* Bottom Row */}
-      <div className="absolute bottom-8 right-0 w-full">
+      <div className="absolute bottom-4 right-0 w-full">
         <div className="flex animate-scroll-right">
           {[...bottomRowImages, ...bottomRowImages].reverse().map((image, index) => (
             <div
@@ -230,9 +230,9 @@ export function MovingImageBanner({ className }: MovingImageBannerProps) {
               <Image
                 src={image.src || "/placeholder.svg"}
                 alt={image.alt}
-                width={120}
-                height={120}
-                className="rounded-lg shadow-lg"
+                width={180}
+                height={180}
+                className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48 object-cover"
               />
             </div>
           ))}
