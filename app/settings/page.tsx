@@ -8,23 +8,20 @@ import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Crown, Settings, User, Bell, Palette } from "lucide-react"
 import { ProtectedRoute } from "@/components/protected-route"
-// Mock user for static export
-const mockUser = {
-  id: "1",
-  name: "Demo User",
-  email: "demo@example.com",
-  role: "user" as "user" | "admin",
-  isProUser: false,
-  generationsToday: 2,
-  totalGenerations: 15,
-  lastGenerationDate: new Date(),
-  avatarUrl: undefined,
-  createdAt: new Date(),
-  updatedAt: new Date()
-}
+import { useAuth } from "@/hooks/use-auth"
 
 export default function SettingsPage() {
-  const user = mockUser
+  const { user } = useAuth()
+
+  if (!user) {
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <div className="container mx-auto py-8 px-4 max-w-4xl">
+          <div className="text-center py-8">Loading...</div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
 
   return (
     <ProtectedRoute requireAuth={true}>
