@@ -201,7 +201,7 @@ export function MovingImageBanner({ className }: MovingImageBannerProps) {
   return (
     <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
       {/* Top Row */}
-      <div className="absolute top-4 left-0 w-full">
+      <div className="absolute top-12 left-0 w-full">
         <div className="flex animate-scroll-left">
           {[...topRowImages, ...topRowImages].map((image, index) => (
             <div
@@ -220,7 +220,7 @@ export function MovingImageBanner({ className }: MovingImageBannerProps) {
         </div>
       </div>
       {/* Bottom Row */}
-      <div className="absolute bottom-4 right-0 w-full">
+      <div className="absolute bottom-12 right-0 w-full">
         <div className="flex animate-scroll-right">
           {[...bottomRowImages, ...bottomRowImages].reverse().map((image, index) => (
             <div
