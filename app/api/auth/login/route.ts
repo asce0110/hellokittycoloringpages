@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import * as crypto from 'crypto'
 
 // Admin credentials
 const ADMIN_EMAIL = "asce3801@gmail.com"
@@ -94,9 +95,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, we'll skip password hashing and just do a simple check
-    // In a real app, you'd compare hashed passwords
-    // This is a placeholder until proper password hashing is implemented
+    // Verify password hash
+    const providedPasswordHash = crypto.createHash('sha256').update(password).digest('hex')
+    if (user.password_hash !== providedPasswordHash) {
+      return NextResponse.json(
+        { error: 'Email or password is incorrect. Please check your credentials and try again.' },
+        { status: 401 }
+      )
+    }
     
     console.log('✅ User login successful:', user.id)
 

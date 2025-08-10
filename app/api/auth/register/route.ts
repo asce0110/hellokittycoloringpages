@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import * as crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,11 +46,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Create password hash
+    const passwordHash = crypto.createHash('sha256').update(password).digest('hex')
+
     // Create new user
     const now = new Date().toISOString()
     const newUser = {
       email: email.toLowerCase(),
       name: name || email.split('@')[0],
+      password_hash: passwordHash,
       role: 'user',
       is_pro_user: false,
       generations_today: 0,
