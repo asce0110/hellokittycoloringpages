@@ -32,7 +32,8 @@ export default function LoginPage() {
         router.push("/dashboard")
       }
     } catch (error) {
-      setError("Invalid email or password")
+      const errorMessage = error instanceof Error ? error.message : "Invalid email or password"
+      setError(errorMessage)
     }
   }
 
@@ -44,7 +45,8 @@ export default function LoginPage() {
       await register(registerForm.email, registerForm.password, registerForm.name)
       router.push("/dashboard")
     } catch (error) {
-      setError("Registration failed. Please try again.")
+      const errorMessage = error instanceof Error ? error.message : "Registration failed. Please try again."
+      setError(errorMessage)
     }
   }
 

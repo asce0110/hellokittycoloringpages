@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Validate input
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Please provide both email and password to log in.' },
         { status: 400 }
       )
     }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'Email or password is incorrect. Please check your credentials and try again.' },
         { status: 401 }
       )
     }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'Email or password is incorrect. Please check your credentials and try again.' },
         { status: 401 }
       )
     }

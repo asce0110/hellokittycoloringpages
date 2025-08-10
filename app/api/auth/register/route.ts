@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Validate input
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Please provide both email and password to create your account.' },
         { status: 400 }
       )
     }
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'An account with this email already exists. Please try logging in instead.' },
         { status: 409 }
       )
     }
