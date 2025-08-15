@@ -43,62 +43,62 @@ export const ColoringCanvas = React.forwardRef<
       return
     }
 
-    console.log('🖼️ Loading image:', imageUrl)
+    console.log('Loading image:', imageUrl)
     
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.src = imageUrl
-    
-    img.onload = () => {
-      console.log('✅ Image loaded successfully:', img.width, 'x', img.height)
-      
-      const aspectRatio = img.width / img.height
-      
-      // 计算合适的画布尺寸，确保不会太大也不会太小
+    const loadImage = (image: HTMLImageElement) => {
+      const aspectRatio = image.width / image.height
       let canvasWidth, canvasHeight
       
       if (aspectRatio > 1) {
-        // 横图：限制宽度
-        canvasWidth = Math.min(500, img.width)
+        canvasWidth = Math.min(500, image.width)
         canvasHeight = canvasWidth / aspectRatio
       } else {
-        // 竖图：限制高度
-        canvasHeight = Math.min(600, img.height)
+        canvasHeight = Math.min(600, image.height)
         canvasWidth = canvasHeight * aspectRatio
       }
 
-      console.log('📐 Canvas dimensions:', canvasWidth, 'x', canvasHeight)
+      canvasWidth = Math.round(canvasWidth)
+      canvasHeight = Math.round(canvasHeight)
 
-      // 设置画布的实际像素尺寸
       imageCanvas.width = canvasWidth
       imageCanvas.height = canvasHeight
       drawingCanvas.width = canvasWidth
       drawingCanvas.height = canvasHeight
       
-      // 设置画布的显示尺寸（CSS）
       imageCanvas.style.width = canvasWidth + 'px'
       imageCanvas.style.height = canvasHeight + 'px'
       drawingCanvas.style.width = canvasWidth + 'px'
       drawingCanvas.style.height = canvasHeight + 'px'
       
-      // 设置画布背景为白色
       imageCanvas.style.backgroundColor = 'white'
-
-      // 清除之前的内容
       imageCtx.clearRect(0, 0, canvasWidth, canvasHeight)
       drawingCtx.clearRect(0, 0, canvasWidth, canvasHeight)
       
-      // 绘制线条图到imageCanvas
-      imageCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
-      console.log('🎨 Line art drawn to canvas')
-      
-      // 初始化历史记录
+      imageCtx.drawImage(image, 0, 0, canvasWidth, canvasHeight)
       saveToHistory(drawingCtx.getImageData(0, 0, canvasWidth, canvasHeight))
+      console.log('Image drawn to canvas successfully')
     }
     
-    img.onerror = (error) => {
-      console.error('❌ Failed to load image:', imageUrl, error)
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      console.log('Image loaded with CORS')
+      loadImage(img)
     }
+    img.onerror = () => {
+      console.log('CORS failed, trying without CORS...')
+      // Retry without crossOrigin
+      const img2 = new Image()
+      img2.onload = () => {
+        console.log('Image loaded without CORS')
+        loadImage(img2)
+      }
+      img2.onerror = () => {
+        console.log('Image completely failed to load')
+      }
+      img2.src = imageUrl
+    }
+    img.src = imageUrl
   }, [imageUrl])
 
   useEffect(() => {
@@ -152,8 +152,10 @@ export const ColoringCanvas = React.forwardRef<
     if (!drawingCanvas || !imageCanvas || !drawingCtx || !imageCtx) return
 
     const [fr, fg, fb] = hexToRgb(activeColor)
-    const imageData = imageCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height)
-    const drawingData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)
+    
+    try {
+      const imageData = imageCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height)
+      const drawingData = drawingCtx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)
     const imagePixels = imageData.data
     const drawingPixels = drawingData.data
     
@@ -165,20 +167,30 @@ export const ColoringCanvas = React.forwardRef<
       return
     }
     
-    // 更严格的线条检测 - 使用更低的阈值和多重检测
+    // 改进的线条检测 - 同时检查原图线条和用户绘制的线条
     const isLinePixel = (px: number, py: number): boolean => {
       if (px < 0 || px >= imageCanvas.width || py < 0 || py >= imageCanvas.height) return true
       
       const pixelIndex = (py * imageCanvas.width + px) * 4
+      
+      // 检查原图线条
       const r = imagePixels[pixelIndex]
       const g = imagePixels[pixelIndex + 1] 
       const b = imagePixels[pixelIndex + 2]
-      
-      // 使用更精确的灰度计算
       const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
       
-      // 对于 Hello Kitty 线稿，黑色线条通常亮度在 50 以下
-      return brightness < 80
+      // 检查用户绘制的线条（drawing canvas上的像素）
+      const drawingR = drawingPixels[pixelIndex]
+      const drawingG = drawingPixels[pixelIndex + 1]
+      const drawingB = drawingPixels[pixelIndex + 2]
+      const drawingA = drawingPixels[pixelIndex + 3]
+      
+      // 如果有不透明的绘制内容，检查是否为深色（可能是用户画的线条）
+      const hasDrawing = drawingA > 0
+      const drawingBrightness = hasDrawing ? (drawingR * 0.299 + drawingG * 0.587 + drawingB * 0.114) : 255
+      
+      // 原图线条检测（亮度低于80）或用户绘制的深色线条（亮度低于100且不透明度大于128）
+      return brightness < 80 || (hasDrawing && drawingA > 128 && drawingBrightness < 100)
     }
     
     const targetPixelIndex = (targetY * imageCanvas.width + targetX) * 4
@@ -238,10 +250,14 @@ export const ColoringCanvas = React.forwardRef<
       )
     }
     
-    // 更新画布
-    drawingCtx.putImageData(drawingData, 0, 0)
-    if (saveHistory) {
-      saveToHistory(drawingData)
+      // 更新画布
+      drawingCtx.putImageData(drawingData, 0, 0)
+      
+      if (saveHistory) {
+        saveToHistory(drawingData)
+      }
+    } catch (error) {
+      console.log('Fill area error:', error)
     }
   }
   
@@ -267,12 +283,23 @@ export const ColoringCanvas = React.forwardRef<
       return false
     }
     
-    // 线条检测函数
+    // 线条检测函数 - 检查原图和用户绘制的线条
     const isLinePixel = (px: number, py: number): boolean => {
       if (px < 0 || px >= imageCanvas.width || py < 0 || py >= imageCanvas.height) return true
       const pixelIndex = (py * imageCanvas.width + px) * 4
+      
+      // 检查原图线条
       const brightness = (imagePixels[pixelIndex] * 0.299 + imagePixels[pixelIndex + 1] * 0.587 + imagePixels[pixelIndex + 2] * 0.114)
-      return brightness < 80
+      
+      // 检查用户绘制的线条
+      const drawingR = drawingPixels[pixelIndex]
+      const drawingG = drawingPixels[pixelIndex + 1]
+      const drawingB = drawingPixels[pixelIndex + 2]
+      const drawingA = drawingPixels[pixelIndex + 3]
+      const hasDrawing = drawingA > 0
+      const drawingBrightness = hasDrawing ? (drawingR * 0.299 + drawingG * 0.587 + drawingB * 0.114) : 255
+      
+      return brightness < 80 || (hasDrawing && drawingA > 128 && drawingBrightness < 100)
     }
     
     // 跳过线条像素
@@ -387,9 +414,13 @@ export const ColoringCanvas = React.forwardRef<
       clientY = e.nativeEvent.clientY
     }
 
+    // 计算精确的画布坐标，考虑缩放比例
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     }
   }
 
@@ -398,7 +429,7 @@ export const ColoringCanvas = React.forwardRef<
     if (!coords) return
 
     if (activeTool === "dropper") {
-      // 单击立即填充
+      // 正常的填充逻辑
       fillArea(coords.x, coords.y)
       
       // 重置拖拽状态
@@ -433,8 +464,10 @@ export const ColoringCanvas = React.forwardRef<
         if (!canvas || !isDragFilling.current) return
         
         const rect = canvas.getBoundingClientRect()
-        const x = moveEvent.clientX - rect.left
-        const y = moveEvent.clientY - rect.top
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        const x = (moveEvent.clientX - rect.left) * scaleX
+        const y = (moveEvent.clientY - rect.top) * scaleY
         
         lastFillPosition.current = { x, y }
         
@@ -464,8 +497,10 @@ export const ColoringCanvas = React.forwardRef<
         
         const rect = canvas.getBoundingClientRect()
         const touch = moveEvent.touches[0]
-        const x = touch.clientX - rect.left
-        const y = touch.clientY - rect.top
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        const x = (touch.clientX - rect.left) * scaleX
+        const y = (touch.clientY - rect.top) * scaleY
         
         lastFillPosition.current = { x, y }
         
@@ -497,8 +532,10 @@ export const ColoringCanvas = React.forwardRef<
         if (!canvas || !isDrawing.current) return
         
         const rect = canvas.getBoundingClientRect()
-        const x = moveEvent.clientX - rect.left
-        const y = moveEvent.clientY - rect.top
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        const x = (moveEvent.clientX - rect.left) * scaleX
+        const y = (moveEvent.clientY - rect.top) * scaleY
         draw(x, y)
       }
       
@@ -518,8 +555,10 @@ export const ColoringCanvas = React.forwardRef<
         
         const rect = canvas.getBoundingClientRect()
         const touch = moveEvent.touches[0]
-        const x = touch.clientX - rect.left
-        const y = touch.clientY - rect.top
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        const x = (touch.clientX - rect.left) * scaleX
+        const y = (touch.clientY - rect.top) * scaleY
         draw(x, y)
       }
       

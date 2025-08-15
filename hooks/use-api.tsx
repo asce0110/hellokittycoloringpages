@@ -10,6 +10,7 @@ import {
   PricingPlan, 
   SystemSetting,
   UserFavorite,
+  PromptTemplate,
   PaginatedResponse,
   ApiResponse 
 } from '@/lib/types'
@@ -34,11 +35,26 @@ export function useAdminStats() {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      const data = await getDemoAdminStats()
-      setStats(data)
+      const response = await fetch('/api/admin/stats')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      setStats(result.data)
       setError(null)
     } catch (err) {
+      console.error('Failed to fetch admin stats:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch stats')
+      
+      // 如果 API 失败，回退到demo数据
+      try {
+        const fallbackData = await getDemoAdminStats()
+        setStats(fallbackData)
+      } catch (fallbackErr) {
+        console.error('Fallback to demo data also failed:', fallbackErr)
+      }
     } finally {
       setLoading(false)
     }
@@ -59,11 +75,30 @@ export function useAdminUsers(page = 1, limit = 10) {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const data = await getDemoUsers(page, limit)
-      setUsers(data)
+      const response = await fetch(`/api/admin/users?page=${page}&limit=${limit}`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      setUsers({
+        data: result.data,
+        pagination: result.pagination,
+        success: result.success
+      })
       setError(null)
     } catch (err) {
+      console.error('Failed to fetch admin users:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch users')
+      
+      // 如果 API 失败，回退到demo数据
+      try {
+        const fallbackData = await getDemoUsers(page, limit)
+        setUsers(fallbackData)
+      } catch (fallbackErr) {
+        console.error('Fallback to demo data also failed:', fallbackErr)
+      }
     } finally {
       setLoading(false)
     }
@@ -125,11 +160,42 @@ export function useAdminBanners() {
   const fetchBanners = async () => {
     try {
       setLoading(true)
-      const data = await getDemoBanners()
-      setBanners(data)
+      const response = await fetch('/api/admin/banners')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      let apiBanners = result.data || []
+      
+      // 无论API是否成功，都合并demo数据（包括localStorage中的上传数据）
+      try {
+        const demoData = await getDemoBanners()
+        
+        // 合并数据：API数据 + demo数据，去重（以API数据为准）
+        const apiIds = new Set(apiBanners.map((b: BannerImage) => b.id))
+        const additionalBanners = demoData.filter(b => !apiIds.has(b.id))
+        
+        setBanners([...apiBanners, ...additionalBanners])
+      } catch (demoErr) {
+        console.error('Failed to load demo data:', demoErr)
+        setBanners(apiBanners)
+      }
+      
       setError(null)
     } catch (err) {
+      console.error('Failed to fetch banners:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch banners')
+      
+      // 如果 API 失败，完全回退到demo数据
+      try {
+        const fallbackData = await getDemoBanners()
+        setBanners(fallbackData)
+      } catch (fallbackErr) {
+        console.error('Fallback to demo data also failed:', fallbackErr)
+        setBanners([])
+      }
     } finally {
       setLoading(false)
     }
@@ -150,11 +216,26 @@ export function useAdminPricing() {
   const fetchPlans = async () => {
     try {
       setLoading(true)
-      const data = await getDemoPricingPlans()
-      setPlans(data)
+      const response = await fetch('/api/admin/pricing')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      setPlans(result.data)
       setError(null)
     } catch (err) {
+      console.error('Failed to fetch pricing plans:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch pricing plans')
+      
+      // 如果 API 失败，回退到demo数据
+      try {
+        const fallbackData = await getDemoPricingPlans()
+        setPlans(fallbackData)
+      } catch (fallbackErr) {
+        console.error('Fallback to demo data also failed:', fallbackErr)
+      }
     } finally {
       setLoading(false)
     }
@@ -380,4 +461,73 @@ export function useBanners(showOn?: 'homepage' | 'library') {
   }, [showOn])
   
   return { banners, loading, error }
+}
+
+// Admin hooks for Prompt Templates
+export function useAdminPromptTemplates(page = 1, limit = 10, category?: string, style?: string) {
+  const [templates, setTemplates] = useState<PaginatedResponse<PromptTemplate> | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  const fetchTemplates = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      })
+      
+      if (category) params.append('category', category)
+      if (style) params.append('style', style)
+      
+      const response = await fetch(`/api/admin/prompt-templates?${params}`)
+      
+      if (!response.ok) {
+        // 尝试获取错误详情
+        let errorMessage = `HTTP error! status: ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // 如果无法解析JSON，使用默认错误信息
+        }
+        
+        // 对于数据库表不存在的情况，不抛出错误
+        if (response.status === 500 || response.status === 503) {
+          console.warn('Prompt templates API failed, using empty data:', errorMessage)
+          setTemplates({
+            data: [],
+            pagination: { page, limit, total: 0, totalPages: 0 },
+            success: true
+          })
+          setError(null)
+          return
+        }
+        
+        throw new Error(errorMessage)
+      }
+      
+      const result = await response.json()
+      setTemplates(result)
+      setError(null)
+    } catch (err) {
+      console.error('Failed to fetch prompt templates:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch prompt templates')
+      
+      // 如果 API 失败，使用空数据
+      setTemplates({
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+        success: false
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  useEffect(() => {
+    fetchTemplates()
+  }, [page, limit, category, style])
+  
+  return { templates, loading, error, refetch: fetchTemplates }
 }

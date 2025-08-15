@@ -81,7 +81,7 @@ export default function LibraryPage() {
       title: image.title,
       description: image.description || '',
       tags: image.tags,
-      src: image.imageUrl,
+      src: image.imageUrl, // Use the original URL from database - it should be line art
       category: image.category,
       dateAdded: new Date(image.createdAt),
       isNew: image.isFeatured || (new Date().getTime() - new Date(image.createdAt).getTime()) < (7 * 24 * 60 * 60 * 1000) // New if featured or within 7 days

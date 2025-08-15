@@ -9,9 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  output: 'export',
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
+  // Remove output: 'export' for development mode
+  // output: 'export',
+  // trailingSlash: true,
+  // skipTrailingSlashRedirect: true,
   // 禁用 webpack 缓存以避免大文件
   webpack: (config, { isServer }) => {
     config.cache = false

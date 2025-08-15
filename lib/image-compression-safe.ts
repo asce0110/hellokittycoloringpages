@@ -77,25 +77,43 @@ async function attemptSharpCompression(
   filename: string
 ): Promise<ImageCompressionResult | null> {
   try {
+    console.log(`🔧 attemptSharpCompression called for ${filename}, buffer size: ${inputBuffer.length}`)
+    
     // 动态导入，避免类型检查
-    const sharpModule = await import('sharp').catch(() => null)
-    if (!sharpModule) return null
+    const sharpModule = await import('sharp').catch((error) => {
+      console.error('❌ Failed to import sharp:', error)
+      return null
+    })
+    
+    if (!sharpModule) {
+      console.log('⚠️ Sharp module not available')
+      return null
+    }
 
     const sharp = sharpModule.default || sharpModule
-    if (typeof sharp !== 'function') return null
+    if (typeof sharp !== 'function') {
+      console.log('⚠️ Sharp is not a function:', typeof sharp)
+      return null
+    }
 
-    console.log('📷 Sharp loaded, starting compression...')
+    console.log('📷 Sharp loaded successfully, starting compression...')
 
     // 创建Sharp实例
     const image = sharp(inputBuffer)
     
     // 获取元数据
     const metadata = await image.metadata()
-    if (!metadata.width || !metadata.height) return null
+    console.log('📊 Image metadata:', metadata)
+    
+    if (!metadata.width || !metadata.height) {
+      console.log('⚠️ Invalid image metadata')
+      return null
+    }
 
     console.log(`📏 Image: ${metadata.width}x${metadata.height}, ${metadata.format}`)
 
     // 压缩主图
+    console.log('🔧 Starting main image compression...')
     const compressedBuffer = await image
       .png({
         compressionLevel: 9,
@@ -106,7 +124,10 @@ async function attemptSharpCompression(
       })
       .toBuffer()
 
+    console.log(`📊 Main image compressed: ${inputBuffer.length} -> ${compressedBuffer.length} bytes`)
+
     // 生成缩略图
+    console.log('🔧 Starting thumbnail generation...')
     const thumbnailBuffer = await sharp(inputBuffer)
       .resize(200, 200, {
         fit: 'inside',
@@ -122,6 +143,9 @@ async function attemptSharpCompression(
     const compressedSize = compressedBuffer.length
     const thumbnailSize = thumbnailBuffer.length
     const compressionRatio = ((inputBuffer.length - compressedSize) / inputBuffer.length) * 100
+
+    console.log(`📊 Thumbnail generated: ${thumbnailSize} bytes`)
+    console.log(`🎯 Overall compression ratio: ${compressionRatio.toFixed(1)}%`)
 
     return {
       success: true,

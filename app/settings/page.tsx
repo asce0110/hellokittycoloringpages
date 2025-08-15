@@ -12,7 +12,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -44,17 +44,39 @@ export default function SettingsPage() {
     
     setIsSaving(true)
     try {
-      // Here you would make an API call to update user data
-      // For now, we'll just show a success message
-      console.log('Saving changes:', { formData, preferences })
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      const response = await fetch('/api/user/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          name: formData.name,
+          email: formData.email,
+          preferences: preferences
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update settings')
+      }
+
+      // Update user context with the returned user data
+      if (result.user) {
+        const updatedUser = {
+          ...result.user,
+          createdAt: new Date(result.user.createdAt),
+          updatedAt: new Date(result.user.updatedAt)
+        }
+        updateUser(updatedUser)
+      }
+
       alert('✅ Settings saved successfully!')
     } catch (error) {
       console.error('Save failed:', error)
-      alert('❌ Failed to save settings. Please try again.')
+      alert('❌ ' + (error instanceof Error ? error.message : 'Failed to save settings. Please try again.'))
     } finally {
       setIsSaving(false)
     }

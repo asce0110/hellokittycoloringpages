@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
       case 'avatar':
         targetFolder = 'avatars'
         break
+      case 'reference':
+        targetFolder = 'references'
+        break
       default:
         targetFolder = 'uploads'
     }

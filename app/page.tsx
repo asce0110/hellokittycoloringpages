@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import dynamic from "next/dynamic"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -9,14 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BowIcon } from "@/components/icons/bow-icon"
 import { Library, Sparkles, HelpCircle } from "lucide-react"
-
-const MovingImageBanner = dynamic(
-  () => import("@/components/moving-image-banner").then((mod) => mod.MovingImageBanner),
-  {
-    ssr: false,
-    loading: () => <div className="absolute inset-0" />,
-  },
-)
+import MovingImageBanner from "@/components/moving-image-banner"
 
 export default function HomePage() {
   return (

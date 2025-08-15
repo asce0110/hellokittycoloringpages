@@ -484,7 +484,7 @@ export function ColoringPageClient({ params }: ColoringPageClientProps) {
         </div>
         
         {/* Floating reference panel - only show if color reference exists */}
-        {hasColorRef && (
+        {hasColorRef && imageUrl && (
           <ReferenceImagePanel 
             originalImage={decodeURIComponent(imageUrl)}
             title="Coloring Reference"

@@ -21,10 +21,11 @@ interface ImageUploadModalProps {
   isOpen: boolean
   onClose: () => void
   onUpload: (imageData: Partial<LibraryImage | BannerImage>) => Promise<void>
-  type: 'library' | 'banner' | 'hero'
+  type: 'library' | 'banner' | 'hero' | 'reference'
+  selectedImage?: LibraryImage | null
 }
 
-export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploadModalProps) {
+export function ImageUploadModal({ isOpen, onClose, onUpload, type, selectedImage }: ImageUploadModalProps) {
   const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
@@ -38,7 +39,14 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploa
     showOnLibrary: type === 'banner' ? false : false, 
     showOnHero: type === 'hero' ? true : false,
     heroRow: type === 'hero' ? 'top' : null,
-    position: 1
+    position: 1,
+    // Reference specific fields
+    originalImageUrl: type === 'reference' ? '' : undefined,
+    colorScheme: type === 'reference' ? {
+      primary: ['#FF69B4', '#FFFFFF'],
+      secondary: ['#00BCD4', '#FFDC00'],
+      accent: ['#FF4136', '#2ECC40']
+    } : undefined
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -67,7 +75,7 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploa
       const uploadFormData = new FormData()
       uploadFormData.append('file', selectedFile)
       uploadFormData.append('type', type)
-      uploadFormData.append('folder', type === 'library' ? 'library' : type === 'hero' ? 'hero' : 'banners')
+      uploadFormData.append('folder', type === 'library' ? 'library' : type === 'hero' ? 'hero' : type === 'reference' ? 'references' : 'banners')
       
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
@@ -92,7 +100,7 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploa
       } else if (uploadResult.fallback) {
         // R2未配置，使用模拟路径
         console.warn('R2 not configured, using fallback paths')
-        const basePath = type === 'library' ? '/library' : '/banners'
+        const basePath = type === 'library' ? '/library' : type === 'reference' ? '/references' : '/banners'
         imageUrl = `${basePath}/${selectedFile.name}`
         thumbnailUrl = type === 'library' ? `${basePath}/thumbs/${selectedFile.name}` : imageUrl
       } else {
@@ -122,7 +130,13 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploa
         showOnLibrary: type === 'banner' ? false : false,
         showOnHero: type === 'hero' ? true : false,
         heroRow: type === 'hero' ? 'top' : null,
-        position: 1
+        position: 1,
+        originalImageUrl: type === 'reference' ? '' : undefined,
+        colorScheme: type === 'reference' ? {
+          primary: ['#FF69B4', '#FFFFFF'],
+          secondary: ['#00BCD4', '#FFDC00'],
+          accent: ['#FF4136', '#2ECC40']
+        } : undefined
       })
       setSelectedFile(null)
       onClose()
@@ -140,12 +154,16 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploa
         <DialogHeader>
           <DialogTitle>
             {type === 'library' ? '上传图片库图片' : 
-             type === 'banner' ? '上传轮播图' : '上传Hero背景图片'}
+             type === 'banner' ? '上传轮播图' : 
+             type === 'hero' ? '上传Hero背景图片' : 
+             selectedImage ? `为"${selectedImage.title}"上传彩色参考图` : '上传彩色参考图片'}
           </DialogTitle>
           <DialogDescription>
             {type === 'library' ? '添加新的着色页图片到图片库' : 
              type === 'banner' ? '添加新的轮播图到首页展示' :
-             '添加新的背景图片到首页Hero区域展示'}
+             type === 'hero' ? '添加新的背景图片到首页Hero区域展示' :
+             selectedImage ? `为线稿图片"${selectedImage.title}"上传对应的彩色参考图，帮助用户更好地进行着色` :
+             '上传彩色参考图片，用于辅助用户着色'}
           </DialogDescription>
         </DialogHeader>
         
@@ -236,37 +254,174 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type }: ImageUploa
             </>
           )}
           
+          {type === 'reference' && !selectedImage && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="originalImageUrl">对应的线稿图片URL</Label>
+                <Input
+                  id="originalImageUrl"
+                  value={formData.originalImageUrl || ''}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, originalImageUrl: e.target.value }))}
+                  placeholder="输入对应的黑白线稿图片URL"
+                />
+              </div>
+            </>
+          )}
+
+          {type === 'reference' && selectedImage && (
+            <>
+              <div className="grid gap-2 p-3 bg-muted/50 rounded-md">
+                <Label className="text-sm font-medium">目标线稿图片</Label>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={selectedImage.imageUrl} 
+                    alt={selectedImage.title}
+                    className="w-16 h-16 object-cover rounded border"
+                  />
+                  <div>
+                    <p className="font-medium text-sm">{selectedImage.title}</p>
+                    <p className="text-xs text-muted-foreground">将为此图片创建彩色参考图</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {type === 'reference' && (
+            <>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="primaryColors">主要颜色</Label>
+                <Input
+                  id="primaryColors"
+                  value={formData.colorScheme?.primary?.join(', ') || ''}
+                  onChange={(e) => {
+                    const colors = e.target.value.split(',').map(c => c.trim()).filter(c => c)
+                    setFormData((prev: any) => ({ 
+                      ...prev, 
+                      colorScheme: { 
+                        ...prev.colorScheme,
+                        primary: colors
+                      }
+                    }))
+                  }}
+                  placeholder="输入主要颜色，用逗号分隔 (如: #FF69B4, #FFFFFF)"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="secondaryColors">辅助颜色</Label>
+                <Input
+                  id="secondaryColors"
+                  value={formData.colorScheme?.secondary?.join(', ') || ''}
+                  onChange={(e) => {
+                    const colors = e.target.value.split(',').map(c => c.trim()).filter(c => c)
+                    setFormData((prev: any) => ({ 
+                      ...prev, 
+                      colorScheme: { 
+                        ...prev.colorScheme,
+                        secondary: colors
+                      }
+                    }))
+                  }}
+                  placeholder="输入辅助颜色，用逗号分隔 (如: #00BCD4, #FFDC00)"
+                />
+              </div>
+            </>
+          )}
+          
           {(type === 'banner' || type === 'hero') && (
             <>
-              {type === 'banner' && (
-                <div className="grid gap-2">
-                  <Label htmlFor="linkUrl">链接地址 (可选)</Label>
-                  <Input
-                    id="linkUrl"
-                    value={formData.linkUrl || ''}
-                    onChange={(e) => setFormData((prev: any) => ({ ...prev, linkUrl: e.target.value }))}
-                    placeholder="输入点击跳转地址"
-                  />
-                </div>
-              )}
+              <div className="grid gap-2">
+                <Label htmlFor="linkUrl">链接地址 (可选)</Label>
+                <Input
+                  id="linkUrl"
+                  value={formData.linkUrl || ''}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, linkUrl: e.target.value }))}
+                  placeholder="输入点击跳转地址"
+                />
+              </div>
               
-              {type === 'hero' && (
-                <div className="grid gap-2">
-                  <Label htmlFor="heroRow">显示位置</Label>
-                  <Select
-                    value={formData.heroRow || 'top'}
-                    onValueChange={(value) => setFormData((prev: any) => ({ ...prev, heroRow: value as 'top' | 'bottom' }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="top">上排</SelectItem>
-                      <SelectItem value="bottom">下排</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="grid gap-2">
+                <Label htmlFor="position">显示顺序</Label>
+                <Input
+                  id="position"
+                  type="number"
+                  value={formData.position || 1}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, position: parseInt(e.target.value) || 1 }))}
+                  placeholder="数字越小越靠前"
+                  min="1"
+                />
+              </div>
+
+              {/* Banner显示位置选择 */}
+              <div className="space-y-3">
+                <Label>显示位置</Label>
+                
+                {/* Hero区域选择 */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showOnHero"
+                    checked={formData.showOnHero || false}
+                    onChange={(e) => {
+                      setFormData((prev: any) => ({ 
+                        ...prev, 
+                        showOnHero: e.target.checked,
+                        heroRow: e.target.checked ? (prev.heroRow || 'top') : null
+                      }))
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="showOnHero" className="text-sm font-normal">
+                    显示在Hero区域（首页滚动背景）
+                  </Label>
                 </div>
-              )}
+                
+                {formData.showOnHero && (
+                  <div className="ml-6">
+                    <Select
+                      value={formData.heroRow || 'top'}
+                      onValueChange={(value) => setFormData((prev: any) => ({ ...prev, heroRow: value as 'top' | 'bottom' }))}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="top">上排（向左滚动）</SelectItem>
+                        <SelectItem value="bottom">下排（向右滚动）</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* 普通Banner选择 */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showOnHomepage"
+                    checked={formData.showOnHomepage || false}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, showOnHomepage: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="showOnHomepage" className="text-sm font-normal">
+                    显示在首页Banner轮播
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showOnLibrary"
+                    checked={formData.showOnLibrary || false}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, showOnLibrary: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="showOnLibrary" className="text-sm font-normal">
+                    显示在图库Banner轮播
+                  </Label>
+                </div>
+              </div>
             </>
           )}
         </div>

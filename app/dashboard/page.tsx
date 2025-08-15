@@ -131,7 +131,15 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
+              <div className="text-2xl font-bold">
+                {(() => {
+                  const now = new Date()
+                  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+                  return generations.filter(gen => 
+                    new Date(gen.createdAt) >= firstDayOfMonth
+                  ).length
+                })()}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Generations created
               </p>

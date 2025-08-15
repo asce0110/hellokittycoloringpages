@@ -129,6 +129,24 @@ export interface AnalyticsStats {
   createdAt: Date
 }
 
+export interface PromptTemplate {
+  id: string
+  name: string
+  description: string
+  template: string
+  style: string // classic, cute, simple, detailed
+  complexity: "simple" | "medium" | "complex"
+  category: string // character, scene, object, etc.
+  isActive: boolean
+  isDefault: boolean
+  variables: string[] // {character}, {setting}, {action} etc.
+  exampleOutput: string
+  createdBy?: string
+  sortOrder: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface DashboardStats {
   totalUsers: number
   totalGenerations: number
@@ -185,6 +203,32 @@ export interface CreateLibraryImageRequest extends UpdateLibraryImageRequest {
 export interface UpdateSystemSettingRequest {
   settingValue: any
   description?: string
+}
+
+export interface CreatePromptTemplateRequest {
+  name: string
+  description: string
+  template: string
+  style: string
+  complexity: "simple" | "medium" | "complex"
+  category: string
+  variables: string[]
+  exampleOutput: string
+  isActive: boolean
+  isDefault: boolean
+  sortOrder: number
+}
+
+export interface UpdatePromptTemplateRequest extends CreatePromptTemplateRequest {
+  id: string
+}
+
+export interface AIGenerationRequest {
+  prompt: string
+  style: string
+  complexity: "simple" | "medium" | "complex"
+  templateId?: string
+  userId: string
 }
 
 // Legacy type aliases for backward compatibility

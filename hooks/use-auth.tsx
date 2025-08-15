@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   register: (email: string, password: string, name?: string) => Promise<void>
+  updateUser: (updatedUser: User) => void
   isAuthenticated: boolean
   isAdmin: boolean
 }
@@ -142,12 +143,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("user", JSON.stringify(updatedUser))
+    }
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
     login,
     logout,
     register,
+    updateUser,
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin"
   }
