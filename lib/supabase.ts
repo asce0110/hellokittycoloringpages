@@ -145,6 +145,264 @@ export type Database = {
           updated_at?: string
         }
       }
+      user_favorites: {
+        Row: {
+          id: string
+          user_id: string
+          generation_id: string | null
+          library_image_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          generation_id?: string | null
+          library_image_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          generation_id?: string | null
+          library_image_id?: string | null
+        }
+      }
+      banner_images: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          image_url: string
+          is_active: boolean
+          display_order: number
+          image_type: 'library' | 'hero' | 'general'
+          paired_image_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          image_url: string
+          is_active?: boolean
+          display_order?: number
+          image_type?: 'library' | 'hero' | 'general'
+          paired_image_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          image_url?: string
+          is_active?: boolean
+          display_order?: number
+          image_type?: 'library' | 'hero' | 'general'
+          paired_image_id?: string | null
+          updated_at?: string
+        }
+      }
+      pricing_plans: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          price: number
+          currency: string
+          billing_cycle: string
+          features: string[]
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description: string
+          price: number
+          currency?: string
+          billing_cycle: string
+          features: string[]
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          price?: number
+          currency?: string
+          billing_cycle?: string
+          features?: string[]
+          is_active?: boolean
+          updated_at?: string
+        }
+      }
+      system_settings: {
+        Row: {
+          key: string
+          value: string
+          description: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: string
+          description: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+          description?: string
+          updated_at?: string
+        }
+      }
+      user_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan_id: string
+          stripe_subscription_id: string
+          status: string
+          current_period_start: string
+          current_period_end: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan_id: string
+          stripe_subscription_id: string
+          status: string
+          current_period_start: string
+          current_period_end: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan_id?: string
+          stripe_subscription_id?: string
+          status?: string
+          current_period_start?: string
+          current_period_end?: string
+          updated_at?: string
+        }
+      }
+      analytics_stats: {
+        Row: {
+          id: string
+          stat_date: string
+          total_users: number
+          new_users_today: number
+          total_generations: number
+          generations_today: number
+          total_downloads: number
+          downloads_today: number
+          active_pro_subscriptions: number
+          total_revenue: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          stat_date: string
+          total_users?: number
+          new_users_today?: number
+          total_generations?: number
+          generations_today?: number
+          total_downloads?: number
+          downloads_today?: number
+          active_pro_subscriptions?: number
+          total_revenue?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          stat_date?: string
+          total_users?: number
+          new_users_today?: number
+          total_generations?: number
+          generations_today?: number
+          total_downloads?: number
+          downloads_today?: number
+          active_pro_subscriptions?: number
+          total_revenue?: number
+          updated_at?: string
+        }
+      }
+      prompt_templates: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          prompt: string
+          category: string
+          tags: string[]
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          prompt: string
+          category: string
+          tags?: string[]
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          prompt?: string
+          category?: string
+          tags?: string[]
+          is_active?: boolean
+          updated_at?: string
+        }
+      }
+      color_references: {
+        Row: {
+          id: string
+          library_image_id: string
+          reference_image_url: string
+          color_palette: string[]
+          description: string
+          is_primary: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          library_image_id: string
+          reference_image_url: string
+          color_palette: string[]
+          description: string
+          is_primary?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          library_image_id?: string
+          reference_image_url?: string
+          color_palette?: string[]
+          description?: string
+          is_primary?: boolean
+          updated_at?: string
+        }
+      }
     }
   }
 }

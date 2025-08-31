@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BannerImage } from "@/lib/types"
+import { BannerDefaultImage } from "@/components/default-image"
 
 interface BannerEditModalProps {
   banner: BannerImage
@@ -46,22 +47,24 @@ export function BannerEditModal({ banner, isOpen, onClose, onSave }: BannerEditM
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>编辑Banner图片</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-2">
           {/* 图片预览 */}
           <div className="flex items-center gap-4">
-            <img
-              src={formData.imageUrl}
-              alt={formData.title}
-              className="w-24 h-24 object-cover rounded-lg border"
-            />
+            <div className="w-24 h-24 rounded-lg border overflow-hidden">
+              <BannerDefaultImage
+                src={formData.imageUrl}
+                alt={formData.title}
+                className="w-full h-full"
+              />
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">当前图片</p>
-              <p className="text-sm font-mono text-xs">{formData.imageUrl}</p>
+              <p className="text-sm font-mono text-xs break-all">{formData.imageUrl}</p>
             </div>
           </div>
 

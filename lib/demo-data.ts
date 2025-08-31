@@ -13,9 +13,14 @@ import {
   ApiResponse
 } from './types'
 
+// 永久seoId功能已移除，现在使用基于标题的URL
+function generatePermanentSeoId(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
 // 管理员账户数据
 export const adminUser: User = {
-  id: "admin-1",
+  id: "550e8400-e29b-41d4-a716-446655440100", // UUID格式的admin ID
   email: "asce3801@gmail.com",
   name: "Administrator",
   role: "admin",
@@ -30,7 +35,7 @@ export const adminUser: User = {
 
 // 演示用户数据
 export const demoUser: User = {
-  id: "user-1",
+  id: "550e8400-e29b-41d4-a716-446655440101", // UUID格式的用户ID
   email: "user@example.com",
   name: "Demo User", 
   role: "user",
@@ -52,8 +57,8 @@ export const demoUsers: User[] = [
 // 生成历史数据
 export const demoGenerations: GenerationHistory[] = [
   {
-    id: "gen-1",
-    userId: "user-1",
+    id: "550e8400-e29b-41d4-a716-446655441001", // UUID格式的generation ID
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 引用demoUser的UUID
     prompt: "Hello Kitty as an astronaut floating in space",
     imageUrl: "/generated/astronaut-kitty.png",
     thumbnailUrl: "/generated/thumbs/astronaut-kitty.png",
@@ -65,8 +70,8 @@ export const demoGenerations: GenerationHistory[] = [
     createdAt: new Date("2024-08-02")
   },
   {
-    id: "gen-2",
-    userId: "user-1", 
+    id: "550e8400-e29b-41d4-a716-446655441002", // UUID格式的generation ID 
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 引用demoUser的UUID 
     prompt: "Hello Kitty having a tea party with friends",
     imageUrl: "/generated/tea-party.png",
     thumbnailUrl: "/generated/thumbs/tea-party.png",
@@ -78,8 +83,8 @@ export const demoGenerations: GenerationHistory[] = [
     createdAt: new Date("2024-08-01")
   },
   {
-    id: "gen-3",
-    userId: "user-1",
+    id: "550e8400-e29b-41d4-a716-446655441003", // UUID格式的generation ID
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 引用demoUser的UUID
     prompt: "Hello Kitty in a magical forest with unicorns", 
     imageUrl: "/generated/magical-forest.png",
     thumbnailUrl: "/generated/thumbs/magical-forest.png",
@@ -92,195 +97,94 @@ export const demoGenerations: GenerationHistory[] = [
   }
 ]
 
-// 图片库数据
+// 图片库数据 - 包括真实用户上传的图片和默认图片
 export const demoLibraryImages: LibraryImage[] = [
+  // 真实上传的图片 - 对应SEO缓存中的数据
   {
-    id: "lib-1",
-    title: "Hello Kitty Classic",
-    description: "Traditional Hello Kitty pose perfect for beginners",
-    imageUrl: "/library/hello-kitty-classic.png",
-    thumbnailUrl: "/library/thumbs/hello-kitty-classic.png",
-    tags: ["hello kitty", "classic", "simple"],
-    category: "Characters",
+    id: "550e8400-e29b-41d4-a716-446655440001", // UUID格式的ID
+    title: "Hello Kitty Astronaut",
+    description: "Hello Kitty exploring space as a brave astronaut surrounded by stars",
+    imageUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755442141915-5la4zk1sq4t.blob",
+    thumbnailUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755442141915-5la4zk1sq4t.blob",
+    tags: ["Hello Kitty", "Space", "Adventure"],
+    category: "Adventure",
+    difficulty: "medium",
+    isActive: true,
+    isFeatured: true,
+    downloadCount: 250, // 更高的下载量让它成为热门
+    viewCount: 1250, // 浏览量
+    uploadedBy: "550e8400-e29b-41d4-a716-446655440100", // 引用adminUser的UUID
+    fileSize: 860350,
+    imageWidth: 1024,
+    imageHeight: 1024,
+    createdAt: new Date("2024-08-20"), // 较新的日期
+    updatedAt: new Date("2024-08-20")
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440002", // UUID格式的ID
+    title: "Hello Kitty Portrait",
+    description: "A beautiful portrait-style Hello Kitty coloring page perfect for beginners",
+    imageUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755444954865-bpaijly5jln.blob",
+    thumbnailUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755444954865-bpaijly5jln.blob",
+    tags: ["Hello Kitty", "Portrait", "Cute"],
+    category: "Characters", 
     difficulty: "easy",
     isActive: true,
     isFeatured: true,
+    downloadCount: 180, // 高下载量
+    viewCount: 950, // 浏览量
+    uploadedBy: "550e8400-e29b-41d4-a716-446655440100", // 引用adminUser的UUID
+    fileSize: 384000,
+    imageWidth: 1024,
+    imageHeight: 1024,
+    createdAt: new Date("2024-08-22"), // 最新的日期
+    updatedAt: new Date("2024-08-22")
+  },
+  // 保留原有的默认图片作为备用
+  {
+    id: "550e8400-e29b-41d4-a716-446655440003", // UUID格式的ID
+    title: "Hello Kitty Space Explorer",
+    description: "Hello Kitty exploring space as an astronaut with colorful stars",
+    imageUrl: "/astronaut-cat-coloring-page.png",
+    thumbnailUrl: "/astronaut-cat-line-art.png",
+    tags: ["Hello Kitty", "Space", "Adventure"],
+    category: "Adventure",
+    difficulty: "medium",
+    isActive: true,
+    isFeatured: false, // 不特色，优先级较低
     downloadCount: 150,
-    uploadedBy: "admin-1",
-    fileSize: 256000,
+    viewCount: 780, // 浏览量
+    uploadedBy: "550e8400-e29b-41d4-a716-446655440100", // 引用adminUser的UUID
+    fileSize: 860350,
     imageWidth: 1024,
     imageHeight: 1024,
     createdAt: new Date("2024-01-15"),
     updatedAt: new Date("2024-01-15")
   },
   {
-    id: "lib-2", 
-    title: "Hello Kitty Tea Party",
-    description: "Hello Kitty having a delightful tea party",
-    imageUrl: "/library/hello-kitty-tea-party.png",
-    thumbnailUrl: "/library/thumbs/hello-kitty-tea-party.png",
-    tags: ["hello kitty", "tea party", "detailed"],
-    category: "Scenes", 
-    difficulty: "medium",
+    id: "550e8400-e29b-41d4-a716-446655440004", // UUID格式的ID
+    title: "Hello Kitty Classic",
+    description: "Traditional Hello Kitty pose perfect for beginners",
+    imageUrl: "/hello-kitty-coloring-page.png",
+    thumbnailUrl: "/hello-kitty-coloring-page.png",
+    tags: ["Hello Kitty", "Classic", "Simple"],
+    category: "Characters", 
+    difficulty: "easy",
     isActive: true,
-    isFeatured: true,
+    isFeatured: false, // 不特色，优先级较低
     downloadCount: 89,
-    uploadedBy: "admin-1",
+    viewCount: 425, // 浏览量
+    uploadedBy: "550e8400-e29b-41d4-a716-446655440100", // 引用adminUser的UUID
     fileSize: 384000,
     imageWidth: 1024,
     imageHeight: 1024,
     createdAt: new Date("2024-01-20"),
     updatedAt: new Date("2024-01-20")
-  },
-  {
-    id: "lib-3",
-    title: "Hello Kitty Astronaut", 
-    description: "Hello Kitty exploring space as an astronaut",
-    imageUrl: "/library/hello-kitty-astronaut.png",
-    thumbnailUrl: "/library/thumbs/hello-kitty-astronaut.png",
-    tags: ["hello kitty", "space", "astronaut", "adventure"],
-    category: "Adventure",
-    difficulty: "complex",
-    isActive: true,
-    isFeatured: false,
-    downloadCount: 67,
-    uploadedBy: "admin-1",
-    fileSize: 512000,
-    imageWidth: 1024,
-    imageHeight: 1024,
-    createdAt: new Date("2024-02-01"),
-    updatedAt: new Date("2024-02-01")
-  },
-  {
-    id: "lib-4",
-    title: "Hello Kitty Garden",
-    description: "Hello Kitty tending to beautiful flowers",
-    imageUrl: "/library/hello-kitty-garden.png",
-    thumbnailUrl: "/library/thumbs/hello-kitty-garden.png",
-    tags: ["hello kitty", "garden", "flowers", "nature"],
-    category: "Nature",
-    difficulty: "medium",
-    isActive: true,
-    isFeatured: true,
-    downloadCount: 112,
-    uploadedBy: "admin-1",
-    fileSize: 445000,
-    imageWidth: 1024,
-    imageHeight: 1024,
-    createdAt: new Date("2024-02-10"),
-    updatedAt: new Date("2024-02-10")
-  },
-  {
-    id: "lib-5",
-    title: "Hello Kitty Birthday",
-    description: "Hello Kitty celebrating with birthday cake",
-    imageUrl: "/library/hello-kitty-birthday.png",
-    thumbnailUrl: "/library/thumbs/hello-kitty-birthday.png",
-    tags: ["hello kitty", "birthday", "cake", "celebration"],
-    category: "Celebration",
-    difficulty: "easy",
-    isActive: true,
-    isFeatured: false,
-    downloadCount: 203,
-    uploadedBy: "admin-1",
-    fileSize: 298000,
-    imageWidth: 1024,
-    imageHeight: 1024,
-    createdAt: new Date("2024-02-15"),
-    updatedAt: new Date("2024-02-15")
   }
 ]
 
-// 轮播图数据 - 使用真实存在的图片
-export const demoBannerImages: BannerImage[] = [
-  {
-    id: "banner-1",
-    title: "Welcome to AI Kitty Creator",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    linkUrl: "/create",
-    description: "Create unlimited Hello Kitty coloring pages with AI",
-    position: 1,
-    isActive: true,
-    showOnHomepage: true,
-    showOnLibrary: false,
-    showOnHero: false,
-    heroRow: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01")
-  },
-  {
-    id: "banner-2",
-    title: "Featured: Tea Party Collection", 
-    imageUrl: "/cute-kitty-coloring-page.png",
-    linkUrl: "/library?category=Scenes",
-    description: "Discover our most popular tea party themed coloring pages",
-    position: 2,
-    isActive: true,
-    showOnHomepage: true,
-    showOnLibrary: true,
-    showOnHero: false,
-    heroRow: null,
-    createdAt: new Date("2024-01-05"),
-    updatedAt: new Date("2024-01-05")
-  },
-  // Hero区域专用banner图片
-  {
-    id: "hero-1",
-    title: "Hero Top Row - Princess Kitty",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    description: "Princess themed Hello Kitty for hero display",
-    position: 1,
-    isActive: true,
-    showOnHomepage: false,
-    showOnLibrary: false,
-    showOnHero: true,
-    heroRow: "top",
-    createdAt: new Date("2024-01-10"),
-    updatedAt: new Date("2024-01-10")
-  },
-  {
-    id: "hero-2",
-    title: "Hero Bottom Row - Astronaut Kitty",
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    description: "Astronaut themed Hello Kitty for hero display",
-    position: 1,
-    isActive: true,
-    showOnHomepage: false,
-    showOnLibrary: false,
-    showOnHero: true,
-    heroRow: "bottom",
-    createdAt: new Date("2024-01-10"),
-    updatedAt: new Date("2024-01-10")
-  },
-  {
-    id: "hero-3",
-    title: "Hero Top Row - Community Kitty",
-    imageUrl: "/ai-community-coloring.png",
-    description: "Community themed Hello Kitty for hero display",
-    position: 2,
-    isActive: true,
-    showOnHomepage: false,
-    showOnLibrary: false,
-    showOnHero: true,
-    heroRow: "top",
-    createdAt: new Date("2024-01-12"),
-    updatedAt: new Date("2024-01-12")
-  },
-  {
-    id: "hero-4",
-    title: "Hero Bottom Row - Coloring Kitty",
-    imageUrl: "/coloring-kitty-cat.png",
-    description: "Coloring themed Hello Kitty for hero display",
-    position: 2,
-    isActive: true,
-    showOnHomepage: false,
-    showOnLibrary: false,
-    showOnHero: true,
-    heroRow: "bottom",
-    createdAt: new Date("2024-01-12"),
-    updatedAt: new Date("2024-01-12")
-  }
-]
+// Banner模拟数据已删除 - 现在返回空数组，使用默认图片显示
+export const demoBannerImages: BannerImage[] = []
 
 // 价格计划数据
 export const demoPricingPlans: PricingPlan[] = [
@@ -390,28 +294,39 @@ export const demoSystemSettings: SystemSetting[] = [
   }
 ]
 
-// 用户收藏数据
+// 用户收藏数据 - 🎯 修复: 使用正确的UUID格式ID确保与图库数据匹配
 export const demoUserFavorites: UserFavorite[] = [
   {
-    id: "fav-1",
-    userId: "user-1",
-    generationId: "gen-1",
+    id: "550e8400-e29b-41d4-a716-446655442001",
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 使用demoUser的UUID
+    generationId: "550e8400-e29b-41d4-a716-446655441001", // 引用demoGenerations[0]
     createdAt: new Date("2024-08-02"),
     generation: demoGenerations[0]
   },
   {
-    id: "fav-2",
-    userId: "user-1",
-    generationId: "gen-3",
+    id: "550e8400-e29b-41d4-a716-446655442002", 
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 使用demoUser的UUID
+    generationId: "550e8400-e29b-41d4-a716-446655441003", // 引用demoGenerations[2]
     createdAt: new Date("2024-07-30"),
     generation: demoGenerations[2]
   },
   {
-    id: "fav-3",
-    userId: "user-1",
-    libraryImageId: "lib-1",
-    createdAt: new Date("2024-08-01"),
-    libraryImage: demoLibraryImages[0]
+    id: "550e8400-e29b-41d4-a716-446655442003",
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 使用demoUser的UUID  
+    libraryImageId: "64105254-f184-4009-a201-e3fc5f4e0cc7", // 🎯 修复: 使用真实的图库ID (第1张 go and fly a kite)
+    createdAt: new Date("2024-08-01")
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655442004",
+    userId: "550e8400-e29b-41d4-a716-446655440101", // 使用demoUser的UUID
+    libraryImageId: "389e9cfc-89eb-4190-8728-1088a6e0e82f", // 🎯 修复: 使用真实的图库ID (第5张 Hello Kitty in a space suit)
+    createdAt: new Date("2024-08-22")
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655442005",
+    userId: "550e8400-e29b-41d4-a716-446655440100", // admin用户也收藏了第一张
+    libraryImageId: "64105254-f184-4009-a201-e3fc5f4e0cc7", // 🎯 修复: 使用真实的图库ID (第1张 go and fly a kite)
+    createdAt: new Date("2024-08-21")
   }
 ]
 
@@ -667,10 +582,12 @@ export function addUploadedLibraryImage(imageData: Partial<LibraryImage>): void 
       isActive: imageData.isActive !== undefined ? imageData.isActive : true,
       isFeatured: imageData.isFeatured || false,
       downloadCount: 0,
+      viewCount: 0, // 新上传的图片初始浏览量为0
       fileSize: imageData.fileSize || 0,
       imageWidth: imageData.imageWidth || 1024,
       imageHeight: imageData.imageHeight || 1024,
       uploadedBy: 'admin',
+      // seoId功能已移除，现在使用基于标题的SEO URL
       createdAt: new Date(),
       updatedAt: new Date()
     }

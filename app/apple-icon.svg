@@ -1,0 +1,12 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" rx="45" fill="#e11d48"/>
+  <!-- Large palette icon centered -->
+  <path d="M90 25c37.279 0 67.5 30.221 67.5 67.5 0 9.321-7.554 16.875-16.875 16.875h-14.063c-4.657 0-8.437 3.78-8.437 8.437s3.78 8.438 8.437 8.438c4.657 0 8.438 3.78 8.438 8.437 0 18.634-15.116 33.75-33.75 33.75-37.279 0-67.5-30.221-67.5-67.5S52.721 25 90 25z" fill="white"/>
+  <!-- Color dots on the palette -->
+  <circle cx="67.5" cy="67.5" r="8.5" fill="#e11d48"/>
+  <circle cx="112.5" cy="56.25" r="8.5" fill="#e11d48"/>
+  <circle cx="123.75" cy="90" r="8.5" fill="#e11d48"/>
+  <circle cx="78.75" cy="101.25" r="6.75" fill="#e11d48"/>
+  <!-- Accent dot like in logo component -->
+  <circle cx="146.25" cy="33.75" r="11.25" fill="white" opacity="0.8"/>
+</svg>

@@ -9,8 +9,182 @@ import { Badge } from "@/components/ui/badge"
 import { BowIcon } from "@/components/icons/bow-icon"
 import { Library, Sparkles, HelpCircle } from "lucide-react"
 import MovingImageBanner from "@/components/moving-image-banner"
+import { PopularColoringGrid } from "@/components/popular-coloring-grid"
+import { useState, useEffect } from "react"
+import { getTimeRangeQueryParams } from "@/lib/time-filters"
+
+// Fresh Images 数据类型
+interface FreshImage {
+  id: string
+  title: string
+  description: string
+  imageUrl: string
+  thumbnailUrl: string
+  category: string
+  difficulty: 'easy' | 'medium' | 'complex'
+  tags: string[]
+  isActive: boolean
+  isFeatured: boolean
+  createdAt: Date | string
+  updatedAt: Date | string
+}
+
+interface TimeRange {
+  label: string
+  description: string
+  filterDate: Date | string
+  period: 'week' | 'month' | 'quarter' | 'year'
+}
+
+interface FreshImagesResponse {
+  success: boolean
+  timeRange: TimeRange
+  images: FreshImage[]
+  totalCount: number
+  error?: string
+  metadata: {
+    requestedCount: number
+    period: string
+    filterDate: string
+    dataSource?: string // 🎯 数据源标识：'database' | 'mock' | 'fallback'
+  }
+}
 
 export default function HomePage() {
+  const [freshImages, setFreshImages] = useState<FreshImage[]>([])
+  const [timeRange, setTimeRange] = useState<TimeRange | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [showFreshImages, setShowFreshImages] = useState(false)
+
+  // 获取最新图片数据 - 增强调试和错误处理
+  useEffect(() => {
+    const fetchFreshImages = async (retryCount = 0) => {
+      const maxRetries = 3 // 增加重试次数
+      
+      try {
+        setLoading(true)
+        
+        console.log(`🔍 获取Fresh Images (尝试 ${retryCount + 1}/${maxRetries + 1})`)
+        console.log(`📡 正在请求: /api/fresh-images/?count=4`)
+        
+        // 增加超时控制和更详细的错误处理
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15秒超时
+        
+        const response = await fetch('/api/fresh-images/?count=4', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        console.log(`📊 API响应状态: ${response.status} ${response.statusText}`)
+        console.log(`📋 响应头:`, Object.fromEntries(response.headers))
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`❌ API错误响应:`, errorText)
+          throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`)
+        }
+        
+        const responseText = await response.text()
+        console.log(`📄 原始响应内容 (前500字符):`, responseText.substring(0, 500))
+        
+        let data: FreshImagesResponse
+        try {
+          data = JSON.parse(responseText)
+        } catch (parseErr) {
+          console.error(`❌ JSON解析失败:`, parseErr)
+          console.error(`🔍 响应内容:`, responseText)
+          throw new Error(`JSON解析失败: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`)
+        }
+        
+        console.log(`✅ 解析成功的数据结构:`, {
+          success: data.success,
+          hasImages: !!data.images,
+          imageCount: data.images?.length || 0,
+          hasTimeRange: !!data.timeRange,
+          dataSource: data.metadata?.dataSource || 'unknown'
+        })
+        
+        if (data.success && data.images && data.images.length > 0) {
+          // 🎯 只接受真实数据库数据，拒绝模拟数据
+          const isRealDatabaseData = data.metadata?.dataSource === 'database'
+          
+          console.log(`🔍 数据源验证:`, {
+            success: data.success,
+            dataSource: data.metadata?.dataSource,
+            isRealDatabaseData,
+            imageCount: data.images.length,
+            sampleIds: data.images.slice(0, 2).map(img => img.id)
+          })
+          
+          if (isRealDatabaseData) {
+            console.log(`✅ 真实数据库数据加载成功:`, {
+              images: data.images.slice(0, 2).map(img => ({ id: img.id, title: img.title })),
+              totalCount: data.images.length,
+              timeRange: data.timeRange.label
+            })
+            
+            setFreshImages(data.images)
+            setTimeRange(data.timeRange)
+            setShowFreshImages(true)
+            setLoading(false)
+            
+            console.log(`✅ Fresh Images加载完成 (真实数据)`)
+            return // 成功，直接返回
+          } else {
+            console.log('ℹ️ 非数据库数据源，隐藏Fresh Images部分')
+            // 非数据库数据，隐藏Fresh Images部分
+            setShowFreshImages(false)
+            setLoading(false)
+            return
+          }
+        } else {
+          console.log('ℹ️ 无有效数据，隐藏Fresh Images部分')
+          // 无有效数据，隐藏Fresh Images部分
+          setShowFreshImages(false)
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        console.error(`❌ Fresh images 加载失败 (尝试 ${retryCount + 1}):`, {
+          error: errorMessage,
+          name: err instanceof Error ? err.name : 'Unknown',
+          stack: err instanceof Error ? err.stack : undefined
+        })
+        
+        // 如果还有重试机会
+        if (retryCount < maxRetries) {
+          const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000) // 指数退避，最大5秒
+          console.log(`🔄 将在${retryDelay}ms后重试... (${retryCount + 1}/${maxRetries})`)
+          setTimeout(() => {
+            fetchFreshImages(retryCount + 1)
+          }, retryDelay)
+          return
+        }
+        
+        // 所有重试都失败了
+        console.log('ℹ️ 所有重试都失败，隐藏Fresh Images部分')
+        
+        setShowFreshImages(false)
+        setLoading(false)
+      }
+    }
+
+    // 延迟启动
+    const timer = setTimeout(() => {
+      fetchFreshImages()
+    }, 200)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div className="flex flex-col">
       <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-muted/20 relative overflow-hidden">
@@ -24,11 +198,10 @@ export default function HomePage() {
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-extrabold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-white drop-shadow-lg">
-                AI Kitty Creator Studio
+                Coloring Pages Printable | Free Download & Print Instantly
               </h1>
               <p className="mx-auto max-w-[700px] text-white/90 md:text-xl drop-shadow-md">
-                Explore thousands of curated Hello Kitty coloring pages or create unique designs with AI. Print, color,
-                and unleash your creativity!
+                Download coloring pages printable instantly! 500+ original printable coloring sheets ready to download. Perfect for kids, adults, teachers & parents. Explore our comprehensive library of coloring pages printable for every skill level now!
               </p>
             </div>
             <div className="space-x-4">
@@ -38,7 +211,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-white text-primary hover:bg-white/90 px-8 transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <Link href="/library">Browse Library</Link>
+                <Link href="/gallery">🎨 Art Gallery</Link>
               </Button>
               <Button
                 asChild
@@ -46,68 +219,212 @@ export default function HomePage() {
                 size="lg"
                 className="border-white text-white bg-transparent hover:bg-white/10 backdrop-blur-sm px-8 transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <Link href="/create">Create with AI</Link>
+                <Link href="/create">AI Studio</Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-white dark:bg-card relative -mt-8">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center space-y-4 text-center mb-12">
-            <div className="inline-block rounded-full bg-muted px-4 py-2 text-sm font-semibold text-primary">
-              New This Week
+      {/* Fresh Images Section - 只在有真实数据库数据时显示 */}
+      {(loading || showFreshImages) && (
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-white dark:bg-card relative -mt-8">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-4 text-center mb-12">
+              <div className="inline-block rounded-full bg-muted px-4 py-2 text-sm font-semibold text-primary">
+                {loading ? 'Loading...' : timeRange?.label || 'Featured Pages'}
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tighter sm:text-5xl text-gray-800 dark:text-gray-200">
+                Fresh Printable Coloring Pages Collection
+              </h2>
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+                {loading 
+                  ? 'Loading the latest AI generated coloring pages...'
+                  : timeRange?.description || 'Discover amazing new AI-generated coloring pages and printable designs perfect for kids and adults.'
+                }
+              </p>
+              {!loading && timeRange && (
+                <Link href={`/library?${getTimeRangeQueryParams(timeRange)}`}>
+                  <Button variant="outline" className="mt-4">
+                    View All New Pages
+                  </Button>
+                </Link>
+              )}
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tighter sm:text-5xl text-gray-800 dark:text-gray-200">
-              Fresh Coloring Pages Added
-            </h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-              Our team carefully curates and adds new high-quality Hello Kitty coloring pages every week.
-            </p>
-            <Link href="/library?filter=new">
-              <Button variant="outline" className="mt-4">
-                View All New Pages
-              </Button>
-            </Link>
-          </div>
-          <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {[
-              { title: "Astronaut Kitty", query: "astronaut", image: "/astronaut-cat-coloring-page.png" },
-              { title: "Chef Kitty", query: "chef", image: "/hello-kitty-coloring-page.png?query=chef" },
-              { title: "Fairy Kitty", query: "fairy", image: "/cute-kitty-coloring-page.png" },
-              { title: "Pirate Kitty", query: "pirate", image: "/hello-kitty-coloring-page.png?query=pirate" },
-            ].map((item, i) => (
-              <Link 
-                key={i} 
-                href={`/library?filter=new&search=${item.query}`}
-                className="block"
-              >
-                <Card
-                  className="overflow-hidden group cursor-pointer shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 hover:scale-105"
-                >
-                  <CardContent className="p-0">
-                    <Image
-                      src={item.image}
-                      alt={`Featured coloring page: ${item.title}`}
-                      width={300}
-                      height={300}
-                      className="object-cover w-full aspect-square transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="p-4">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">A new adventure awaits!</p>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">New</Badge>
-                        <Badge>Popular</Badge>
+
+            {/* Fresh Images Grid */}
+            <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              {loading ? (
+                // Loading skeleton
+                Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden animate-pulse">
+                    <CardContent className="p-0">
+                      <div className="w-full aspect-square bg-muted" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-4 bg-muted rounded w-3/4" />
+                        <div className="h-3 bg-muted rounded w-1/2" />
+                        <div className="flex gap-2">
+                          <div className="h-5 bg-muted rounded w-12" />
+                          <div className="h-5 bg-muted rounded w-16" />
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                // Actual fresh images (只在showFreshImages为true时才到这里)
+                freshImages.map((image) => (
+                  <Link 
+                    key={image.id} 
+                    href={`/library?imageId=${image.id}`}
+                    className="block"
+                  >
+                    <Card
+                      className="overflow-hidden group cursor-pointer shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300 hover:scale-105"
+                    >
+                      <CardContent className="p-0">
+                        <Image
+                          src={image.thumbnailUrl || image.imageUrl}
+                          alt={`Fresh coloring page: ${image.title}`}
+                          width={300}
+                          height={300}
+                          className="object-cover w-full aspect-square transition-transform duration-300 group-hover:scale-110"
+                        />
+                        <div className="p-4">
+                          <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
+                            {image.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {image.description}
+                          </p>
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              New
+                            </Badge>
+                            {image.isFeatured && (
+                              <Badge variant="default">Featured</Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {image.difficulty}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              )}
+            </div>
+
+            {/* Show total count if available */}
+            {!loading && showFreshImages && timeRange && (
+              <div className="text-center mt-8">
+                <p className="text-sm text-muted-foreground">
+                  Showing {freshImages.length} of the latest additions
+                  {timeRange.period === 'week' && ' this week'}
+                  {timeRange.period === 'month' && ' this month'}
+                  {timeRange.period === 'quarter' && ' this quarter'}
+                  {timeRange.period === 'year' && ' this year'}
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Popular Creative Content Section */}
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-purple-50 via-teal-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="container px-4 md:px-6">
+          <PopularColoringGrid 
+            count={10}
+            showRank={true}
+            showMetrics={true}
+            showHeader={true}
+            cardSize="medium"
+            gridCols="auto"
+            className="max-w-7xl mx-auto"
+          />
+        </div>
+      </section>
+
+      {/* Browse Original Art by Difficulty Level - moved here */}
+      <section className="w-full py-16 bg-gradient-to-br from-pink-100 via-purple-50 via-blue-50 via-green-50 via-yellow-50 to-orange-50 dark:from-pink-900/20 dark:via-purple-900/20 dark:via-blue-900/20 dark:via-green-900/20 dark:via-yellow-900/20 dark:to-orange-900/20">
+        <div className="container px-4 md:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Browse Original Art by Difficulty Level
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Find the perfect original coloring pages and AI-generated designs for your skill level. Choose from simple patterns for beginners to intricate masterpieces for advanced artists.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Easy Hello Kitty Drawings */}
+            <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
+                  <span className="text-2xl">🌟</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Easy Creative Coloring Pages</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Perfect for beginners and young children. Simple original designs with large areas, basic patterns, and clear outlines for easy coloring.
+                </p>
+                <div className="space-y-2 mb-6">
+                  <Badge variant="outline" className="bg-green-50 text-green-700">Beginner Friendly</Badge>
+                  <Badge variant="outline" className="bg-green-50 text-green-700">Ages 3-7</Badge>
+                </div>
+                <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                  <Link href="/library?difficulty=easy">
+                    Browse Easy Art →
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Medium Hello Kitty Drawings */}
+            <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Medium Creative Coloring Pages</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Intermediate original designs with balanced detail and moderate complexity. Perfect for building coloring skills and artistic confidence.
+                </p>
+                <div className="space-y-2 mb-6">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">Intermediate</Badge>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">Ages 7-12</Badge>
+                </div>
+                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Link href="/library?difficulty=medium">
+                    Browse Medium Art →
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Complex Hello Kitty Drawings */}
+            <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+                  <span className="text-2xl">🏆</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Complex Artistic Coloring Pages</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Advanced original artwork with intricate designs for expert colorists. Detailed patterns and challenging layouts for sophisticated artistic experiences.
+                </p>
+                <div className="space-y-2 mb-6">
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700">Advanced</Badge>
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700">Adults & Experts</Badge>
+                </div>
+                <Button asChild className="w-full bg-purple-600 hover:bg-purple-700">
+                  <Link href="/library?difficulty=hard">
+                    Browse Complex Art →
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -136,8 +453,8 @@ export default function HomePage() {
               <Sparkles className="h-12 w-12 mb-4 text-secondary" />
               <h3 className="text-2xl font-bold mb-2">2. Create with AI</h3>
               <p className="text-muted-foreground">
-                Unleash your imagination! Describe any scene, character, or theme in our AI creator tool. "Hello Kitty
-                as an astronaut on Mars," or "a garden party with all Sanrio characters." Our AI will generate a unique,
+                Unleash your imagination! Describe any scene, character, or theme in our AI creator tool. "A cute
+                cat as an astronaut on Mars," or "a magical forest with woodland creatures." Our AI will generate a unique,
                 personalized coloring page just for you.
               </p>
             </div>
@@ -149,13 +466,11 @@ export default function HomePage() {
         <div className="container px-4 md:px-6 text-center">
           <BowIcon className="h-16 w-16 mx-auto text-primary opacity-80" />
           <h2 className="text-3xl font-extrabold tracking-tighter sm:text-4xl mb-4 text-gray-800 dark:text-gray-200 mt-2">
-            Your Ultimate Destination for Kitty Coloring Fun
+            Your Ultimate Creative Coloring Destination
           </h2>
           <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
-            Welcome to AI Kitty Creator, the premier online hub for high-quality, printable Hello Kitty coloring pages.
-            Whether you're a parent looking for a fun and creative activity for your kids, an adult seeking a relaxing
-            nostalgic pastime, or an artist wanting to create something truly unique, our platform offers something for
-            everyone.
+            Welcome to your ultimate printable coloring pages destination! Explore our extensive collection of free coloring pages printable for every age and skill level, from simple designs for kids to intricate patterns for adults.
+            Create custom coloring pages with our AI generator and enjoy hours of creative fun with unlimited artistic possibilities.
           </p>
         </div>
       </section>
@@ -191,23 +506,21 @@ export default function HomePage() {
                   Can I use these images for commercial purposes?
                 </AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
-                  No, all content generated or downloaded from our site is for personal, non-commercial use only. This
-                  includes coloring for fun, educational purposes, or personal crafts. For commercial licensing, please
-                  contact us directly.
+                  Our original AI-generated content is available for personal use with our free plan. Pro subscribers get commercial licensing rights for AI-generated content. All content is 100% original and copyright-free. Check your plan details for specific usage rights.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-4">
                 <AccordionTrigger className="text-lg font-bold">How good is the AI generation?</AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground">
-                  Our AI is specifically trained to produce clean, high-contrast line art suitable for coloring. It
-                  excels at interpreting creative prompts and maintaining the "Kitty" art style. While it's always
-                  improving, users are consistently amazed by the quality and creativity of the results.
+                  Our AI is specifically trained to produce clean, high-contrast line art perfect for coloring. It
+                  excels at interpreting creative prompts and generating unique original designs in various artistic styles. The AI constantly learns and improves, consistently producing high-quality, creative results that surprise and delight users.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
           </div>
         </div>
       </section>
+
     </div>
   )
 }

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ai-kitty-creator.pages.dev/sitemap.xml

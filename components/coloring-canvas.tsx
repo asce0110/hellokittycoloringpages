@@ -213,6 +213,9 @@ export const ColoringCanvas = React.forwardRef<
 
   // 改进的智能填充 - 使用扫描线算法解决条纹问题
   const fillArea = (x: number, y: number, saveHistory: boolean = true) => {
+    // 🚨 明显的调试信息：Smart Fill被调用
+    console.log(`🚨 Smart Fill 被触发! brushSize: ${brushSize}, 位置: (${x.toFixed(1)}, ${y.toFixed(1)})`)
+    
     const drawingCanvas = drawingCanvasRef.current
     const imageCanvas = imageCanvasRef.current
     const drawingCtx = drawingCanvas?.getContext("2d")
@@ -237,7 +240,7 @@ export const ColoringCanvas = React.forwardRef<
         return
       }
       
-      // 更精确的线条检测函数
+      // 🎯 超严格线条检测 - 专门针对复杂图像
       const isLinePixel = (px: number, py: number): boolean => {
         if (px < 0 || px >= width || py < 0 || py >= height) return true
         
@@ -254,14 +257,18 @@ export const ColoringCanvas = React.forwardRef<
         const drawingG = drawingPixels[pixelIndex + 1]
         const drawingB = drawingPixels[pixelIndex + 2]
         const drawingA = drawingPixels[pixelIndex + 3]
-        const hasDrawing = drawingA > 128 // 提高透明度阈值
+        const hasDrawing = drawingA > 50 // 降低阈值，更敏感检测用户绘制内容
         
-        // 更严格的线条检测逻辑
-        const isOriginalLine = brightness < 90 // 稍微放宽原图线条阈值
+        // 🎨 简化但有效的线条检测 - 基于Brush Size调整敏感度
+        const brushSensitivity = Math.max(1, Math.min(100, brushSize))
+        
+        // 动态亮度阈值：小值=严格，大值=宽松
+        const brightnessThreshold = 50 + (brushSensitivity - 1) * 1.5 // 50到199的范围
+        const isOriginalLine = brightness < brightnessThreshold
         
         if (hasDrawing) {
           const drawingBrightness = (drawingR * 0.299 + drawingG * 0.587 + drawingB * 0.114)
-          const isUserLine = drawingBrightness < 120 // 检测用户画的深色线条
+          const isUserLine = drawingBrightness < 120
           return isOriginalLine || isUserLine
         }
         
@@ -281,8 +288,10 @@ export const ColoringCanvas = React.forwardRef<
           return targetR === 0 && targetG === 0 && targetB === 0
         }
         
-        // 允许轻微的颜色差异（最大差值5）
-        const tolerance = 5
+        // 🎨 基于Brush Size的动态颜色容差
+        // 小画笔 = 严格匹配，大画笔 = 宽松匹配
+        const brushSensitivity = Math.max(1, Math.min(100, brushSize))
+        const tolerance = 1 + (brushSensitivity - 1) * 0.08 // 1到9的范围
         return Math.abs(currentR - targetR) <= tolerance && 
                Math.abs(currentG - targetG) <= tolerance && 
                Math.abs(currentB - targetB) <= tolerance
@@ -308,7 +317,9 @@ export const ColoringCanvas = React.forwardRef<
         const visited = new Array(width * height).fill(false)
         const stack: Array<{x: number, y: number}> = [{x: targetX, y: targetY}]
         let filledPixels = 0
-        const maxPixels = 500000 // 增加限制以支持超大背景
+        // 🎨 基于Brush Size的动态填充范围控制
+        const brushSensitivity = Math.max(1, Math.min(100, brushSize))
+        const maxPixels = Math.floor(10000 + (brushSensitivity - 1) * 8000) // 10k到800k的范围
         
         while (stack.length > 0 && filledPixels < maxPixels) {
           const {x: seedX, y: seedY} = stack.pop()!
@@ -443,6 +454,9 @@ export const ColoringCanvas = React.forwardRef<
 
   // 拖拽填充函数 - 与主填充函数保持一致的线条检测
   const performDragFill = (x: number, y: number) => {
+    // 🚨 明显的调试信息：拖拽填充被调用
+    console.log(`🚨 拖拽填充 被触发! brushSize: ${brushSize}, 位置: (${x.toFixed(1)}, ${y.toFixed(1)})`)
+    
     const drawingCanvas = drawingCanvasRef.current
     const imageCanvas = imageCanvasRef.current
     const drawingCtx = drawingCanvas?.getContext("2d")
@@ -465,26 +479,26 @@ export const ColoringCanvas = React.forwardRef<
       return false
     }
     
-    // 使用与主填充函数相同的改进线条检测
+    // 🎯 与主填充函数一致的简化线条检测
     const isLinePixel = (px: number, py: number): boolean => {
       if (px < 0 || px >= width || py < 0 || py >= height) return true
       const pixelIndex = (py * width + px) * 4
       
-      // 检查原图线条 - 使用更智能的阈值检测
       const r = imagePixels[pixelIndex]
       const g = imagePixels[pixelIndex + 1] 
       const b = imagePixels[pixelIndex + 2]
       const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
       
-      // 检查用户绘制的线条
       const drawingR = drawingPixels[pixelIndex]
       const drawingG = drawingPixels[pixelIndex + 1]
       const drawingB = drawingPixels[pixelIndex + 2]
       const drawingA = drawingPixels[pixelIndex + 3]
-      const hasDrawing = drawingA > 128
+      const hasDrawing = drawingA > 50
       
-      // 更严格的线条检测逻辑（与主填充函数一致）
-      const isOriginalLine = brightness < 90
+      // 与主填充函数相同的逻辑
+      const brushSensitivity = Math.max(1, Math.min(100, brushSize))
+      const brightnessThreshold = 50 + (brushSensitivity - 1) * 1.5
+      const isOriginalLine = brightness < brightnessThreshold
       
       if (hasDrawing) {
         const drawingBrightness = (drawingR * 0.299 + drawingG * 0.587 + drawingB * 0.114)
@@ -509,7 +523,9 @@ export const ColoringCanvas = React.forwardRef<
       }
       
       // 允许轻微的颜色差异
-      const tolerance = 5
+      // 基于Brush Size的动态颜色容差（与主填充函数一致）
+      const brushSensitivity = Math.max(1, Math.min(100, brushSize))
+      const tolerance = 1 + (brushSensitivity - 1) * 0.08
       return Math.abs(currentR - targetR) <= tolerance && 
              Math.abs(currentG - targetG) <= tolerance && 
              Math.abs(currentB - targetB) <= tolerance
@@ -605,7 +621,7 @@ export const ColoringCanvas = React.forwardRef<
     saveToHistory(drawingCtx.getImageData(0, 0, drawingCtx.canvas.width, drawingCtx.canvas.height))
   }
 
-  // 颜色深浅调节工具核心算法
+  // 着色工具核心算法 - 使用选定颜色进行着色
   const adjustColorTone = (x: number, y: number, mode: "darken" | "lighten", intensity: number, isDrawing = false) => {
     const drawingCanvas = drawingCanvasRef.current
     const drawingCtx = drawingCanvas?.getContext("2d")
@@ -616,8 +632,11 @@ export const ColoringCanvas = React.forwardRef<
     const width = drawingCanvas.width
     const height = drawingCanvas.height
     
+    // 获取目标颜色（用户选择的颜色）
+    const [targetR, targetG, targetB] = hexToRgb(activeColor)
+    
     // 调试信息
-    console.log(`🎨 颜色深浅调节 - 模式: ${mode === 'lighten' ? '变淡' : '加深'}, 强度: ${intensity}, 画笔大小: ${brushSize}`)
+    console.log(`🎨 着色工具 - 目标颜色: rgb(${targetR}, ${targetG}, ${targetB}), 模式: ${mode === 'lighten' ? '浅色调' : '深色调'}, 强度: ${intensity}, 画笔大小: ${brushSize}`)
     
     // 计算受影响的像素范围
     const radius = Math.max(1, Math.floor(brushSize / 2))
@@ -640,42 +659,64 @@ export const ColoringCanvas = React.forwardRef<
         if (distance > radius) continue
         
         const pixelIndex = (pixelY * width + pixelX) * 4
-        const r = data[pixelIndex]
-        const g = data[pixelIndex + 1]
-        const b = data[pixelIndex + 2]
-        const a = data[pixelIndex + 3]
-        
-        // 只对已上色的像素进行调节（避免在空白区域创建颜色）
-        if (a < 10) continue // 跳过透明或接近透明的像素
+        const currentR = data[pixelIndex]
+        const currentG = data[pixelIndex + 1]
+        const currentB = data[pixelIndex + 2]
+        const currentA = data[pixelIndex + 3]
         
         // 计算距离衰减因子，让画笔边缘有渐变效果
         const falloff = Math.max(0, 1 - (distance / radius))
         const adjustedIntensity = intensity * falloff
         
-        let newR, newG, newB
+        let newR, newG, newB, newA
         
-        if (mode === "darken") {
-          // 加深模式：减少亮度但保持色相
-          newR = Math.max(0, r - (r * adjustedIntensity))
-          newG = Math.max(0, g - (g * adjustedIntensity))
-          newB = Math.max(0, b - (b * adjustedIntensity))
+        if (currentA < 10) {
+          // 透明区域：直接应用目标颜色，根据模式调整深浅
+          if (mode === "darken") {
+            // 深色调：使用较深的目标颜色
+            newR = Math.max(0, targetR * (1 - adjustedIntensity * 0.5))
+            newG = Math.max(0, targetG * (1 - adjustedIntensity * 0.5))
+            newB = Math.max(0, targetB * (1 - adjustedIntensity * 0.5))
+          } else {
+            // 浅色调：使用较浅的目标颜色（向白色混合）
+            newR = Math.min(255, targetR + (255 - targetR) * adjustedIntensity * 0.5)
+            newG = Math.min(255, targetG + (255 - targetG) * adjustedIntensity * 0.5)
+            newB = Math.min(255, targetB + (255 - targetB) * adjustedIntensity * 0.5)
+          }
+          newA = Math.min(255, adjustedIntensity * 255)
         } else {
-          // 变淡模式：对称的算法，增加亮度到白色
-          // 计算每个颜色通道向255（白色）的增量
-          newR = Math.min(255, r + (255 - r) * adjustedIntensity)
-          newG = Math.min(255, g + (255 - g) * adjustedIntensity)
-          newB = Math.min(255, b + (255 - b) * adjustedIntensity)
+          // 已有颜色区域：混合当前颜色与目标颜色
+          if (mode === "darken") {
+            // 深色调：混合后再加深
+            const mixR = currentR * (1 - adjustedIntensity) + targetR * adjustedIntensity
+            const mixG = currentG * (1 - adjustedIntensity) + targetG * adjustedIntensity
+            const mixB = currentB * (1 - adjustedIntensity) + targetB * adjustedIntensity
+            
+            newR = Math.max(0, mixR * (1 - adjustedIntensity * 0.3))
+            newG = Math.max(0, mixG * (1 - adjustedIntensity * 0.3))
+            newB = Math.max(0, mixB * (1 - adjustedIntensity * 0.3))
+          } else {
+            // 浅色调：混合后再变淡
+            const mixR = currentR * (1 - adjustedIntensity) + targetR * adjustedIntensity
+            const mixG = currentG * (1 - adjustedIntensity) + targetG * adjustedIntensity
+            const mixB = currentB * (1 - adjustedIntensity) + targetB * adjustedIntensity
+            
+            newR = Math.min(255, mixR + (255 - mixR) * adjustedIntensity * 0.3)
+            newG = Math.min(255, mixG + (255 - mixG) * adjustedIntensity * 0.3)
+            newB = Math.min(255, mixB + (255 - mixB) * adjustedIntensity * 0.3)
+          }
+          newA = Math.min(255, Math.max(currentA, adjustedIntensity * 255))
         }
         
-        // 应用颜色变化
+        // 应用新颜色
         data[pixelIndex] = Math.round(newR)
         data[pixelIndex + 1] = Math.round(newG)
         data[pixelIndex + 2] = Math.round(newB)
-        // 保持原有透明度
+        data[pixelIndex + 3] = Math.round(newA)
         
         // 调试信息：显示颜色变化效果（仅第一个像素）
         if (!pixelsModified) {
-          console.log(`📊 颜色变化示例 - 原始: rgb(${r}, ${g}, ${b}) → 新颜色: rgb(${Math.round(newR)}, ${Math.round(newG)}, ${Math.round(newB)})`)
+          console.log(`📊 着色效果 - 原始: rgba(${currentR}, ${currentG}, ${currentB}, ${currentA}) → 新颜色: rgba(${Math.round(newR)}, ${Math.round(newG)}, ${Math.round(newB)}, ${Math.round(newA)})`)
         }
         
         pixelsModified = true

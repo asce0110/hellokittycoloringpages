@@ -31,6 +31,7 @@ export interface LibraryImage {
   title: string
   description?: string
   imageUrl: string
+  printUrl?: string  // 高分辨率打印版本URL
   thumbnailUrl: string
   tags: string[]
   category: string
@@ -38,6 +39,7 @@ export interface LibraryImage {
   isActive: boolean
   isFeatured: boolean
   downloadCount: number
+  viewCount: number  // 新增：真实浏览量统计
   uploadedBy?: string
   fileSize?: number
   imageWidth?: number
@@ -50,6 +52,7 @@ export interface BannerImage {
   id: string
   title: string
   imageUrl: string
+  printUrl?: string  // 高分辨率打印版本URL
   linkUrl?: string
   description?: string
   position: number
@@ -58,6 +61,9 @@ export interface BannerImage {
   showOnLibrary: boolean
   showOnHero: boolean  // 新增：是否在hero区域显示
   heroRow: "top" | "bottom" | null  // 新增：显示在hero的上排还是下排
+  // 配对信息
+  imageType?: "line" | "colored" | "unknown"  // 图片类型
+  pairedImageId?: string  // 配对图片的ID
   createdAt: Date
   updatedAt: Date
 }
@@ -191,13 +197,23 @@ export interface UpdateLibraryImageRequest {
   tags: string[]
   category: string
   difficulty: "easy" | "medium" | "complex"
-  isActive: boolean
-  isFeatured: boolean
+  // 使用数据库字段名
+  is_active: boolean
+  is_featured: boolean
 }
 
-export interface CreateLibraryImageRequest extends UpdateLibraryImageRequest {
+export interface CreateLibraryImageRequest {
+  title: string
+  description?: string
+  tags: string[]
+  category: string
+  difficulty: "easy" | "medium" | "complex"
+  // 创建时使用数据库字段名
+  is_active: boolean
+  is_featured: boolean
   imageUrl: string
   thumbnailUrl: string
+  seoId: string
 }
 
 export interface UpdateSystemSettingRequest {

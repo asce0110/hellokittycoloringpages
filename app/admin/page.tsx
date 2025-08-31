@@ -44,6 +44,7 @@ import { LibraryImageEditModal } from "@/components/library-image-edit-modal"
 import { BannerEditModal } from "@/components/banner-edit-modal"
 import { HeroPreviewModal } from "@/components/hero-preview-modal"
 import { getColorReferenceSync, hasColorReferenceSync } from "@/lib/reference-images"
+import { BannerDefaultImage } from "@/components/default-image"
 import { useEffect } from "react"
 
 
@@ -76,6 +77,13 @@ export default function AdminPage() {
   const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null)
   const [bannerFilter, setBannerFilter] = useState<'all' | 'hero' | 'banner'>('all')
   const [showHeroPreview, setShowHeroPreview] = useState(false)
+  
+  // 拖拽配对状态
+  const [draggedImage, setDraggedImage] = useState<BannerImage | null>(null)
+  const [imagePairs, setImagePairs] = useState<{[key: string]: string}>({}) // lineImageId -> coloredImageId
+  const [imageTypes, setImageTypes] = useState<{[key: string]: 'line' | 'colored' | 'unknown'}>({}) // imageId -> type
+  const [showHiddenImages, setShowHiddenImages] = useState(false) // 是否显示已配对的彩色图
+  const [isDatabaseMigrated, setIsDatabaseMigrated] = useState(false) // 数据库是否已迁移
   const [systemSettings, setSystemSettings] = useState({
     adminEmail: '',
     freeGenerations: 0,
@@ -156,24 +164,31 @@ export default function AdminPage() {
     try {
       console.log('Saving library image:', updatedImage)
       
+      // 转换字段名为数据库格式
+      const updateData = {
+        title: updatedImage.title,
+        description: updatedImage.description,
+        tags: updatedImage.tags,
+        category: updatedImage.category,
+        difficulty: updatedImage.difficulty,
+        // 转换为数据库字段名
+        is_featured: updatedImage.isFeatured,
+        is_active: updatedImage.isActive
+      }
+      
+      console.log('Sending data to API:', updateData)
+      
       const response = await fetch(`/api/admin/library-images/${updatedImage.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          title: updatedImage.title,
-          description: updatedImage.description,
-          tags: updatedImage.tags,
-          category: updatedImage.category,
-          difficulty: updatedImage.difficulty,
-          isFeatured: updatedImage.isFeatured,
-          isActive: updatedImage.isActive
-        })
+        body: JSON.stringify(updateData)
       })
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ API response error:', errorData)
         throw new Error(errorData.error || '更新图片失败')
       }
 
@@ -232,23 +247,29 @@ export default function AdminPage() {
     try {
       console.log('💾 Saving image to database:', imageData)
       
+      // 转换为数据库字段名格式
+      const createData = {
+        title: imageData.title,
+        description: imageData.description,
+        imageUrl: imageData.imageUrl,
+        thumbnailUrl: imageData.thumbnailUrl || imageData.imageUrl,
+        category: imageData.category,
+        difficulty: imageData.difficulty,
+        tags: imageData.tags || [],
+        // 转换为数据库字段名
+        is_active: imageData.isActive !== false,
+        is_featured: imageData.isFeatured || false
+      }
+      
+      console.log('Sending create data to API:', createData)
+      
       // 发送到数据库API
       const response = await fetch('/api/admin/library-images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          title: imageData.title,
-          description: imageData.description,
-          imageUrl: imageData.imageUrl,
-          thumbnailUrl: imageData.thumbnailUrl || imageData.imageUrl,
-          category: imageData.category,
-          difficulty: imageData.difficulty,
-          tags: imageData.tags || [],
-          isActive: imageData.isActive !== false,
-          isFeatured: imageData.isFeatured || false
-        })
+        body: JSON.stringify(createData)
       })
 
       if (!response.ok) {
@@ -263,7 +284,24 @@ export default function AdminPage() {
       await refetchLibrary()
     } catch (error) {
       console.error('❌ Image upload/save failed:', error)
-      alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      
+      // 提供更详细的错误信息
+      let errorMessage = '保存失败'
+      let suggestion = ''
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to create library image')) {
+          errorMessage = '数据库保存失败'
+          suggestion = '可能原因：\n• 数据库连接问题\n• 环境变量未配置\n• 网络连接异常\n\n建议检查浏览器控制台获取详细错误信息。'
+        } else if (error.message.includes('fetch')) {
+          errorMessage = '网络请求失败'
+          suggestion = '请检查网络连接后重试。'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      alert(`${errorMessage}\n\n${suggestion}`)
     }
   }
 
@@ -300,6 +338,73 @@ export default function AdminPage() {
     }
   }, [libraryImages?.data, libraryLoading])
 
+  // 当Banner数据加载完成时，从数据库恢复配对关系和图片类型
+  useEffect(() => {
+    if (bannerImages && !bannersLoading) {
+      loadPairingDataFromDatabase()
+    }
+  }, [bannerImages, bannersLoading])
+
+  const loadPairingDataFromDatabase = () => {
+    if (!bannerImages) return
+
+    const pairs: {[key: string]: string} = {}
+    const types: {[key: string]: 'line' | 'colored' | 'unknown'} = {}
+
+    // 首先尝试从数据库恢复
+    let hasDbData = false
+    bannerImages.forEach(image => {
+      // 恢复图片类型
+      if (image.imageType) {
+        types[image.id] = image.imageType
+        hasDbData = true
+      }
+
+      // 恢复配对关系
+      if (image.imageType === 'line' && image.pairedImageId) {
+        pairs[image.id] = image.pairedImageId
+        hasDbData = true
+      }
+    })
+
+    // 更新数据库迁移状态
+    setIsDatabaseMigrated(hasDbData)
+
+    // 如果数据库没有数据，尝试从本地存储恢复
+    if (!hasDbData) {
+      try {
+        const localData = localStorage.getItem('banner_pairing_data')
+        if (localData) {
+          const pairingData = JSON.parse(localData)
+          
+          if (pairingData.pairs) {
+            Object.assign(pairs, pairingData.pairs)
+          }
+          
+          if (pairingData.types) {
+            Object.assign(types, pairingData.types)
+          }
+          
+          console.log('✅ 从本地存储恢复配对关系:', {
+            配对数量: Object.keys(pairs).length,
+            图片类型数量: Object.keys(types).length,
+            时间戳: pairingData.timestamp ? new Date(pairingData.timestamp).toLocaleString() : '无'
+          })
+        }
+      } catch (error) {
+        console.warn('⚠️ 本地存储数据解析失败:', error)
+      }
+    } else {
+      console.log('✅ 从数据库恢复配对关系:', {
+        配对数量: Object.keys(pairs).length,
+        图片类型数量: Object.keys(types).length
+      })
+    }
+
+    setImageTypes(types)
+    setImagePairs(pairs)
+  }
+
   const handleBannerUpload = async (bannerData: any) => {
     try {
       console.log('Uploading banner:', bannerData)
@@ -333,6 +438,16 @@ export default function AdminPage() {
       
       alert(`Banner图片上传成功！\\n标题: ${bannerData.title}`)
       await refetchBanners()
+      
+      // 如果是Hero图片，延迟一秒后给用户提示查看效果
+      if (bannerData.showOnHero) {
+        setTimeout(() => {
+          if (confirm(`🎉 Hero图片上传成功！\\n\\n是否要立即查看首页效果？`)) {
+            // 在新标签页打开首页查看效果
+            window.open('/', '_blank')
+          }
+        }, 1000)
+      }
     } catch (error) {
       console.error('❌ Banner upload failed:', error)
       alert(`上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
@@ -349,14 +464,7 @@ export default function AdminPage() {
     try {
       console.log('Saving banner:', updatedBanner)
       
-      // 检查是否是演示数据（ID不是UUID格式）
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updatedBanner.id)
-      
-      if (!isUUID) {
-        // 演示数据无法真正更新
-        alert(`⚠️ "${updatedBanner.title}" 是演示数据，无法直接编辑。\\n\\n如需自定义，请：\\n1. 上传新的Hero图片\\n2. 在新上传的图片上进行编辑\\n3. 新图片会覆盖演示数据的显示`)
-        return
-      }
+      // 移除了演示数据检查，现在所有banner都可以编辑
       
       const response = await fetch(`/api/admin/banners/${updatedBanner.id}`, {
         method: 'PUT',
@@ -372,7 +480,9 @@ export default function AdminPage() {
           showOnHomepage: updatedBanner.showOnHomepage,
           showOnLibrary: updatedBanner.showOnLibrary,
           showOnHero: updatedBanner.showOnHero,
-          heroRow: updatedBanner.heroRow
+          heroRow: updatedBanner.heroRow,
+          imageType: updatedBanner.imageType,
+          pairedImageId: updatedBanner.pairedImageId
         })
       })
 
@@ -386,6 +496,15 @@ export default function AdminPage() {
       
       alert(`Banner更新成功！\\n标题: ${updatedBanner.title}`)
       await refetchBanners()
+      
+      // 如果是Hero图片，提示查看效果
+      if (updatedBanner.showOnHero) {
+        setTimeout(() => {
+          if (confirm(`🎨 Hero图片设置已更新！\\n\\n是否要立即查看首页效果？`)) {
+            window.open('/', '_blank')
+          }
+        }, 500)
+      }
     } catch (error) {
       console.error('❌ Banner update failed:', error)
       alert(`更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
@@ -401,14 +520,7 @@ export default function AdminPage() {
       try {
         console.log('🗑️ Deleting banner:', banner)
         
-        // 检查是否是演示数据（ID不是UUID格式）
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(banner.id)
-        
-        if (!isUUID) {
-          // 演示数据无法真正删除，只能从localStorage中移除（如果存在）
-          alert(`⚠️ "${banner.title}" 是演示数据，无法删除。\\n\\n如需删除演示数据，请在管理员面板中上传替代图片，或联系开发者。`)
-          return
-        }
+        // 移除了演示数据检查，现在所有banner都可以删除
         
         const response = await fetch(`/api/admin/banners/${banner.id}`, {
           method: 'DELETE',
@@ -615,6 +727,375 @@ export default function AdminPage() {
       console.error('Template save failed:', error)
       alert('❌ 保存失败：' + (error instanceof Error ? error.message : '未知错误'))
     }
+  }
+
+  // 数据库配对操作函数
+  const savePairingToDatabase = async (lineImage: BannerImage, coloredImage: BannerImage) => {
+    try {
+      console.log('🔄 尝试保存配对信息到数据库:', {
+        lineImage: lineImage.title,
+        coloredImage: coloredImage.title
+      })
+
+      // 首先尝试数据库保存（如果数据库支持新字段）
+      try {
+        // 更新线条图的配对信息
+        const lineResponse = await fetch(`/api/admin/banners/${lineImage.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: lineImage.title,
+            description: lineImage.description,
+            linkUrl: lineImage.linkUrl,
+            position: lineImage.position,
+            isActive: lineImage.isActive,
+            showOnHomepage: lineImage.showOnHomepage,
+            showOnLibrary: lineImage.showOnLibrary,
+            showOnHero: lineImage.showOnHero,
+            heroRow: lineImage.heroRow,
+            imageType: 'line',
+            pairedImageId: coloredImage.id
+          })
+        })
+
+        if (lineResponse.ok) {
+          // 更新彩色图的配对信息
+          const colorResponse = await fetch(`/api/admin/banners/${coloredImage.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              title: coloredImage.title,
+              description: coloredImage.description,
+              linkUrl: coloredImage.linkUrl,
+              position: coloredImage.position,
+              isActive: coloredImage.isActive,
+              showOnHomepage: coloredImage.showOnHomepage,
+              showOnLibrary: coloredImage.showOnLibrary,
+              showOnHero: coloredImage.showOnHero,
+              heroRow: coloredImage.heroRow,
+              imageType: 'colored',
+              pairedImageId: lineImage.id
+            })
+          })
+
+          if (colorResponse.ok) {
+            console.log('✅ 配对信息已保存到数据库')
+            // 注意：数据库保存成功时也不刷新，因为本地状态已经更新
+            return
+          }
+        }
+      } catch (dbError) {
+        console.warn('⚠️ 数据库保存失败，使用本地存储方案:', dbError)
+      }
+
+      // 如果数据库保存失败，使用localStorage作为临时方案
+      console.log('🔄 使用本地存储保存配对信息...')
+      
+      const pairingData = {
+        pairs: {
+          ...imagePairs,
+          [lineImage.id]: coloredImage.id
+        },
+        types: {
+          ...imageTypes,
+          [lineImage.id]: 'line' as const,
+          [coloredImage.id]: 'colored' as const
+        },
+        timestamp: Date.now()
+      }
+      
+      localStorage.setItem('banner_pairing_data', JSON.stringify(pairingData))
+      
+      console.log('✅ 配对信息已保存到本地存储（临时方案）')
+      console.log('💡 请执行数据库迁移以启用永久存储')
+      
+    } catch (error) {
+      console.error('❌ 保存配对失败:', error)
+      throw error
+    }
+  }
+
+  const removePairingFromDatabase = async (lineImageId: string) => {
+    try {
+      const pairedImageId = imagePairs[lineImageId]
+      if (!pairedImageId) return
+
+      console.log('🔄 尝试从数据库移除配对关系:', { lineImageId, pairedImageId })
+
+      // 尝试数据库删除
+      try {
+        const lineImage = bannerImages?.find(img => img.id === lineImageId)
+        const coloredImage = bannerImages?.find(img => img.id === pairedImageId)
+        
+        let success = true
+
+        // 清除线条图的配对信息
+        if (lineImage) {
+          const lineResponse = await fetch(`/api/admin/banners/${lineImageId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              title: lineImage.title,
+              description: lineImage.description,
+              linkUrl: lineImage.linkUrl,
+              position: lineImage.position,
+              isActive: lineImage.isActive,
+              showOnHomepage: lineImage.showOnHomepage,
+              showOnLibrary: lineImage.showOnLibrary,
+              showOnHero: lineImage.showOnHero,
+              heroRow: lineImage.heroRow,
+              imageType: lineImage.imageType,
+              pairedImageId: null
+            })
+          })
+
+          if (!lineResponse.ok) success = false
+        }
+
+        // 清除彩色图的配对信息
+        if (coloredImage && success) {
+          const colorResponse = await fetch(`/api/admin/banners/${pairedImageId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              title: coloredImage.title,
+              description: coloredImage.description,
+              linkUrl: coloredImage.linkUrl,
+              position: coloredImage.position,
+              isActive: coloredImage.isActive,
+              showOnHomepage: coloredImage.showOnHomepage,
+              showOnLibrary: coloredImage.showOnLibrary,
+              showOnHero: coloredImage.showOnHero,
+              heroRow: coloredImage.heroRow,
+              imageType: coloredImage.imageType,
+              pairedImageId: null
+            })
+          })
+
+          if (!colorResponse.ok) success = false
+        }
+
+        if (success) {
+          console.log('✅ 配对关系已从数据库移除')
+          // 注意：数据库删除成功时也不刷新，因为本地状态已经更新
+          return
+        }
+      } catch (dbError) {
+        console.warn('⚠️ 数据库删除失败，使用本地存储:', dbError)
+      }
+
+      // 如果数据库删除失败，从本地存储删除
+      console.log('🔄 从本地存储移除配对关系...')
+      
+      const existingData = localStorage.getItem('banner_pairing_data')
+      const pairingData = existingData ? JSON.parse(existingData) : { pairs: {}, types: {} }
+      
+      // 删除配对关系
+      delete pairingData.pairs[lineImageId]
+      
+      pairingData.timestamp = Date.now()
+      
+      localStorage.setItem('banner_pairing_data', JSON.stringify(pairingData))
+      
+      console.log('✅ 配对关系已从本地存储移除')
+      
+    } catch (error) {
+      console.error('❌ 移除配对失败:', error)
+      throw error
+    }
+  }
+
+  const saveImageTypeToDatabase = async (imageId: string, type: 'line' | 'colored' | 'unknown') => {
+    try {
+      const image = bannerImages?.find(img => img.id === imageId)
+      if (!image) {
+        console.warn('❌ 找不到图片:', imageId)
+        return
+      }
+
+      console.log('🔄 尝试保存图片类型到数据库:', { imageId, type, imageTitle: image.title })
+
+      // 尝试数据库保存
+      try {
+        const response = await fetch(`/api/admin/banners/${imageId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: image.title,
+            description: image.description,
+            linkUrl: image.linkUrl,
+            position: image.position,
+            isActive: image.isActive,
+            showOnHomepage: image.showOnHomepage,
+            showOnLibrary: image.showOnLibrary,
+            showOnHero: image.showOnHero,
+            heroRow: image.heroRow,
+            imageType: type,
+            pairedImageId: image.pairedImageId
+          })
+        })
+
+        if (response.ok) {
+          console.log(`✅ 图片类型已保存到数据库: ${image.title} -> ${type}`)
+          // 注意：数据库保存成功时也不刷新，因为本地状态已经更新
+          return
+        }
+      } catch (dbError) {
+        console.warn('⚠️ 数据库保存失败，使用本地存储:', dbError)
+      }
+
+      // 如果数据库保存失败，保存到本地存储
+      console.log('🔄 使用本地存储保存图片类型...')
+      
+      const existingData = localStorage.getItem('banner_pairing_data')
+      const pairingData = existingData ? JSON.parse(existingData) : { pairs: {}, types: {} }
+      
+      pairingData.types = {
+        ...pairingData.types,
+        [imageId]: type
+      }
+      pairingData.timestamp = Date.now()
+      
+      localStorage.setItem('banner_pairing_data', JSON.stringify(pairingData))
+      
+      console.log(`✅ 图片类型已保存到本地存储: ${image.title} -> ${type}`)
+      
+    } catch (error) {
+      console.error('❌ 保存图片类型失败:', error)
+      // 不抛出错误，允许本地状态更新
+    }
+  }
+
+  // 拖拽配对功能
+  const handleDragStart = (image: BannerImage) => {
+    setDraggedImage(image)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = async (targetImage: BannerImage) => {
+    if (!draggedImage || draggedImage.id === targetImage.id) {
+      setDraggedImage(null)
+      return
+    }
+
+    // 确定哪个是线条图，哪个是彩色图
+    const sourceType = getImageType(draggedImage)
+    const targetType = getImageType(targetImage)
+
+    console.log('🔍 拖拽配对调试:', {
+      source: draggedImage.title,
+      sourceType,
+      target: targetImage.title,
+      targetType
+    })
+
+    // 检查是否有未分类的图片
+    if (sourceType === 'unknown' || targetType === 'unknown') {
+      alert('请先标记图片类型（线条图或彩色图）！')
+      setDraggedImage(null)
+      return
+    }
+
+    // 检查是否为相同类型
+    if (sourceType === targetType) {
+      alert(`不能配对两个${sourceType === 'line' ? '线条图' : '彩色图'}！只能将线条图和彩色图配对。`)
+      setDraggedImage(null)
+      return
+    }
+
+    // 建立配对关系
+    const lineImage = sourceType === 'line' ? draggedImage : targetImage
+    const coloredImage = sourceType === 'colored' ? draggedImage : targetImage
+
+    try {
+      // 保存到数据库
+      await savePairingToDatabase(lineImage, coloredImage)
+      
+      // 更新本地状态
+      setImagePairs(prev => ({
+        ...prev,
+        [lineImage.id]: coloredImage.id
+      }))
+
+      console.log(`✅ 配对成功并已保存: ${lineImage.title} <-> ${coloredImage.title}`)
+    } catch (error) {
+      console.error('❌ 配对保存失败:', error)
+      alert('配对保存失败，请重试')
+    }
+    
+    setDraggedImage(null)
+  }
+
+  const handleRemovePair = async (lineImageId: string) => {
+    try {
+      await removePairingFromDatabase(lineImageId)
+      
+      setImagePairs(prev => {
+        const newPairs = { ...prev }
+        delete newPairs[lineImageId]
+        return newPairs
+      })
+    } catch (error) {
+      console.error('❌ 移除配对失败:', error)
+      alert('移除配对失败，请重试')
+    }
+  }
+
+  // 手动设置图片类型
+  const setImageType = (imageId: string, type: 'line' | 'colored' | 'unknown') => {
+    // 立即更新本地状态以提供即时反馈
+    setImageTypes(prev => ({
+      ...prev,
+      [imageId]: type
+    }))
+    
+    // 异步保存到数据库（不等待完成）
+    saveImageTypeToDatabase(imageId, type)
+  }
+
+  // 判断图片类型的函数
+  const getImageType = (image: BannerImage): 'line' | 'colored' | 'unknown' => {
+    // 优先使用手动设置的类型
+    if (imageTypes[image.id]) {
+      return imageTypes[image.id]
+    }
+    
+    if (image.imageType) return image.imageType
+    
+    const title = image.title.toLowerCase()
+    console.log('🔍 分析图片类型:', { title, id: image.id })
+    
+    // 线条图关键词
+    if (title.includes('line') || title.includes('art') || title.includes('sketch') || 
+        title.includes('outline') || title.includes('lineart') || title.includes('black') ||
+        title.includes('coloring') || title.includes('drawing')) {
+      console.log('✅ 识别为线条图')
+      return 'line'
+    }
+    
+    // 彩色图关键词  
+    if (title.includes('color') || title.includes('painted') || title.includes('filled') ||
+        title.includes('colou') || title.includes('bright') || title.includes('rainbow') ||
+        title.includes('vivid') || title.includes('full')) {
+      console.log('✅ 识别为彩色图')
+      return 'colored'
+    }
+    
+    console.log('⚠️ 无法识别类型，标记为unknown')
+    return 'unknown'
   }
 
   // 系统设置功能
@@ -928,22 +1409,73 @@ export default function AdminPage() {
                       Hero图片
                     </Button>
                     {bannerImages && bannerImages.filter(img => img.showOnHero).length > 0 && (
-                      <Button 
-                        variant="secondary" 
-                        onClick={() => setShowHeroPreview(true)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        预览效果
-                      </Button>
+                      <>
+                        <Button 
+                          variant="secondary" 
+                          onClick={() => setShowHeroPreview(true)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          预览效果
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            window.open('/', '_blank')
+                          }}
+                          title="在新页面查看首页实际效果"
+                        >
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          查看首页
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
+                {/* 数据库迁移状态提示 */}
+                {!bannersLoading && !isDatabaseMigrated && (
+                  <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="text-yellow-600 mt-0.5">⚠️</div>
+                      <div className="flex-1">
+                        <h4 className="text-yellow-800 font-medium mb-2">配对功能正在使用临时存储</h4>
+                        <p className="text-yellow-700 text-sm mb-3">
+                          配对关系目前保存在浏览器本地存储中。为了永久保存配对数据，请执行数据库迁移。
+                        </p>
+                        <div className="flex gap-2">
+                          <a 
+                            href="https://supabase.com/dashboard" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                          >
+                            打开Supabase控制台
+                          </a>
+                          <button 
+                            onClick={() => {
+                              const sql = `-- 执行以下SQL命令添加配对字段：
+ALTER TABLE banner_images ADD COLUMN IF NOT EXISTS image_type VARCHAR(20) CHECK (image_type IN ('line', 'colored', 'unknown'));
+ALTER TABLE banner_images ADD COLUMN IF NOT EXISTS paired_image_id UUID REFERENCES banner_images(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_banner_images_image_type ON banner_images(image_type);
+CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(paired_image_id);`
+                              navigator.clipboard.writeText(sql)
+                              alert('SQL命令已复制到剪贴板！请在Supabase SQL编辑器中粘贴并执行。')
+                            }}
+                            className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                          >
+                            复制SQL迁移命令
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* 统计信息和筛选 */}
                 {!bannersLoading && bannerImages && (
                   <div className="space-y-4 mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div className="bg-muted/50 p-3 rounded-lg text-center">
                         <div className="text-2xl font-bold text-primary">
                           {bannerImages.filter(img => img.showOnHero).length}
@@ -968,147 +1500,300 @@ export default function AdminPage() {
                         </div>
                         <div className="text-sm text-muted-foreground">普通Banner</div>
                       </div>
+                      <div className="bg-muted/50 p-3 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {Object.keys(imagePairs).length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">已配对组合</div>
+                      </div>
                     </div>
 
-                    {/* 快速筛选 */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">快速筛选:</span>
-                      <Button
-                        variant={bannerFilter === 'hero' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setBannerFilter('hero')}
-                      >
-                        仅显示Hero图片
-                      </Button>
-                      <Button
-                        variant={bannerFilter === 'banner' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setBannerFilter('banner')}
-                      >
-                        仅显示Banner
-                      </Button>
-                      <Button
-                        variant={bannerFilter === 'all' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setBannerFilter('all')}
-                      >
-                        显示全部
-                      </Button>
+                    {/* 快速筛选和使用说明 */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm flex-wrap">
+                        <span className="text-muted-foreground">快速筛选:</span>
+                        <Button
+                          variant={bannerFilter === 'hero' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setBannerFilter('hero')}
+                        >
+                          仅显示Hero图片
+                        </Button>
+                        <Button
+                          variant={bannerFilter === 'banner' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setBannerFilter('banner')}
+                        >
+                          仅显示Banner
+                        </Button>
+                        <Button
+                          variant={bannerFilter === 'all' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setBannerFilter('all')}
+                        >
+                          显示全部
+                        </Button>
+                        
+                        {/* 显示/隐藏已配对图片的切换按钮 */}
+                        {Object.keys(imagePairs).length > 0 && (
+                          <Button
+                            variant={showHiddenImages ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setShowHiddenImages(!showHiddenImages)}
+                            className="ml-2"
+                          >
+                            {showHiddenImages ? (
+                              <>
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                隐藏已配对图片
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3 w-3 mr-1" />
+                                显示已配对图片
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* 拖拽配对说明 */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <h4 className="text-sm font-medium text-blue-900 mb-2">🎯 拖拽配对功能</h4>
+                        <div className="space-y-1 text-xs text-blue-700">
+                          <p><strong>步骤1:</strong> 点击图片左上角的类型标签来设置图片类型（📝线条图 / 🎨彩色图）</p>
+                          <p><strong>步骤2:</strong> 将彩色图拖拽到对应的线条图上建立配对关系</p>
+                          <p><strong>结果:</strong> 配对后线条图右下角会显示彩色图预览，彩色图会自动隐藏保持界面清爽</p>
+                          <p><strong>编辑:</strong> 点击"显示已配对图片"按钮可以重新显示隐藏的彩色图进行编辑操作</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 🎨 改进的网格布局 - 保持原来的卡片大小但优化配对显示 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {bannersLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
+                    Array.from({ length: 8 }).map((_, i) => (
                       <div key={i} className="animate-pulse">
-                        <div className="bg-muted rounded-lg h-32 mb-2"></div>
-                        <div className="bg-muted rounded h-4 w-3/4 mb-1"></div>
+                        <div className="bg-muted rounded-xl h-48 mb-3"></div>
+                        <div className="bg-muted rounded h-4 w-3/4 mb-2"></div>
                         <div className="bg-muted rounded h-3 w-1/2"></div>
                       </div>
                     ))
                   ) : bannerImages?.filter((image) => {
+                    // 基础筛选
+                    let shouldShow = true
                     if (bannerFilter === 'hero') {
-                      return image.showOnHero
+                      shouldShow = image.showOnHero
                     } else if (bannerFilter === 'banner') {
-                      return !image.showOnHero && (image.showOnHomepage || image.showOnLibrary)
+                      shouldShow = !image.showOnHero && (image.showOnHomepage || image.showOnLibrary)
                     }
+                    
+                    if (!shouldShow) return false
+                    
+                    // 隐藏已配对的彩色图（除非开启了显示隐藏图片模式）
+                    const imageType = getImageType(image)
+                    if (imageType === 'colored' && !showHiddenImages) {
+                      // 检查这个彩色图是否已经被某个线条图配对了
+                      const isUsedInPair = Object.values(imagePairs).includes(image.id)
+                      if (isUsedInPair) {
+                        return false // 隐藏已配对的彩色图
+                      }
+                    }
+                    
                     return true
-                  }).map((image) => (
-                    <Card 
-                      key={image.id} 
-                      className={`overflow-hidden ${
-                        image.showOnHero 
-                          ? 'ring-2 ring-purple-200 dark:ring-purple-800' 
-                          : ''
-                      }`}
-                    >
-                      <div className="relative">
-                        <img 
-                          src={image.imageUrl}
-                          alt={image.title}
-                          className="w-full h-32 object-cover"
-                        />
-                        {/* Hero标识 */}
-                        {image.showOnHero && (
-                          <div className="absolute top-2 left-2">
-                            <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs">
-                              Hero {image.heroRow === 'top' ? '上' : '下'}
-                            </Badge>
+                  }).map((image) => {
+                    const imageType = getImageType(image)
+                    const isLineImage = imageType === 'line'
+                    const pairedImageId = isLineImage ? imagePairs[image.id] : null
+                    const pairedImage = pairedImageId ? bannerImages?.find(img => img.id === pairedImageId) : null
+                    
+                    // 检查是否为已配对的彩色图（用于特殊显示）
+                    const isHiddenPairedImage = imageType === 'colored' && Object.values(imagePairs).includes(image.id) && showHiddenImages
+
+                    return (
+                      <Card 
+                        key={image.id} 
+                        draggable
+                        onDragStart={() => handleDragStart(image)}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(image)}
+                        className={`overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-move ${
+                          draggedImage?.id === image.id ? 'opacity-50 scale-95' : ''
+                        } ${
+                          isHiddenPairedImage 
+                            ? 'ring-2 ring-orange-200 dark:ring-orange-800 shadow-orange-100 dark:shadow-orange-900/20 opacity-70'
+                            : image.showOnHero 
+                            ? 'ring-2 ring-purple-200 dark:ring-purple-800 shadow-purple-100 dark:shadow-purple-900/20' 
+                            : pairedImage
+                            ? 'ring-1 ring-green-200 dark:ring-green-800'
+                            : 'hover:ring-2 hover:ring-primary/20'
+                        }`}
+                      >
+                        <div className="relative group">
+                          <div className="aspect-[4/3] overflow-hidden bg-muted/50">
+                            <BannerDefaultImage
+                              src={image.imageUrl}
+                              alt={image.title}
+                              className="transition-transform duration-200 group-hover:scale-105"
+                            />
                           </div>
-                        )}
-                        {/* 演示数据标识 */}
-                        {!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(image.id) && (
-                          <div className="absolute bottom-2 left-2">
-                            <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 text-xs">
-                              演示数据
+                          
+                          {/* 图片类型标识 - 可点击切换 */}
+                          <div className="absolute top-2 left-2 flex flex-col gap-1">
+                            <Badge 
+                              className={`text-xs font-medium shadow-sm cursor-pointer hover:opacity-80 ${
+                                imageType === 'line' 
+                                  ? 'bg-blue-500 text-white' 
+                                  : imageType === 'colored'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-gray-500 text-white'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                // 循环切换类型：unknown -> line -> colored -> unknown
+                                const nextType = imageType === 'unknown' ? 'line' : 
+                                               imageType === 'line' ? 'colored' : 'unknown'
+                                setImageType(image.id, nextType)
+                              }}
+                              title="点击切换图片类型"
+                            >
+                              {imageType === 'line' ? '📝 线条图' : 
+                               imageType === 'colored' ? '🎨 彩色图' : '❓ 未分类'}
                             </Badge>
-                          </div>
-                        )}
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditBanner(image)}
-                            className="h-6 w-6 p-0 bg-white/80 hover:bg-white"
-                            title="编辑Banner设置"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteBanner(image)}
-                            className="h-6 w-6 p-0 bg-red-500/80 hover:bg-red-600"
-                            title="删除Banner"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between mb-2">
-                          <p className="text-sm font-medium truncate flex-1 mr-2">{image.title}</p>
-                          {image.position && (
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              #{image.position}
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-1 flex-wrap">
-                            {/* 显示位置标签 */}
-                            {image.showOnHomepage && (
-                              <Badge variant="secondary" className="text-xs">
-                                首页
+                            
+                            {/* Hero标识 */}
+                            {image.showOnHero && (
+                              <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-medium shadow-sm">
+                                🎭 Hero {image.heroRow === 'top' ? '上排' : '下排'}
                               </Badge>
                             )}
-                            {image.showOnLibrary && (
-                              <Badge variant="secondary" className="text-xs">
-                                图库
-                              </Badge>
-                            )}
-                            {!image.showOnHero && !image.showOnHomepage && !image.showOnLibrary && (
-                              <Badge variant="outline" className="text-xs text-muted-foreground">
-                                未设置显示位置
+                            
+                            {/* 已配对的彩色图标识 */}
+                            {isHiddenPairedImage && (
+                              <Badge className="bg-orange-500 text-white text-xs font-medium shadow-sm">
+                                🔗 已配对彩色图
                               </Badge>
                             )}
                           </div>
                           
-                          <div className="flex items-center justify-between">
-                            <Badge variant={image.isActive ? "default" : "secondary"} className="text-xs">
-                              {image.isActive ? "启用" : "禁用"}
-                            </Badge>
-                            {image.showOnHero && (
-                              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                {image.heroRow === 'top' ? '↗️ 向左滚动' : '↘️ 向右滚动'}
+                          {/* 配对的彩色图小预览 - 只在线条图上显示 */}
+                          {isLineImage && pairedImage && (
+                            <div className="absolute bottom-2 right-2 group/pair">
+                              <div className="relative">
+                                <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-white shadow-lg bg-white">
+                                  <BannerDefaultImage
+                                    src={pairedImage.imageUrl}
+                                    alt={pairedImage.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleRemovePair(image.id)
+                                  }}
+                                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs opacity-0 group-hover/pair:opacity-100 transition-opacity flex items-center justify-center"
+                                  title="取消配对"
+                                >
+                                  ×
+                                </button>
                               </div>
-                            )}
+                            </div>
+                          )}
+                          
+                          {/* 激活状态标识 */}
+                          {!image.isActive && (
+                            <div className="absolute top-2 right-2">
+                              <Badge variant="secondary" className="bg-gray-500 text-white text-xs">
+                                🚫 未激活
+                              </Badge>
+                            </div>
+                          )}
+                          
+                          {/* 操作按钮 - 悬停显示 */}
+                          <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditBanner(image)}
+                              className="h-7 w-7 p-0 bg-white/90 hover:bg-white border-white/50 backdrop-blur-sm shadow-sm"
+                              title="编辑Banner设置"
+                            >
+                              <Edit className="h-3 w-3 text-blue-600" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteBanner(image)}
+                              className="h-7 w-7 p-0 bg-red-50/90 hover:bg-red-100 border-red-200 shadow-sm"
+                              title="删除Banner"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )) ?? (
+                        
+                        <CardContent className="p-3">
+                          <div className="space-y-2">
+                            {/* 标题和位置 */}
+                            <div className="flex items-start justify-between">
+                              <h3 className="text-sm font-semibold text-foreground truncate flex-1 mr-2">
+                                {image.title}
+                              </h3>
+                              {image.position && (
+                                <span className="text-xs text-muted-foreground font-mono bg-muted px-1 py-0.5 rounded">
+                                  #{image.position}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* 显示位置标签 */}
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {image.showOnHomepage && (
+                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                                  🏠 首页
+                                </Badge>
+                              )}
+                              {image.showOnLibrary && (
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                                  📚 图库
+                                </Badge>
+                              )}
+                              {!image.showOnHero && !image.showOnHomepage && !image.showOnLibrary && (
+                                <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                                  ⚠️ 未设置显示位置
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {/* 状态信息 */}
+                            <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                              <Badge variant={image.isActive ? "default" : "secondary"} className="text-xs">
+                                {image.isActive ? "✅ 启用" : "⏸️ 禁用"}
+                              </Badge>
+                              
+                              {/* 配对信息和拖拽提示 */}
+                              {isLineImage && pairedImage ? (
+                                <span className="text-xs text-green-600 font-medium">
+                                  ✓ 已配对
+                                </span>
+                              ) : imageType !== 'unknown' ? (
+                                <span className="text-xs text-muted-foreground">
+                                  {isLineImage ? '🎯 拖拽彩色图到此' : '🎯 拖拽到线条图'}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-orange-500">
+                                  ⚠️ 请标记图片类型
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  }) ?? (
                     <div className="col-span-full text-center py-12">
                       <div className="max-w-md mx-auto">
                         <div className="text-6xl mb-4">🖼️</div>
@@ -1130,6 +1815,7 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+                
               </CardContent>
             </Card>
           </TabsContent>
@@ -1524,3 +2210,4 @@ function TemplateCard({ template, onEdit, onDelete, onToggleActive }: TemplateCa
     </Card>
   )
 }
+

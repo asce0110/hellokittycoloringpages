@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Cat, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
+import { Logo } from "@/components/logo"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
@@ -54,11 +55,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/20 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center">
-            <Cat className="h-8 w-8 text-primary mr-2" />
-            <span className="text-2xl font-bold">AI Kitty Creator</span>
-          </Link>
-          <p className="text-muted-foreground mt-2">Welcome back to your creative space</p>
+          <Logo size="lg" />
+          <p className="text-muted-foreground mt-2">Your ultimate destination for free printable coloring pages</p>
         </div>
 
         <Card>
@@ -166,11 +164,6 @@ export default function LoginPage() {
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Demo credentials:</p>
-              <p>Admin: asce3801@gmail.com / xahzjz114223</p>
-              <p>User: user@example.com / password123</p>
-            </div>
           </CardContent>
         </Card>
 

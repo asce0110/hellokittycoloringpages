@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useBanners } from "@/hooks/use-api"
 import { BannerImage } from "@/lib/types"
+import { HeroDefaultImage } from "@/components/default-image"
 
 type HeroImageType = {
   id: string
@@ -29,7 +29,7 @@ interface MovingImageBannerProps {
 
 export default function MovingImageBanner({ className }: MovingImageBannerProps) {
   const [displayImages, setDisplayImages] = useState<HeroImageType[]>([])
-  const { banners } = useBanners() // 获取真实banner数据
+  const { banners, refetch } = useBanners() // 获取真实banner数据，包括refetch功能
 
   useEffect(() => {
     // 只使用数据库中的Hero区域banner图片
@@ -47,18 +47,44 @@ export default function MovingImageBanner({ className }: MovingImageBannerProps)
     setDisplayImages(shuffleArray(heroImages))
   }, [banners])
 
+  // 每10秒自动刷新一次数据，确保能获取到最新上传的图片
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch?.()
+    }, 10000) // 10秒刷新一次
+
+    return () => clearInterval(interval)
+  }, [refetch])
+
   if (displayImages.length === 0) {
-    // 如果没有hero图片数据，显示提示信息而不是硬编码图片
-    return (
-      <div className={cn("absolute inset-0 overflow-hidden bg-gradient-to-r from-pink-100 to-blue-100", className)}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-muted-foreground text-center">
-            No hero images configured.<br/>
-            <span className="text-sm">Add hero images in the admin panel to display moving banners.</span>
-          </p>
-        </div>
-      </div>
-    )
+    // 如果没有hero图片数据，显示默认的Hello Kitty图片
+    const defaultHeroImages: HeroImageType[] = [
+      {
+        id: 'default-top-1',
+        src: '/hello-kitty-coloring-page.png',
+        alt: 'Hello Kitty 默认图片 1',
+        heroRow: 'top'
+      },
+      {
+        id: 'default-top-2', 
+        src: '/hello-kitty-coloring-page.png',
+        alt: 'Hello Kitty 默认图片 2',
+        heroRow: 'top'
+      },
+      {
+        id: 'default-bottom-1',
+        src: '/hello-kitty-coloring-page.png', 
+        alt: 'Hello Kitty 默认图片 3',
+        heroRow: 'bottom'
+      },
+      {
+        id: 'default-bottom-2',
+        src: '/hello-kitty-coloring-page.png',
+        alt: 'Hello Kitty 默认图片 4', 
+        heroRow: 'bottom'
+      }
+    ]
+    setDisplayImages(defaultHeroImages)
   }
 
   // 分离上下排图片，严格根据heroRow字段分配
@@ -88,13 +114,10 @@ export default function MovingImageBanner({ className }: MovingImageBannerProps)
             {Array.from({ length: 20 }).map((_, repeatIndex) =>
               topRowImages.map((image, imageIndex) => (
                 <div key={`top-${image.id}-${repeatIndex}-${imageIndex}`} className="flex-none mx-2">
-                  <Image
+                  <HeroDefaultImage
                     src={image.src}
                     alt={image.alt}
-                    width={192}
-                    height={192}
-                    className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48 object-cover"
-                    loading="eager"
+                    className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48"
                     priority={repeatIndex < 2 && imageIndex < 4}
                   />
                 </div>
@@ -112,13 +135,10 @@ export default function MovingImageBanner({ className }: MovingImageBannerProps)
             {Array.from({ length: 20 }).map((_, repeatIndex) =>
               bottomRowImages.map((image, imageIndex) => (
                 <div key={`bottom-${image.id}-${repeatIndex}-${imageIndex}`} className="flex-none mx-2">
-                  <Image
+                  <HeroDefaultImage
                     src={image.src}
                     alt={image.alt}
-                    width={192}
-                    height={192}
-                    className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48 object-cover"
-                    loading="eager"
+                    className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48"
                     priority={repeatIndex < 2 && imageIndex < 4}
                   />
                 </div>

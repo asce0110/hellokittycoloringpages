@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Printer, Download, Palette, Search, Wand2 } from "lucide-react"
+import { titleToSlug } from "@/lib/coloring-data"
 
 // Define a type for our coloring page data
 type ColoringPage = {
@@ -154,7 +155,26 @@ export default function LibraryPage() {
   }
 
   const handleColorOnline = (page: ColoringPage) => {
-    router.push(`/color/${page.id}?src=${encodeURIComponent(page.src)}`)
+    // 🎯 直接基于标题生成slug - 通用解决方案
+    const targetSlug = titleToSlug(page.title)
+    
+    // 💡 携带真实图片URL和描述信息
+    const urlParams = new URLSearchParams({
+      imageUrl: page.src,
+      title: page.title,
+      description: page.description || ''
+    })
+    
+    const seoUrl = `/${targetSlug}?${urlParams.toString()}`
+    
+    console.log('🔥 OLD页面基于标题的动态映射 + 真实图片URL:', {
+      originalTitle: page.title,
+      generatedSlug: targetSlug,
+      seoUrl: seoUrl,
+      imageSrc: page.src
+    })
+    
+    router.push(seoUrl)
   }
 
   const categories = ["Characters", "Holidays", "Scenes", "Seasons", "Difficulty"]

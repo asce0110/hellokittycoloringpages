@@ -16,7 +16,7 @@ export default function CreatePage() {
   const [prompt, setPrompt] = useState("")
   const [style, setStyle] = useState("classic")
   const [complexity, setComplexity] = useState("medium")
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("")
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("none")
   const [templates, setTemplates] = useState<PromptTemplate[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImages, setGeneratedImages] = useState<GenerationHistory[]>([])
@@ -99,7 +99,7 @@ export default function CreatePage() {
           prompt,
           style,
           complexity,
-          templateId: selectedTemplate || undefined,
+          templateId: selectedTemplate === "none" ? undefined : selectedTemplate,
           userId: user.id
         })
       })
@@ -167,7 +167,7 @@ export default function CreatePage() {
                   <SelectValue placeholder="Choose a template to enhance your prompt" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Template</SelectItem>
+                  <SelectItem value="none">No Template</SelectItem>
                   {templates.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
                       {template.name} - {template.style} ({template.complexity})
@@ -175,7 +175,7 @@ export default function CreatePage() {
                   ))}
                 </SelectContent>
               </Select>
-              {selectedTemplate && (
+              {selectedTemplate && selectedTemplate !== "none" && (
                 <div className="bg-muted/50 p-3 rounded-md">
                   <p className="text-xs text-muted-foreground">
                     {templates.find(t => t.id === selectedTemplate)?.description}
@@ -320,7 +320,7 @@ export default function CreatePage() {
                     />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
                       <Button variant="secondary" size="sm" asChild>
-                        <a href={`/color/${generation.id}?imageUrl=${encodeURIComponent(generation.imageUrl)}`}>
+                        <a href={`/custom-generation-${generation.id}?imageUrl=${encodeURIComponent(generation.imageUrl)}`}>
                           Color This
                         </a>
                       </Button>

@@ -21,8 +21,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for admin login first
+    // Check for admin login first - use real database user for admin
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      // Get real admin user from database
+      if (supabaseAdmin) {
+        try {
+          const { data: adminUser, error: adminError } = await supabaseAdmin
+            .from('users')
+            .select('*')
+            .eq('email', ADMIN_EMAIL)
+            .single()
+
+          if (!adminError && adminUser) {
+            console.log('✅ Admin login successful (real database user)')
+            
+            const responseUser = {
+              id: adminUser.id, // Use real UUID from database
+              email: adminUser.email,
+              name: adminUser.name,
+              role: adminUser.role,
+              isProUser: adminUser.is_pro_user,
+              generationsToday: adminUser.generations_today,
+              totalGenerations: adminUser.total_generations,
+              createdAt: adminUser.created_at,
+              updatedAt: adminUser.updated_at
+            }
+
+            return NextResponse.json({
+              success: true,
+              message: 'Admin login successful',
+              user: responseUser
+            })
+          }
+        } catch (error) {
+          console.log('⚠️ Failed to get real admin user, falling back to mock')
+        }
+      }
+      
+      // Fallback to mock admin if database unavailable
       const adminUser = {
         id: "admin-1",
         email: ADMIN_EMAIL,
@@ -35,7 +71,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date().toISOString()
       }
 
-      console.log('✅ Admin login successful')
+      console.log('✅ Admin login successful (fallback to mock)')
       return NextResponse.json({
         success: true,
         message: 'Admin login successful',

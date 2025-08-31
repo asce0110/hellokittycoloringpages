@@ -1,199 +1,82 @@
-# CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## SEO关键词策略 (基于真实Google Ads数据)
 
-## Project Overview
+### 主要目标关键词
+1. **主关键词**: coloring pages printable (135K搜索量, 0.16竞争度)
+2. **次要关键词**: printable coloring pages (165K搜索量, 0.37竞争度) 
+3. **长期目标**: coloring pages (823K搜索量, 0.42竞争度)
+4. **差异化优势**: ai coloring pages (1K搜索量, 0.04竞争度)
 
-AI Kitty Creator is a Next.js application for creating and exploring Hello Kitty coloring pages. The app combines a curated library of existing coloring pages with AI-generated custom pages. Users can browse, download, print, or color pages online using an interactive canvas.
+### 阶段性实施计划
+- 阶段1: 重点优化低竞争高价值关键词
+- 阶段2: 扩展到相关高价值关键词
+- 阶段3: 挑战主流大词
 
-## Development Commands
+### 页面关键词分配
+- 首页: 主关键词 + 品牌定位
+- 分类页: 长尾关键词组合
+- 详情页: 特定主题长尾词
 
-### Core Commands
-- `pnpm dev` - Start development server
-- `pnpm build` - Build for production
-- `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint (note: lint errors are ignored during builds via next.config.mjs)
+### 关键词密度指导
+- **主关键词**: "coloring pages printable" (1.0-1.5%)
+- **次要关键词**: "printable coloring pages" (0.5-0.8%)
+- **支持关键词**: "ai coloring pages", "free coloring sheets" 等
+- **长尾关键词**: 自然分布在内容中
 
-### Local Preview with Cloudflare Environment
-**Cloudflare Commands** (configured for project):
-- `pnpm run preview` - Build and serve with Cloudflare Pages simulation
-- `pnpm run pages:build` - Build specifically for Cloudflare Pages
-- `pnpm run deploy` - Deploy to Cloudflare Pages
+### 内容策略指南
+- 在每个页面自然融入关键词
+- 避免关键词堆砌
+- 保持语义多样性
+- 关注用户搜索意图匹配
 
-**Note**: 
-- Removed `@cloudflare/next-on-pages` dependency (it uses Vercel CLI internally)
-- Direct Cloudflare deployment using `next build` + `wrangler pages dev`
-- On Windows systems, use WSL for better compatibility
-- Alternative: Use `pnpm dev` for standard Next.js development
+### 文案优化方向
+- 突出"可打印"、"免费"、"AI生成"等特点
+- 强调高质量、多样性、易用性
+- 使用长尾关键词变体
 
-### Package Manager
-This project uses **pnpm** as the package manager, not npm or yarn.
+### 建议文案模板
+- 标题: "[关键词] | [品牌特色]"
+- 描述: "[关键词]的简洁描述，突出价值主张"
 
-### Component Generation
-This project uses shadcn/ui components. To add new UI components:
-- Use the shadcn/ui CLI or manually add components to `components/ui/`
-- Components are pre-configured with the custom Tailwind theme
-- See `components.json` for shadcn/ui configuration
+### 技术SEO建议
+- 保持干净的URL结构
+- 优化元数据和结构化数据
+- 建立内部链接网络
+- 使用语义HTML标签
 
-## Deployment Architecture
+### 监控与调整
+- 每月审核关键词排名
+- 跟踪点击率和转化率
+- 根据数据动态调整策略
 
-### Frontend-Backend Separation
-This project is designed with **frontend-backend separation** for deployment to **Cloudflare**:
+### 当前实施状态
+- ✅ 网站标题已优化为: "Free Printable Coloring Pages | Download & Print Instantly"
+- ✅ Meta描述已优化: 突出免费、可打印、AI生成等核心价值
+- ✅ 关键词标签已重新排列: 优先展示主关键词
+- ✅ 首页H1标题已匹配主关键词策略
+- ✅ 域名 coloringpagesprintable.net 完美匹配EMD关键词策略
 
-- **Frontend**: Next.js application deployed to Cloudflare Pages
-- **Backend**: API endpoints and server functions deployed to Cloudflare Workers/Functions
-- **Architecture**: Fully decoupled for optimal Cloudflare performance and scaling
+### 下一步行动计划
+1. 激活AI涂色页面生成系统(500个提示词库)
+2. 优化分类页面的长尾关键词
+3. 建立内链结构支持关键词策略
+4. 配置新域名DNS和部署
+5. 设置301重定向保护SEO权重
 
-### Cloudflare Deployment
-- **Target Platform**: Cloudflare Pages + Workers
-- **Frontend Deployment**: Static site generation with dynamic routes
-- **Backend Services**: Cloudflare Workers for API endpoints
-- **Preview Environment**: Local development should simulate Cloudflare runtime environment
+### 竞争对手分析
+- 定期检查竞争对手的关键词策略
+- 识别未被充分利用的关键词机会
+- 学习和借鉴优秀实践
 
-## Architecture
+### 合规性与用户体验
+- 确保内容对人类和搜索引擎都有价值
+- 避免过度优化和关键词堆砌
+- 保持内容的自然性和吸引力
 
-### App Structure (Next.js 15 App Router)
-- **App Router**: Uses Next.js 15 app router with TypeScript
-- **Layout**: Root layout (`app/layout.tsx`) includes global navigation, theme provider, and footer
-- **Pages**:
-  - `/` - Homepage with hero section and featured content
-  - `/library` - Browse curated coloring pages with search/filter
-  - `/create` - AI page generation interface
-  - `/color/[id]` - Interactive coloring canvas for specific pages
-  - `/community` - Community features (placeholder)
+### 关键词工具推荐
+- Google Search Console
+- Google Keyword Planner
+- Ahrefs
+- SEMrush
 
-### Key Components
-
-#### ColoringCanvas (`components/coloring-canvas.tsx`)
-- **Purpose**: Interactive canvas for coloring pages online
-- **Features**: 
-  - Dual-canvas architecture (image layer + drawing layer)
-  - Fill tool with flood-fill algorithm
-  - Brush tool with configurable size
-  - Undo functionality with history management
-  - Download and print capabilities
-- **Usage**: Imported in `/color/[id]` pages
-
-#### UI Components (`components/ui/`)
-- **Based on**: shadcn/ui component library with Radix UI primitives
-- **Styling**: Tailwind CSS with custom design tokens
-- **Theme**: Dark/light mode support via next-themes
-
-### Styling System
-- **Framework**: Tailwind CSS with custom configuration
-- **Theme**: Custom Hello Kitty color palette (kitty-pink, kitty-blue, kitty-red)
-- **Icons**: Lucide React icons
-- **Fonts**: Nunito (Google Fonts)
-
-### Configuration Notes
-- **Build Config**: ESLint and TypeScript errors are ignored during builds (see next.config.mjs)
-- **Images**: Unoptimized images enabled for placeholder image handling
-- **Theme**: Dark mode support with class-based switching via next-themes
-- **TypeScript**: Strict mode enabled with Next.js 15 and React 19 types
-- **Cloudflare Config**: Static export mode enabled with trailing slashes for Cloudflare Pages compatibility
-- **Wrangler**: Configured with production and preview environments
-
-### Data Flow
-- Library pages use mock data arrays for coloring page listings
-- Color pages receive image URLs via query parameters
-- AI generation UI is frontend-only (backend integration needed)
-
-### Key Patterns
-- Server and client components are clearly separated ("use client" directive)
-- Dynamic imports used for client-heavy components (MovingImageBanner)
-- Next.js 15 compatibility: `ssr: false` only allowed in client components
-- Consistent error handling for download/print operations
-- Responsive design with mobile-first approach
-- Canvas operations use dual-layer architecture for performance
-- Mock data patterns for development (actual backend integration pending)
-
-### Important Notes
-- Homepage (`app/page.tsx`) is a client component due to MovingImageBanner usage
-- MovingImageBanner requires client-side rendering for animations and state management
-
-### Build Fixes Applied
-- **SSR Issue**: Fixed Next.js 15 `ssr: false` error by making homepage a client component
-- **CSS Import Error**: Removed invalid `@import "tw-animate-css"` from `app/globals.css`
-- **Animations**: Custom scroll animations defined directly in CSS instead of external library
-- **Static Export**: Added `generateStaticParams()` to `/color/[id]` page for Cloudflare static export compatibility
-- **Server/Client Separation**: Split `/color/[id]/page.tsx` into server component (with `generateStaticParams`) and client component (`coloring-page-client.tsx`)
-- **404 Page**: Added missing `not-found.tsx` to prevent build errors
-
-### Build Status: ✅ SUCCESS
-- **19 static pages** generated successfully
-- **12 dynamic routes** (`/color/[id]`) pre-rendered with SSG
-- **Static export** ready for Cloudflare Pages deployment
-- **Bundle sizes** optimized (largest page: 13.7 kB)
-
-## New Features: User & Admin Panels
-
-### User Management System
-- **Authentication**: Context-based auth system with mock data for development
-- **User Dashboard** (`/dashboard`): View generation history, favorites, and statistics
-- **Settings Page** (`/settings`): Account management and preferences
-- **Login/Register** (`/login`): Unified authentication interface
-
-### Admin Panel (`/admin`)
-- **User Management**: View and manage all registered users
-- **Library Management**: Upload and manage coloring page library
-- **Banner Images**: Manage homepage moving banner images
-- **Pricing Configuration**: Configure subscription plans and limits
-- **System Settings**: Application-wide configuration
-
-### Environment Configuration
-- **`.env.example`**: Template for all required environment variables
-- **Database**: Ready for integration with any database (PostgreSQL, MySQL, etc.)
-- **File Storage**: Cloudflare R2 configuration for image uploads
-- **Payment**: Stripe integration for Pro subscriptions
-- **AI APIs**: OpenAI and Stability AI for image generation
-
-### Key Components
-- **AuthProvider** (`hooks/use-auth.tsx`): Authentication context and state management
-- **Navigation** (`components/navigation.tsx`): Dynamic navigation with user state
-- **Type Definitions** (`lib/types.ts`): Complete TypeScript interfaces
-
-### Database Integration
-- **Real Database Support**: Full PostgreSQL/Supabase integration
-- **Complete Schema**: Users, generations, library, banners, pricing, settings, favorites, subscriptions, analytics
-- **API Routes**: RESTful APIs for all data operations
-- **Admin Panel**: Real data management for users, content, and settings
-- **User Dashboard**: Actual generation history and favorites from database
-
-### Mock Data for Development (Legacy)
-- Admin user: `asce3801@gmail.com` / `xahzjz114223`
-- Regular user: `user@example.com` / `password123`
-- Database schema and seed data available in `/database/` folder
-- See `DATABASE_SETUP.md` for complete setup instructions
-
-### Database Tables
-- `users` - User accounts and profiles
-- `generation_history` - AI generation records
-- `library_images` - Template image library
-- `banner_images` - Homepage/library banners
-- `pricing_plans` - Subscription plans
-- `system_settings` - Dynamic configuration
-- `user_subscriptions` - Payment records
-- `user_favorites` - User bookmarks
-- `analytics_stats` - Platform metrics
-
-### API Endpoints
-**Admin APIs:**
-- `/api/admin/stats` - Dashboard statistics
-- `/api/admin/users` - User management
-- `/api/admin/library` - Library management
-- `/api/admin/banners` - Banner management
-- `/api/admin/pricing` - Pricing configuration
-- `/api/admin/settings` - System settings
-
-**User APIs:**
-- `/api/user/generations` - Generation history
-- `/api/user/favorites` - User favorites
-
-**Public APIs:**
-- `/api/library` - Public library access
-- `/api/banners` - Public banner data
-
-### Security Features
-- Role-based access control (user/admin)
-- Protected routes and navigation
-- Environment variable configuration for sensitive data
+建议定期评估和更新这个SEO策略，以适应搜索引擎算法和用户需求的变化。

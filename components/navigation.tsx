@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Cat, User, Settings, LogOut, Crown, Shield } from "lucide-react"
+import { User, Settings, LogOut, Crown, Shield } from "lucide-react"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
+import { Logo } from "@/components/logo"
 import { useAuth } from "@/hooks/use-auth"
 
 export function Navigation() {
@@ -20,20 +21,23 @@ export function Navigation() {
 
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-      <Link href="/" className="flex items-center justify-center">
-        <Cat className="h-7 w-7 text-primary" />
-        <span className="ml-2 text-lg font-extrabold text-foreground">AI Kitty Creator</span>
-      </Link>
+      <Logo />
       
       <nav className="ml-auto flex items-center gap-4 sm:gap-6">
         <Link className="text-sm font-medium hover:text-primary transition-colors" href="/">
           Home
         </Link>
+        <Link className="text-sm font-medium hover:text-primary transition-colors" href="/ai-coloring">
+          AI Coloring
+        </Link>
         <Link className="text-sm font-medium hover:text-primary transition-colors" href="/library">
-          Library
+          Art Gallery
         </Link>
         <Link className="text-sm font-medium hover:text-primary transition-colors" href="/create">
-          AI Create
+          AI Studio
+        </Link>
+        <Link className="text-sm font-medium hover:text-primary transition-colors" href="/blog">
+          Coloring Tips
         </Link>
         
         {isAuthenticated ? (

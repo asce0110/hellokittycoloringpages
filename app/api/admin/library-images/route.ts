@@ -34,21 +34,51 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/library-images - 创建新的图库图片
 export async function POST(request: NextRequest) {
   try {
+    console.log('📥 Received POST request to create library image')
+    
     const body = await request.json()
-    const result = await createLibraryImage(body, 'admin')
-
-    if (!result) {
+    console.log('📝 Request body:', JSON.stringify(body, null, 2))
+    
+    // 验证必需字段
+    if (!body.title || !body.imageUrl) {
+      console.error('❌ Missing required fields:', { title: !!body.title, imageUrl: !!body.imageUrl })
       return NextResponse.json(
-        { error: 'Failed to create library image' },
+        { 
+          error: 'Missing required fields',
+          details: 'Title and imageUrl are required',
+          received: Object.keys(body)
+        },
         { status: 400 }
       )
     }
+    
+    const result = await createLibraryImage(body, 'admin')
+    console.log('📊 Create result:', result ? 'Success' : 'Failed')
 
+    if (!result) {
+      console.error('❌ Database function returned null')
+      return NextResponse.json(
+        { 
+          error: 'Failed to create library image',
+          details: 'Database operation returned null - check server logs for database connection issues',
+          suggestion: 'This might be due to missing environment variables or database connectivity issues'
+        },
+        { status: 500 }
+      )
+    }
+
+    console.log('✅ Library image created successfully:', result.id)
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error creating library image:', error)
+    console.error('❌ API Error creating library image:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace available')
+    
     return NextResponse.json(
-      { error: 'Failed to create library image' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error occurred',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     )
   }

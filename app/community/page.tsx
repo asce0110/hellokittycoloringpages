@@ -43,7 +43,7 @@ export default function CommunityPage() {
                     <Share2 className="h-4 w-4" />
                   </Button>
                   <Button asChild size="icon" variant="ghost" className="text-white hover:bg-white/20">
-                    <Link href={`/color/${i + 1}?src=${encodeURIComponent('/ai-community-coloring.png')}`}>
+                    <Link href={`/community-page-${i + 1}?imageUrl=${encodeURIComponent('/ai-community-coloring.png')}`}>
                       <Palette className="h-4 w-4" />
                     </Link>
                   </Button>

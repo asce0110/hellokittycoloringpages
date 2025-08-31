@@ -21,12 +21,12 @@ export const colorReferences: ColorReference[] = [
     colorScheme: {
       primary: ["#FF69B4", "#FFFFFF"], // 粉色和白色
       secondary: ["#00BCD4", "#FFDC00"], // 蓝色和黄色
-      accent: ["#FF4136", "#2ECC40"] // 红色和绿色
+      accent: ["#FF4136", "#FF69B4"] // 红色和粉色（移除绿色）
     }
   },
   {
     original: "/astronaut-cat-coloring-page.png",
-    colored: "/references/astronaut-cat-colored.png",
+    colored: "/references/hello-kitty-colored.svg", // 临时使用现有的彩色参考图
     title: "Astronaut Kitty",
     colorScheme: {
       primary: ["#001f3f", "#7FDBFF"], // 深蓝和浅蓝
@@ -36,14 +36,14 @@ export const colorReferences: ColorReference[] = [
   },
   {
     original: "/cute-kitty-coloring-page.png", 
-    colored: "/references/cute-kitty-colored.png",
+    colored: "/references/hello-kitty-colored.svg", // 临时使用现有的彩色参考图
     title: "Cute Kitty",
     colorScheme: {
       primary: ["#F012BE", "#FF69B4"], // 紫红和粉色
       secondary: ["#FFFFFF", "#7FDBFF"], // 白色和浅蓝
-      accent: ["#2ECC40", "#FFDC00"] // 绿色和黄色
+      accent: ["#FF851B", "#FFDC00"] // 橙色和黄色（移除绿色）
     }
-  }
+  },
 ]
 
 // 缓存彩色参考图数据，避免重复请求
@@ -106,10 +106,47 @@ export async function getColorReference(originalImageUrl: string): Promise<Color
   const cleanUrl = originalImageUrl.split('?')[0]
   console.log('🔍 Looking for color reference for:', cleanUrl)
   
-  // 获取所有彩色参考图数据（包括数据库和硬编码）
+  // 🔥 首先检查数据库中的图片配对
+  try {
+    console.log('🔄 Checking database for paired colored image...')
+    const pairingResponse = await fetch(`/api/image-pairing?imageUrl=${encodeURIComponent(cleanUrl)}`)
+    
+    if (pairingResponse.ok) {
+      const pairingResult = await pairingResponse.json()
+      if (pairingResult.success && pairingResult.data) {
+        console.log('✅ Found database pairing:', pairingResult.data)
+        
+        // 创建动态颜色参考
+        const dynamicReference: ColorReference = {
+          original: pairingResult.data.lineImage.imageUrl,
+          colored: pairingResult.data.coloredImage.imageUrl,
+          title: `${pairingResult.data.lineImage.title} - Colored Reference`,
+          colorScheme: {
+            // 🎨 注意：这些颜色只作为备选方案
+            // 实际颜色将通过 getRecommendedColors() 从彩色图像中提取
+            primary: ["#FF69B4", "#FFFFFF"], // 粉色和白色（备选）
+            secondary: ["#00BCD4", "#FFDC00"], // 蓝色和黄色（备选）
+            accent: ["#FF4136", "#FF851B", "#B10DC9", "#7FDBFF"] // 红色、橙色、紫色、浅蓝（移除绿色）
+          }
+        }
+        
+        console.log('🎨 Using database-paired colored image:', dynamicReference.colored)
+        return dynamicReference
+      }
+    } else {
+      console.log('⚠️ Database pairing lookup failed or no pairing found')
+    }
+  } catch (error) {
+    console.warn('⚠️ Error checking database pairing:', error)
+  }
+  
+  // 获取所有彩色参考图数据（包括数据库和硬编码）作为fallback
   const allReferences = await fetchColorReferences()
   
-  const found = allReferences.find(ref => {
+  let found = allReferences.find(ref => {
+    // 跳过默认参考图
+    if (ref.original === "default") return false
+    
     // 精确匹配
     if (ref.original === cleanUrl) return true
     
@@ -122,12 +159,19 @@ export async function getColorReference(originalImageUrl: string): Promise<Color
     return matches
   })
   
-  console.log('✅ Color reference result:', found ? found.title : 'None found')
-  return found || null
+  // 如果没有找到具体匹配，不使用任何默认参考图
+  if (!found) {
+    console.log('🎨 No color reference found for:', cleanUrl)
+    return null
+  }
+  
+  console.log('✅ Color reference result:', found.title)
+  return found
 }
 
 /**
  * 同步版本的getColorReference，用于需要立即结果的场景
+ * 注意：同步版本无法进行数据库查询，只能使用缓存或硬编码数据
  */
 export function getColorReferenceSync(originalImageUrl: string): ColorReference | null {
   // 检查输入参数是否有效
@@ -140,10 +184,16 @@ export function getColorReferenceSync(originalImageUrl: string): ColorReference 
   const cleanUrl = originalImageUrl.split('?')[0]
   console.log('🔍 Looking for color reference for (sync):', cleanUrl)
   
+  // 🔥 注意：同步版本无法查询数据库配对，建议使用异步版本 getColorReference()
+  console.log('⚠️ Sync version cannot check database pairings. Use getColorReference() for full functionality.')
+  
   // 只使用缓存数据或硬编码数据
   const allReferences = colorReferenceCache || colorReferences
   
-  const found = allReferences.find(ref => {
+  let found = allReferences.find(ref => {
+    // 跳过默认参考图
+    if (ref.original === "default") return false
+    
     // 精确匹配
     if (ref.original === cleanUrl) return true
     
@@ -155,12 +205,18 @@ export function getColorReferenceSync(originalImageUrl: string): ColorReference 
     return matches
   })
   
-  console.log('✅ Color reference result (sync):', found ? found.title : 'None found')
-  return found || null
+  // 如果没有找到具体匹配，不使用任何默认参考图
+  if (!found) {
+    console.log('🎨 No color reference found (sync) for:', cleanUrl)
+    return null
+  }
+  
+  console.log('✅ Color reference result (sync):', found.title)
+  return found
 }
 
 /**
- * 生成彩色参考图URL（如果不存在真实彩色图，使用原图）
+ * 生成彩色参考图URL（如果不存在真实彩色图，返回空字符串）
  */
 export async function getColoredImageUrl(originalImageUrl: string): Promise<string> {
   // 检查输入参数是否有效
@@ -171,50 +227,53 @@ export async function getColoredImageUrl(originalImageUrl: string): Promise<stri
   const reference = await getColorReference(originalImageUrl)
   
   if (reference) {
-    // 检查彩色参考图是否存在，如果不存在就使用原图
+    // 只有真实的彩色参考图才返回URL
     return reference.colored
   }
   
-  // 如果没有找到映射，返回原图
-  return originalImageUrl
+  // 如果没有找到真实的参考图映射，返回空字符串
+  return ''
 }
 
 /**
- * 获取推荐色彩方案
+ * 获取推荐色彩方案 - 从真实的彩色参考图中提取颜色
  */
 export async function getRecommendedColors(originalImageUrl: string): Promise<string[]> {
   // 检查输入参数是否有效
   if (!originalImageUrl || typeof originalImageUrl !== 'string') {
-    // 返回默认色彩方案
-    return [
-      "#FF69B4", // Kitty Pink
-      "#00BCD4", // Kitty Blue  
-      "#FF4136", // Red
-      "#FFDC00", // Yellow
-      "#FFFFFF", // White
-      "#000000"  // Black
-    ]
+    console.log('❌ No valid image URL provided for color recommendations')
+    return [] // 返回空数组，表示没有颜色建议
   }
   
   const reference = await getColorReference(originalImageUrl)
   
-  if (reference) {
-    return [
-      ...reference.colorScheme.primary,
-      ...reference.colorScheme.secondary,
-      ...reference.colorScheme.accent
-    ]
+  if (reference && reference.colored && reference.colored !== 'default') {
+    console.log('✅ Found real color reference, extracting colors from:', reference.colored)
+    
+    // 🎯 使用真实的像素颜色提取而不是预设颜色方案
+    try {
+      console.log('🔄 Starting real pixel color extraction from:', reference.colored)
+      
+      // 动态导入颜色提取模块
+      const { extractColorsFromImage } = await import('./color-extractor')
+      const extractedColors = await extractColorsFromImage(reference.colored, 8)
+      
+      if (extractedColors && extractedColors.length > 0) {
+        console.log('✅ Successfully extracted colors from image:', extractedColors)
+        return extractedColors
+      } else {
+        console.log('⚠️ No colors could be extracted from image')
+        return []
+      }
+    } catch (error) {
+      console.error('❌ Failed to extract colors from image:', error)
+      return []
+    }
   }
   
-  // 默认Hello Kitty色彩方案
-  return [
-    "#FF69B4", // Kitty Pink
-    "#00BCD4", // Kitty Blue  
-    "#FF4136", // Red
-    "#FFDC00", // Yellow
-    "#FFFFFF", // White
-    "#000000"  // Black
-  ]
+  // 没有真实参考图时不返回任何颜色建议
+  console.log('🚫 No real color reference found, not providing any colors')
+  return []
 }
 
 /**

@@ -35,6 +35,8 @@ export async function GET() {
       showOnLibrary: banner.show_on_library,
       showOnHero: banner.show_on_hero,
       heroRow: banner.hero_row,
+      imageType: banner.image_type,
+      pairedImageId: banner.paired_image_id,
       createdAt: new Date(banner.created_at),
       updatedAt: new Date(banner.updated_at)
     }))
@@ -69,7 +71,9 @@ export async function POST(request: NextRequest) {
       showOnHomepage,
       showOnLibrary,
       showOnHero,
-      heroRow
+      heroRow,
+      imageType,
+      pairedImageId
     } = body
 
     if (!title || !imageUrl) {
@@ -92,6 +96,8 @@ export async function POST(request: NextRequest) {
         show_on_library: showOnLibrary || false,
         show_on_hero: showOnHero || false,
         hero_row: heroRow || null,
+        image_type: imageType || null,
+        paired_image_id: pairedImageId || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -121,6 +127,8 @@ export async function POST(request: NextRequest) {
         showOnLibrary: banner.show_on_library,
         showOnHero: banner.show_on_hero,
         heroRow: banner.hero_row,
+        imageType: banner.image_type,
+        pairedImageId: banner.paired_image_id,
         createdAt: new Date(banner.created_at),
         updatedAt: new Date(banner.updated_at)
       }

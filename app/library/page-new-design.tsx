@@ -163,7 +163,9 @@ export default function LibraryPage() {
 
   const handleStartColoring = () => {
     if (selectedImage) {
-      const coloringUrl = `/color/${selectedImage.id}?src=${encodeURIComponent(selectedImage.imageUrl)}`
+      // 使用新的SEO友好URL格式
+      const slug = `${selectedImage.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}-${selectedImage.id}`
+      const coloringUrl = `/${slug}?imageUrl=${encodeURIComponent(selectedImage.imageUrl)}`
       router.push(coloringUrl)
     }
   }

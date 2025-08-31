@@ -20,9 +20,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const ADMIN_EMAIL = "asce3801@gmail.com"
 const ADMIN_PASSWORD = "xahzjz114223"
 
-// Mock admin user for development
-const mockAdminUser: User = {
-  id: "admin-1",
+// Real admin user from database
+const realAdminUser: User = {
+  id: "550e8400-e29b-41d4-a716-446655440100", // 与demo-data.ts中的adminUser保持一致
   email: ADMIN_EMAIL,
   name: "Administrator",
   role: "admin",

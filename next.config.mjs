@@ -13,9 +13,14 @@ const nextConfig = {
   // output: 'export',
   // trailingSlash: true,
   // skipTrailingSlashRedirect: true,
-  // 禁用 webpack 缓存以避免大文件
+  // webpack配置
   webpack: (config, { isServer }) => {
-    config.cache = false
+    // 确保print-js只在客户端加载
+    if (isServer) {
+      config.externals = config.externals || []
+      config.externals.push('print-js')
+    }
+    
     return config
   },
   // 优化静态导出

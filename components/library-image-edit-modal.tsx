@@ -180,7 +180,7 @@ export function LibraryImageEditModal({ image, isOpen, onClose, onSave }: Librar
                 <SelectContent>
                   <SelectItem value="hello-kitty">Hello Kitty</SelectItem>
                   <SelectItem value="animals">动物</SelectItem>
-                  <SelectItem value="nature">自然</SelectItem>
+                  <SelectItem value="Nature">自然</SelectItem>
                   <SelectItem value="fantasy">幻想</SelectItem>
                   <SelectItem value="seasonal">季节</SelectItem>
                   <SelectItem value="other">其他</SelectItem>

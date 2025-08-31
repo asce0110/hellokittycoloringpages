@@ -13,8 +13,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { userId, name, email, preferences } = body
 
-    console.log('👤 User update request:', { userId, name, email, preferences })
-
     // Validate input
     if (!userId) {
       return NextResponse.json(
@@ -87,7 +85,6 @@ export async function PUT(request: NextRequest) {
     // If preferences are provided, we could store them in a preferences JSON field
     // For now, we'll just log them (assuming preferences are handled client-side)
     if (preferences) {
-      console.log('User preferences update:', preferences)
       // In a real app, you might have a preferences column in users table:
       // updateData.preferences = preferences
     }
@@ -107,7 +104,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.log('✅ User updated successfully:', updatedUser.id)
 
     // Return updated user data
     const responseUser = {

@@ -103,12 +103,165 @@ export async function generatePresignedUploadUrl(
  */
 export async function deleteFromR2(key: string): Promise<boolean> {
   try {
-    // Temporarily simulate delete operation
-    console.log('R2 Delete simulation for:', key)
+    // Check if R2 is configured
+    if (!isR2Configured()) {
+      console.log('R2 not configured, skipping delete for:', key)
+      return true // Return true for simulation mode
+    }
+
+    const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT!
+    const ACCESS_KEY_ID = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!
+    const SECRET_ACCESS_KEY = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!
+    const BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME!
+
+    // Create delete URL
+    const deleteUrl = `${R2_ENDPOINT}/${BUCKET_NAME}/${key}`
+    
+    // Prepare headers for AWS Signature V4
+    const date = new Date()
+    const dateStamp = date.toISOString().slice(0, 10).replace(/-/g, '')
+    const timeStamp = date.toISOString().slice(0, 19).replace(/[-:]/g, '') + 'Z'
+    
+    const headers = {
+      'Host': new URL(R2_ENDPOINT).host,
+      'X-Amz-Date': timeStamp,
+      'X-Amz-Content-Sha256': 'UNSIGNED-PAYLOAD'
+    }
+
+    // Create canonical request for DELETE
+    const canonicalUri = `/${BUCKET_NAME}/${key}`
+    const canonicalQuerystring = ''
+    const canonicalHeaders = Object.keys(headers)
+      .sort()
+      .map(headerKey => `${headerKey.toLowerCase()}:${headers[headerKey as keyof typeof headers]}`)
+      .join('\n') + '\n'
+    const signedHeaders = Object.keys(headers)
+      .map(headerKey => headerKey.toLowerCase())
+      .sort()
+      .join(';')
+
+    const canonicalRequest = [
+      'DELETE',
+      canonicalUri,
+      canonicalQuerystring,
+      canonicalHeaders,
+      signedHeaders,
+      'UNSIGNED-PAYLOAD'
+    ].join('\n')
+
+    // Create string to sign
+    const credentialScope = `${dateStamp}/auto/s3/aws4_request`
+    const stringToSign = [
+      'AWS4-HMAC-SHA256',
+      timeStamp,
+      credentialScope,
+      require('crypto').createHash('sha256').update(canonicalRequest).digest('hex')
+    ].join('\n')
+
+    // Calculate signature
+    const crypto = require('crypto')
+    const kDate = crypto.createHmac('sha256', `AWS4${SECRET_ACCESS_KEY}`).update(dateStamp).digest()
+    const kRegion = crypto.createHmac('sha256', kDate).update('auto').digest()
+    const kService = crypto.createHmac('sha256', kRegion).update('s3').digest()
+    const kSigning = crypto.createHmac('sha256', kService).update('aws4_request').digest()
+    const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex')
+
+    // Create authorization header
+    const authorization = `AWS4-HMAC-SHA256 Credential=${ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+
+    // Delete from R2
+    console.log('🗑️ Deleting from R2:', key)
+
+    const deleteResponse = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        ...headers,
+        'Authorization': authorization
+      }
+    })
+
+    if (!deleteResponse.ok && deleteResponse.status !== 404) {
+      // 404 is OK - file already doesn't exist
+      const errorText = await deleteResponse.text()
+      console.error('R2 Delete Failed:', {
+        status: deleteResponse.status,
+        statusText: deleteResponse.statusText,
+        errorText,
+        key
+      })
+      return false
+    }
+
+    console.log('✅ R2 file deleted successfully:', key)
     return true
   } catch (error) {
-    console.error('R2 Delete Error:', error)
+    console.error('❌ R2 Delete Error:', error)
     return false
+  }
+}
+
+/**
+ * Delete multiple files from R2 (for cleaning up main image + thumbnail)
+ */
+export async function deleteMultipleFromR2(keys: string[]): Promise<{ success: boolean; failed: string[] }> {
+  const failed: string[] = []
+  
+  console.log(`🗑️ Deleting ${keys.length} files from R2:`, keys)
+  
+  // Delete files in parallel
+  const deletePromises = keys.map(async (key) => {
+    const success = await deleteFromR2(key)
+    if (!success) {
+      failed.push(key)
+    }
+    return success
+  })
+  
+  await Promise.all(deletePromises)
+  
+  const successCount = keys.length - failed.length
+  console.log(`✅ R2 cleanup: ${successCount}/${keys.length} files deleted successfully`)
+  
+  if (failed.length > 0) {
+    console.warn('⚠️ Failed to delete:', failed)
+  }
+  
+  return {
+    success: failed.length === 0,
+    failed
+  }
+}
+
+/**
+ * Extract R2 key from URL
+ */
+export function extractR2KeyFromUrl(url: string): string | null {
+  try {
+    // Handle different URL formats
+    if (url.includes('/hero/') || url.includes('/banners/') || url.includes('/library/')) {
+      // Extract key from public URL
+      const urlObj = new URL(url)
+      const pathname = urlObj.pathname
+      
+      // Remove leading slash and extract path after bucket name
+      if (pathname.startsWith('/')) {
+        return pathname.substring(1)
+      }
+      
+      return pathname
+    }
+    
+    // For other formats, try to extract the key part
+    const match = url.match(/\/(hero|banners|library|uploads)\/.*$/)
+    if (match) {
+      return match[0].substring(1) // Remove leading slash
+    }
+    
+    console.warn('Could not extract R2 key from URL:', url)
+    return null
+  } catch (error) {
+    console.error('Error extracting R2 key:', error)
+    return null
   }
 }
 

@@ -19,7 +19,7 @@ export function HeroPreviewModal({ isOpen, onClose, banners }: HeroPreviewModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Hero区域预览效果</DialogTitle>
         </DialogHeader>

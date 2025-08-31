@@ -188,14 +188,9 @@ export function useAdminBanners() {
       console.error('Failed to fetch banners:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch banners')
       
-      // 如果 API 失败，完全回退到demo数据
-      try {
-        const fallbackData = await getDemoBanners()
-        setBanners(fallbackData)
-      } catch (fallbackErr) {
-        console.error('Fallback to demo data also failed:', fallbackErr)
-        setBanners([])
-      }
+      // API 失败时返回空数组，不使用demo数据
+      console.error('Admin banners API failed, returning empty array')
+      setBanners([])
     } finally {
       setLoading(false)
     }
@@ -435,32 +430,49 @@ export function useBanners(showOn?: 'homepage' | 'library') {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  useEffect(() => {
-    async function fetchBanners() {
+  const fetchBanners = async () => {
+    try {
+      setLoading(true)
+      
+      // 首先尝试从API获取数据
       try {
-        setLoading(true)
-        let data = await getDemoBanners()
-        
-        // 应用筛选器
-        if (showOn === 'homepage') {
-          data = data.filter(banner => banner.showOnHomepage)
-        } else if (showOn === 'library') {
-          data = data.filter(banner => banner.showOnLibrary)
+        const response = await fetch('/api/admin/banners')
+        if (response.ok) {
+          const result = await response.json()
+          let data = result.data || []
+          
+          // 应用筛选器
+          if (showOn === 'homepage') {
+            data = data.filter((banner: BannerImage) => banner.showOnHomepage)
+          } else if (showOn === 'library') {
+            data = data.filter((banner: BannerImage) => banner.showOnLibrary)
+          }
+          
+          setBanners(data)
+          setError(null)
+          setLoading(false)
+          return
         }
-        
-        setBanners(data)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch banners')
-      } finally {
-        setLoading(false)
+      } catch (apiError) {
+        console.warn('API fetch failed, falling back to demo data:', apiError)
       }
+      
+      // API失败时返回空数组，不使用demo数据
+      console.log('API failed, returning empty banner array')
+      setBanners([])
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch banners')
+    } finally {
+      setLoading(false)
     }
-    
+  }
+  
+  useEffect(() => {
     fetchBanners()
   }, [showOn])
   
-  return { banners, loading, error }
+  return { banners, loading, error, refetch: fetchBanners }
 }
 
 // Admin hooks for Prompt Templates
