@@ -10,6 +10,8 @@ import { BowIcon } from "@/components/icons/bow-icon"
 import { Library, Sparkles, HelpCircle } from "lucide-react"
 import MovingImageBanner from "@/components/moving-image-banner"
 import { PopularColoringGrid } from "@/components/popular-coloring-grid"
+import { MobileHomeHero, MobileHomeFeatures, MobileQuickStats } from "@/components/mobile-home-layout"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { useState, useEffect } from "react"
 import { getTimeRangeQueryParams } from "@/lib/time-filters"
 
@@ -55,6 +57,7 @@ export default function HomePage() {
   const [timeRange, setTimeRange] = useState<TimeRange | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFreshImages, setShowFreshImages] = useState(false)
+  const isMobile = useIsMobile()
 
   // 获取最新图片数据 - 增强调试和错误处理
   useEffect(() => {
@@ -187,7 +190,8 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col">
-      <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-muted/20 relative overflow-hidden">
+      {/* 响应式优化的Hero区域 */}
+      <section className="w-full py-8 sm:py-12 md:py-24 lg:py-32 xl:py-48 bg-muted/20 relative overflow-hidden">
         {/* Background Elements */}
         <MovingImageBanner className="z-0" />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/50 via-secondary/50 to-primary/50 z-1" />
@@ -197,34 +201,55 @@ export default function HomePage() {
         <div className="container px-4 md:px-6 relative z-10">
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
-              <h1 className="text-3xl font-extrabold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-white drop-shadow-lg">
-                Coloring Pages Printable | Free Download & Print Instantly
+              <h1 className="text-white drop-shadow-lg">
+                {/* 移动端简化标题 */}
+                <span className="block sm:hidden text-2xl font-extrabold">
+                  Free Coloring Pages
+                </span>
+                {/* 桌面端完整标题 */}
+                <span className="hidden sm:block text-3xl font-extrabold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
+                  Coloring Pages Printable | Free Download & Print Instantly
+                </span>
               </h1>
-              <p className="mx-auto max-w-[700px] text-white/90 md:text-xl drop-shadow-md">
-                Download coloring pages printable instantly! 500+ original printable coloring sheets ready to download. Perfect for kids, adults, teachers & parents. Explore our comprehensive library of coloring pages printable for every skill level now!
+              <p className="mx-auto text-white/90 drop-shadow-md">
+                {/* 移动端简化描述 */}
+                <span className="block sm:hidden text-sm max-w-[280px]">
+                  500+ free printable coloring pages for all ages!
+                </span>
+                {/* 桌面端完整描述 */}
+                <span className="hidden sm:block max-w-[700px] md:text-xl">
+                  Download coloring pages printable instantly! 500+ original printable coloring sheets ready to download. Perfect for kids, adults, teachers & parents. Explore our comprehensive library of coloring pages printable for every skill level now!
+                </span>
               </p>
             </div>
-            <div className="space-x-4">
-              {/* --- UPDATED: Added 'active' state animation --- */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
+              {/* --- UPDATED: 移动端优化按钮 --- */}
               <Button
                 asChild
                 size="lg"
-                className="bg-white text-primary hover:bg-white/90 px-8 transition-all duration-300 hover:scale-105 active:scale-95"
+                className="bg-white text-primary hover:bg-white/90 w-full sm:w-auto px-6 sm:px-8 transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <Link href="/gallery">🎨 Art Gallery</Link>
+                <Link href="/library">
+                  🎨 <span className="hidden sm:inline">Art Gallery</span><span className="sm:hidden">Gallery</span>
+                </Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 size="lg"
-                className="border-white text-white bg-transparent hover:bg-white/10 backdrop-blur-sm px-8 transition-all duration-300 hover:scale-105 active:scale-95"
+                className="border-white text-white bg-transparent hover:bg-white/10 backdrop-blur-sm w-full sm:w-auto px-6 sm:px-8 transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <Link href="/create">AI Studio</Link>
+                <Link href="/create">
+                  <span className="hidden sm:inline">AI Studio</span><span className="sm:hidden">AI Create</span>
+                </Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
+      
+      {/* 移动端优化的快速统计 */}
+      <MobileQuickStats />
 
       {/* Fresh Images Section - 只在有真实数据库数据时显示 */}
       {(loading || showFreshImages) && (
@@ -360,7 +385,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Easy Hello Kitty Drawings */}
+            {/* Easy Coloring Pages */}
             <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
@@ -382,7 +407,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Medium Hello Kitty Drawings */}
+            {/* Medium Coloring Pages */}
             <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
@@ -404,7 +429,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Complex Hello Kitty Drawings */}
+            {/* Complex Coloring Pages */}
             <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
