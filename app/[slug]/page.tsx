@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
+import { headers } from "next/headers"
 import { 
   getColoringPageBySlug, 
   getAllColoringPageSlugs, 
@@ -7,6 +8,7 @@ import {
   ColoringPageData 
 } from "@/lib/coloring-data"
 import { ColoringPageClient } from "./coloring-page-client"
+import routeMonitor from "@/lib/route-monitoring"
 
 interface SlugPageProps {
   params: Promise<{ slug: string }>
@@ -105,8 +107,9 @@ export async function generateMetadata({ params, searchParams }: SlugPageProps):
     }
   }
   
-  let coloringPage = getColoringPageBySlug(resolvedParams.slug)
-  console.log('🔍 generateMetadata: 静态数据查找结果:', coloringPage ? '找到' : '未找到')
+  // 🎯 优先使用SEO API，跳过静态数据查找以确保使用真实数据
+  let coloringPage: ColoringPageData | null = null
+  console.log('🔍 generateMetadata: 静态数据查找结果: 未找到')
   
   // 🎯 首先尝试从SEO URL存储中查找（通过API调用）
   if (!coloringPage) {
@@ -258,6 +261,15 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
   const resolvedParams = await params
   const resolvedSearchParams = await searchParams
   
+  // 🔍 获取请求信息用于监控
+  const headersList = await headers()
+  const userAgent = headersList.get('user-agent') || undefined
+  const xForwardedFor = headersList.get('x-forwarded-for')
+  const ip = xForwardedFor?.split(',')[0] || headersList.get('x-real-ip') || undefined
+  
+  // 记录路由访问
+  routeMonitor.logRouteAccess(resolvedParams.slug, userAgent, ip)
+  
   // 检查并处理 /color 路径的重定向
   if (handleColorRouteRedirect(resolvedParams.slug)) {
     return null // redirect已经执行
@@ -265,6 +277,7 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
   
   // 检查是否应该处理为着色页面
   if (!shouldHandleAsColoringPage(resolvedParams.slug)) {
+    routeMonitor.logNotFound(resolvedParams.slug, { reason: 'static_route_conflict' }, userAgent)
     notFound()
   }
   
@@ -281,7 +294,29 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     actualSlug = legacyCheck.newSlug
   }
   
-  let coloringPage = getColoringPageBySlug(actualSlug)
+  // 🧠 临时禁用简化路由器，使用原有的稳定逻辑
+  // try {
+  //   const { resolveSimpleRoute } = await import('@/lib/simple-router')
+  //   const coloringPageData = await resolveSimpleRoute(actualSlug)
+  //   
+  //   if (coloringPageData) {
+  //     console.log('✅ 简化路由成功:', {
+  //       slug: actualSlug,
+  //       title: coloringPageData.title
+  //     })
+  //     
+  //     return (
+  //       <ColoringPageClient 
+  //         coloringPage={coloringPageData}
+  //       />
+  //     )
+  //   }
+  // } catch (error) {
+  //   console.warn('⚠️ 简化路由失败，降级到原有逻辑:', error)
+  // }
+
+  // 🔄 降级到原有逻辑（保持向后兼容）
+  let coloringPage: ColoringPageData | null = null
   
   // 🎯 首先尝试从SEO URL存储中查找（通过API调用）
   if (!coloringPage) {
@@ -296,6 +331,9 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
       if (seoResponse.ok) {
         const seoResult = await seoResponse.json()
         const seoData = seoResult.data
+        
+        // 记录SEO缓存命中
+        routeMonitor.logSeoCacheHit(actualSlug, seoData.title)
         
         coloringPage = {
           id: seoData.libraryImageId || resolvedParams.slug, // 🎯 优先使用真实图片ID
@@ -321,9 +359,12 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
           imageUrl: seoData.imageUrl
         })
       } else {
+        // 记录SEO缓存未命中
+        routeMonitor.logSeoCacheMiss(actualSlug)
         console.log('⚠️ SEO URL存储中未找到数据:', resolvedParams.slug)
       }
     } catch (error) {
+      routeMonitor.logError(actualSlug, error instanceof Error ? error : new Error('SEO URL查询失败'), { phase: 'seo_lookup' })
       console.error('❌ SEO URL查询失败:', error)
     }
   }
@@ -353,6 +394,9 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
         })
         
         if (matchingImage) {
+          // 记录库数据匹配
+          routeMonitor.logLibraryMatch(actualSlug, matchingImage.id, matchingImage.title)
+          
           coloringPage = {
             id: matchingImage.id,
             slug: actualSlug,
@@ -432,6 +476,12 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
   
   // 如果还是找不到页面，显示404
   if (!coloringPage) {
+    routeMonitor.logNotFound(actualSlug, { 
+      reason: 'no_data_source_found',
+      searchedSlug: actualSlug,
+      originalSlug: resolvedParams.slug,
+      wasLegacy: legacyCheck.isLegacy
+    }, userAgent)
     notFound()
   }
   

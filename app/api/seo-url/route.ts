@@ -1,30 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// 安全导入 - 添加错误处理防止初始化失败
-let seoStorageModule: typeof import('@/lib/seo-url-storage') | null = null
-let storageError: Error | null = null
-
-try {
-  seoStorageModule = require('@/lib/seo-url-storage')
-} catch (error) {
-  storageError = error instanceof Error ? error : new Error('Unknown storage initialization error')
-  console.error('❌ SEO存储模块加载失败:', error)
+// 动态导入以避免模块加载时的循环依赖
+async function getSeoStorageModule() {
+  try {
+    const module = await import('@/lib/seo-url-storage')
+    console.log('🚀 SEO API路由：存储模块动态加载成功')
+    return module
+  } catch (error) {
+    console.error('❌ SEO存储模块动态加载失败:', error)
+    throw error
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // 检查存储模块是否可用
-    if (!seoStorageModule) {
-      console.error('⚠️ SEO存储模块不可用:', storageError?.message)
-      return NextResponse.json(
-        { 
-          error: 'SEO storage service temporarily unavailable',
-          details: 'Storage initialization failed',
-          fallback: true
-        },
-        { status: 503 }
-      )
-    }
+    // 动态加载存储模块
+    const seoStorageModule = await getSeoStorageModule()
 
     const body = await request.json()
     const { slug, imageUrl, title, description, libraryImageId } = body
@@ -36,7 +27,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    seoStorageModule.storeSeoUrlMapping(slug, {
+    await seoStorageModule.storeSeoUrlMapping(slug, {
       imageUrl,
       title,
       description: description || '',
@@ -47,7 +38,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ API POST: SEO映射存储成功:', { slug, title })
     
     // 验证存储是否成功
-    const verification = seoStorageModule.getSeoUrlMapping(slug)
+    const verification = await seoStorageModule.getSeoUrlMapping(slug)
     if (!verification) {
       console.error('⚠️ API POST: 存储后立即查询失败!')
     }
@@ -72,18 +63,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // 检查存储模块是否可用
-    if (!seoStorageModule) {
-      console.error('⚠️ SEO存储模块不可用:', storageError?.message)
-      return NextResponse.json(
-        { 
-          error: 'SEO storage service temporarily unavailable',
-          details: 'Storage initialization failed',
-          fallback: true
-        },
-        { status: 503 }
-      )
-    }
+    // 动态加载存储模块
+    const seoStorageModule = await getSeoStorageModule()
 
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')
@@ -96,7 +77,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('🔍 API GET: 查询SEO映射:', slug)
-    const data = seoStorageModule.getSeoUrlMapping(slug)
+    const data = await seoStorageModule.getSeoUrlMapping(slug)
     
     if (!data) {
       console.log('❌ API GET: SEO映射未找到:', slug)

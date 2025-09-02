@@ -106,27 +106,39 @@ export function createColoringPageFromTitle(title: string, imageUrl: string, des
 // 通过demo数据查找图片
 function findImageFromDemoData(title: string): string {
   // 导入demo数据来查找真实图片
-  if (typeof window !== 'undefined') {
-    // 在客户端可以访问demo数据
-    const demoImages = [
-      { title: "Hello Kitty Astronaut", imageUrl: "/astronaut-cat-coloring-page.png" },
-      { title: "Hello Kitty Classic", imageUrl: "/hello-kitty-coloring-page.png" },
-      { title: "Cute Kitty Garden", imageUrl: "/cute-kitty-coloring-page.png" },
-      { title: "Community Kitty", imageUrl: "/ai-community-coloring.png" },
-      { title: "Playful Kitty Cat", imageUrl: "/coloring-kitty-cat.png" }
-    ]
-    
-    // 模糊匹配标题
-    const foundImage = demoImages.find(img => 
-      img.title.toLowerCase().includes(title.toLowerCase()) ||
-      title.toLowerCase().includes(img.title.toLowerCase())
+  const demoImages = [
+    { title: "Hello Kitty Astronaut", imageUrl: "/astronaut-cat-coloring-page.png", keywords: ["astronaut", "space", "rocket"] },
+    { title: "Hello Kitty Classic", imageUrl: "/hello-kitty-coloring-page.png", keywords: ["classic", "simple", "basic", "hello", "kitty"] },
+    { title: "Cute Kitty Garden", imageUrl: "/cute-kitty-coloring-page.png", keywords: ["garden", "flower", "nature", "cute"] },
+    { title: "Community Kitty", imageUrl: "/ai-community-coloring.png", keywords: ["community", "friends", "group"] },
+    { title: "Playful Kitty Cat", imageUrl: "/coloring-kitty-cat.png", keywords: ["playful", "play", "fun", "cat"] },
+    // 添加更多通用匹配
+    { title: "Beach Bucket", imageUrl: "/hello-kitty-coloring-page.png", keywords: ["beach", "bucket", "sand", "summer", "ocean"] },
+    { title: "Drawing", imageUrl: "/hello-kitty-coloring-page.png", keywords: ["drawing", "art", "creative"] }
+  ]
+  
+  const titleLower = title.toLowerCase()
+  console.log('🔍 查找图片匹配:', { title: titleLower })
+  
+  // 首先尝试精确标题匹配
+  let foundImage = demoImages.find(img => 
+    img.title.toLowerCase().includes(titleLower) ||
+    titleLower.includes(img.title.toLowerCase())
+  )
+  
+  // 如果没找到，尝试关键词匹配
+  if (!foundImage) {
+    foundImage = demoImages.find(img => 
+      img.keywords.some(keyword => 
+        titleLower.includes(keyword) || keyword.includes(titleLower)
+      )
     )
-    
-    if (foundImage) return foundImage.imageUrl
   }
   
-  // fallback到最通用的图片
-  return "/hello-kitty-coloring-page.png"
+  const selectedImage = foundImage?.imageUrl || "/hello-kitty-coloring-page.png"
+  console.log('✅ 选择的图片:', { title, selectedImage, foundTitle: foundImage?.title })
+  
+  return selectedImage
 }
 
 // 数据获取函数
@@ -136,15 +148,29 @@ export function getColoringPageBySlug(slug: string): ColoringPageData | null {
   if (staticPage) return staticPage
   
   // 如果没找到，尝试从slug反推标题并生成动态数据
-  if (slug.endsWith('-coloring')) {
-    const titlePart = slug.replace('-coloring', '').replace(/-/g, ' ')
+  if (slug.endsWith('-coloring') || slug.endsWith('-coloring-pages')) {
+    // 处理不同的后缀格式
+    let titlePart = slug
+    if (slug.endsWith('-coloring-pages')) {
+      titlePart = slug.replace('-coloring-pages', '')
+    } else if (slug.endsWith('-coloring')) {
+      titlePart = slug.replace('-coloring', '')
+    }
+    
     const reconstructedTitle = titlePart
+      .replace(/-/g, ' ')
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ')
     
     // 查找对应的真实图片
     const imageUrl = findImageFromDemoData(reconstructedTitle)
+    
+    console.log('🔄 动态生成着色页面数据:', {
+      原始slug: slug,
+      重建标题: reconstructedTitle,
+      图片URL: imageUrl
+    })
     
     // 返回动态生成的页面数据
     return createColoringPageFromTitle(

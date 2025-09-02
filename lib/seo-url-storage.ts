@@ -10,6 +10,7 @@ type SeoUrlData = {
 
 // 内存存储 + 文件持久化 (生产环境应该用Redis或数据库)
 const seoUrlMap = new Map<string, SeoUrlData>()
+const loadPromise = new Map<string, Promise<any>>() // 防止重复加载
 
 // 文件持久化路径 (开发环境使用)
 const STORAGE_FILE = './.seo-url-cache.json'
@@ -77,46 +78,72 @@ let isInitialized = false
 function initializeStorage() {
   if (!isInitialized) {
     try {
-      loadStorageFromFile()
+      const loadedCount = loadStorageFromFile()
       isInitialized = true
-      console.log('✅ SEO缓存系统初始化完成')
+      console.log(`✅ SEO缓存系统初始化完成，加载了 ${loadedCount || 0} 个映射`)
     } catch (error) {
       console.error('❌ SEO缓存系统初始化失败:', error)
       isInitialized = true // 设置为true以避免重复尝试
     }
+  } else {
+    console.log('⚠️ SEO缓存系统已初始化，跳过重复初始化')
   }
 }
 
-// 使用 setTimeout 延迟初始化，确保模块完全加载
-setTimeout(initializeStorage, 0)
+// 延迟初始化避免模块加载时的竞争条件 - 性能优化版本
+let initializationPromise: Promise<void> | null = null
+let cleanupInterval: NodeJS.Timeout | null = null
 
-// 定时清理过期数据 - 只有在初始化后才开始
-setTimeout(() => {
-  setInterval(() => {
-    if (!isInitialized) return // 未初始化时跳过
-    
-    const now = Date.now()
-    let deletedCount = 0
-    for (const [slug, data] of seoUrlMap.entries()) {
-      if (now - data.timestamp > EXPIRY_TIME) {
-        seoUrlMap.delete(slug)
-        console.log('🗑️ 清理过期SEO URL映射:', slug)
-        deletedCount++
+function ensureInitialized(): Promise<void> {
+  if (!initializationPromise) {
+    initializationPromise = new Promise<void>((resolve) => {
+      // 只在服务端环境初始化
+      if (typeof window === 'undefined') {
+        try {
+          const loadedCount = loadStorageFromFile()
+          isInitialized = true
+          console.log(`🚀 SEO缓存系统：延迟初始化完成，加载了 ${loadedCount || 0} 个映射`)
+          
+          // 启动定时清理（只启动一次，避免内存泄漏）
+          if (!cleanupInterval) {
+            setTimeout(() => {
+              cleanupInterval = setInterval(() => {
+                const now = Date.now()
+                let deletedCount = 0
+                for (const [slug, data] of seoUrlMap.entries()) {
+                  if (now - data.timestamp > EXPIRY_TIME) {
+                    seoUrlMap.delete(slug)
+                    console.log('🗑️ 清理过期SEO URL映射:', slug)
+                    deletedCount++
+                  }
+                }
+                
+                if (deletedCount > 0) {
+                  console.log(`🧹 SEO缓存清理完成: 删除了 ${deletedCount} 个过期映射`)
+                  saveStorageToFile() // 更新文件
+                }
+              }, 60 * 60 * 1000) // 每小时清理一次
+            }, 5000) // 延迟5秒开始
+          }
+          
+          resolve()
+        } catch (error) {
+          console.error('❌ SEO缓存系统初始化失败:', error)
+          isInitialized = true // 标记为已尝试，避免重复
+          resolve()
+        }
+      } else {
+        console.log('⚠️ SEO缓存系统：浏览器环境，跳过初始化')
+        resolve()
       }
-    }
-    
-    if (deletedCount > 0) {
-      console.log(`🧹 SEO缓存清理完成: 删除了 ${deletedCount} 个过期映射`)
-      saveStorageToFile() // 更新文件
-    }
-  }, 60 * 60 * 1000) // 每小时清理一次
-}, 5000) // 延迟5秒开始，确保系统完全启动
-
-export function storeSeoUrlMapping(slug: string, data: SeoUrlData): void {
-  // 确保系统已初始化
-  if (!isInitialized) {
-    initializeStorage()
+    })
   }
+  return initializationPromise
+}
+
+export async function storeSeoUrlMapping(slug: string, data: SeoUrlData): Promise<void> {
+  // 确保系统已初始化
+  await ensureInitialized()
   
   // 确保先加载现有数据（避免覆盖）
   if (seoUrlMap.size === 0 && isInitialized) {
@@ -158,16 +185,19 @@ export function storeSeoUrlMapping(slug: string, data: SeoUrlData): void {
   }
 }
 
-export function getSeoUrlMapping(slug: string): SeoUrlData | null {
-  // 确保系统已初始化
-  if (!isInitialized) {
-    initializeStorage()
-  }
+export async function getSeoUrlMapping(slug: string): Promise<SeoUrlData | null> {
+  // 🚀 性能优化：确保系统已初始化且避免重复加载
+  await ensureInitialized()
   
-  // 🔥 关键修复: 每次查询时确保数据已加载
+  // 🔥 关键修复: 使用防抖机制避免重复加载
   if (seoUrlMap.size === 0 && isInitialized) {
-    console.log('🔄 内存为空，重新加载SEO缓存...')
-    loadStorageFromFile()
+    const cacheKey = 'reload-cache'
+    if (!loadPromise.has(cacheKey)) {
+      console.log('🔄 内存为空，重新加载SEO缓存...')
+      loadPromise.set(cacheKey, Promise.resolve(loadStorageFromFile()))
+      setTimeout(() => loadPromise.delete(cacheKey), 1000) // 1秒后清理
+    }
+    await loadPromise.get(cacheKey)
   }
   
   // 🎯 修复: 处理不同的缓存键格式
@@ -286,5 +316,29 @@ export function getStorageStats() {
   return {
     totalMappings: seoUrlMap.size,
     memoryUsage: JSON.stringify(Array.from(seoUrlMap.entries())).length
+  }
+}
+
+// 强制重新加载缓存（用于调试和手动刷新）
+export function reloadCache(): { success: boolean; loadedCount: number; error?: string } {
+  try {
+    // 清空内存缓存
+    seoUrlMap.clear()
+    console.log('🔄 清空内存缓存，重新加载...')
+    
+    // 重新加载文件
+    const loadedCount = loadStorageFromFile() || 0
+    
+    return {
+      success: true,
+      loadedCount,
+    }
+  } catch (error) {
+    console.error('❌ 强制重新加载缓存失败:', error)
+    return {
+      success: false,
+      loadedCount: 0,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
   }
 }
