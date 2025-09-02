@@ -15,7 +15,7 @@ interface DefaultImageProps {
   onError?: () => void
 }
 
-// 默认的Hello Kitty图片路径
+// 默认的图片路径
 const DEFAULT_KITTY_IMAGE = "/hello-kitty-coloring-page.png"
 
 export function DefaultImage({ 
@@ -56,7 +56,7 @@ export function DefaultImage({
       {/* 默认图片 - 立即显示 */}
       <img
         src={DEFAULT_KITTY_IMAGE}
-        alt="Hello Kitty 默认图片"
+        alt="默认图片"
         width={width}
         height={height}
         loading="eager"

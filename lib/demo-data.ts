@@ -104,8 +104,8 @@ export const demoLibraryImages: LibraryImage[] = [
     id: "550e8400-e29b-41d4-a716-446655440001", // UUID格式的ID
     title: "Hello Kitty Astronaut",
     description: "Hello Kitty exploring space as a brave astronaut surrounded by stars",
-    imageUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755442141915-5la4zk1sq4t.blob",
-    thumbnailUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755442141915-5la4zk1sq4t.blob",
+    imageUrl: "https://r2.coloringpagesprintable.net/uploads/1755442141915-5la4zk1sq4t.blob",
+    thumbnailUrl: "https://r2.coloringpagesprintable.net/uploads/1755442141915-5la4zk1sq4t.blob",
     tags: ["Hello Kitty", "Space", "Adventure"],
     category: "Adventure",
     difficulty: "medium",
@@ -124,8 +124,8 @@ export const demoLibraryImages: LibraryImage[] = [
     id: "550e8400-e29b-41d4-a716-446655440002", // UUID格式的ID
     title: "Hello Kitty Portrait",
     description: "A beautiful portrait-style Hello Kitty coloring page perfect for beginners",
-    imageUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755444954865-bpaijly5jln.blob",
-    thumbnailUrl: "https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/1755444954865-bpaijly5jln.blob",
+    imageUrl: "https://r2.coloringpagesprintable.net/uploads/1755444954865-bpaijly5jln.blob",
+    thumbnailUrl: "https://r2.coloringpagesprintable.net/uploads/1755444954865-bpaijly5jln.blob",
     tags: ["Hello Kitty", "Portrait", "Cute"],
     category: "Characters", 
     difficulty: "easy",

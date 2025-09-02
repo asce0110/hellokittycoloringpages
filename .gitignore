@@ -27,4 +27,4 @@ yarn-error.log*
 next-env.d.ts
 
 # SEO URL cache
-.seo-url-cache.json
+.seo-url-cache.json.claude/agents/

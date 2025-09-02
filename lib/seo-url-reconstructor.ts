@@ -129,7 +129,7 @@ function reconstructImageUrl(urlHash: string): string | null {
   // 如果hash看起来像base64编码的一部分，可能来自R2 URL
   if (urlHash.length >= 6 && /^[a-zA-Z0-9]+$/.test(urlHash)) {
     // 尝试几种常见的R2 URL模式
-    const r2BaseUrl = 'https://pub-6b9f60f951414c618dea1ff78ef21e4d.r2.dev/uploads/'
+    const r2BaseUrl = 'https://r2.coloringpagesprintable.net/uploads/'
     
     // 基于hash生成可能的文件名模式
     const possiblePatterns = [

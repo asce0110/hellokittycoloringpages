@@ -137,7 +137,7 @@ export function LibraryImageCard({
       console.error('❌ SEO存储请求失败:', error)
       // 网络错误时使用基本的slug（移除hello-kitty前缀）
       const basicSlug = image.title.toLowerCase()
-        .replace(/^hello\s+kitty\s+/i, '') // 移除Hello Kitty前缀
+        .replace(/^hello\s+kitty\s+/i, '') // 移除不需要的前缀
         .replace(/[^a-z0-9\s]/g, '')
         .replace(/\s+/g, '-') + '-coloring-pages'
       router.push(`/${basicSlug}`)
@@ -351,7 +351,7 @@ export function LibraryImageCard({
           <div className="relative w-full aspect-square overflow-hidden">
             <Image
               src={image.thumbnailUrl || image.imageUrl}
-              alt={`${image.title} - Hello Kitty coloring page`}
+              alt={`${image.title} - coloring page`}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

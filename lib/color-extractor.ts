@@ -45,7 +45,7 @@ export async function extractColorsFromImage(imageUrl: string, maxColors: number
   
   // 对于跨域图片，使用代理端点
   let finalImageUrl = originalImageUrl
-  if (originalImageUrl.includes('coloringpagesprintable.net') || originalImageUrl.includes('r2.dev') || originalImageUrl.includes('r2.cloudflarestorage.com')) {
+  if (originalImageUrl.includes('r2.coloringpagesprintable.net') || originalImageUrl.includes('r2.dev') || originalImageUrl.includes('r2.cloudflarestorage.com')) {
     console.log('🔄 Using proxy endpoint for cross-origin image:', originalImageUrl)
     finalImageUrl = `/api/proxy-image/?url=${encodeURIComponent(originalImageUrl)}` // 注意尾随斜杠
   }

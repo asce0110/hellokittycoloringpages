@@ -178,7 +178,7 @@ export function LibraryImageEditModal({ image, isOpen, onClose, onSave }: Librar
                   <SelectValue placeholder="选择分类" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="hello-kitty">Hello Kitty</SelectItem>
+                  <SelectItem value="cute-characters">可爱角色</SelectItem>
                   <SelectItem value="animals">动物</SelectItem>
                   <SelectItem value="Nature">自然</SelectItem>
                   <SelectItem value="fantasy">幻想</SelectItem>

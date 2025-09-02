@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   icons: [
     {
       rel: 'icon',
-      url: '/icon.svg',
+      url: '/favicon.svg',
       type: 'image/svg+xml',
     },
     {
@@ -77,6 +77,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // 触发服务启动预加载（仅在服务端执行）
+  if (typeof window === 'undefined') {
+    import('@/lib/startup-preloader').then(({ triggerStartupPreload }) => {
+      triggerStartupPreload().catch(console.error)
+    })
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

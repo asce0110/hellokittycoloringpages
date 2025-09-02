@@ -1,12 +1,9 @@
-"use client"
-
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BowIcon } from "@/components/icons/bow-icon"
 import { Heart, Home, Library, Sparkles, ArrowLeft, Search } from "lucide-react"
-import { useEffect, useState } from "react"
 
 // 404 Page Structured Data
 const jsonLd = {
@@ -40,44 +37,6 @@ const jsonLd = {
 }
 
 export default function NotFound() {
-  const [mounted, setMounted] = useState(false)
-  const [sparkleAnimation, setSparkleAnimation] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-    
-    // Set proper document title and meta tags for SEO
-    if (typeof window !== 'undefined') {
-      document.title = 'Page Not Found (404) - Coloring Pages Printable | Free Printable Coloring Pages'
-      
-      // Update meta description
-      const metaDescription = document.querySelector('meta[name="description"]')
-      if (metaDescription) {
-        metaDescription.setAttribute('content', 'Oops! This page could not be found! Explore our library of free printable coloring pages or browse our collection.')
-      }
-      
-      // Add robots meta tag
-      let robotsMeta = document.querySelector('meta[name="robots"]')
-      if (!robotsMeta) {
-        robotsMeta = document.createElement('meta')
-        robotsMeta.setAttribute('name', 'robots')
-        robotsMeta.setAttribute('content', 'noindex, follow')
-        document.head.appendChild(robotsMeta)
-      } else {
-        robotsMeta.setAttribute('content', 'noindex, follow')
-      }
-    }
-    
-    // Trigger sparkle animation periodically
-    const interval = setInterval(() => {
-      setSparkleAnimation(true)
-      setTimeout(() => setSparkleAnimation(false), 1000)
-    }, 3000)
-    
-    return () => clearInterval(interval)
-  }, [])
-
-  if (!mounted) return null
 
   return (
     <>
@@ -111,28 +70,28 @@ export default function NotFound() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
         <div className="max-w-2xl w-full space-y-8 text-center">
           
-          {/* Hello Kitty 404 Illustration */}
+          {/* 404 Illustration */}
           <div className="relative">
             <Card className="border-0 bg-gradient-to-r from-primary/10 via-background to-secondary/10 shadow-2xl backdrop-blur-sm">
               <CardContent className="p-12">
                 <div className="relative flex flex-col items-center space-y-6">
                   
-                  {/* Large 404 with Hello Kitty styling */}
+                  {/* Large 404 with cute styling */}
                   <div className="relative">
                     <h1 className="text-8xl md:text-9xl font-black text-transparent bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text leading-none">
                       404
                     </h1>
                     
-                    {/* Hello Kitty Bow */}
+                    {/* Decorative Bow */}
                     <div className="absolute -top-4 right-4 transform rotate-12">
-                      <BowIcon className="w-16 h-16 text-primary animate-bounce" aria-label="Hello Kitty bow decoration" />
+                      <BowIcon className="w-16 h-16 text-primary animate-bounce" aria-label="Decorative bow" />
                     </div>
                     
                     {/* Sparkles */}
-                    <div className={`absolute -top-6 left-8 transition-all duration-1000 ${sparkleAnimation ? 'scale-110 rotate-180' : 'scale-100 rotate-0'}`}>
+                    <div className="absolute -top-6 left-8 transition-all duration-1000 scale-100 rotate-0">
                       <Sparkles className="w-8 h-8 text-secondary animate-pulse" aria-label="Sparkle decoration" />
                     </div>
-                    <div className={`absolute -bottom-4 right-12 transition-all duration-1000 ${sparkleAnimation ? 'scale-110 -rotate-90' : 'scale-100 rotate-0'}`}>
+                    <div className="absolute -bottom-4 right-12 transition-all duration-1000 scale-100 rotate-0">
                       <Sparkles className="w-6 h-6 text-primary animate-pulse delay-500" aria-label="Sparkle decoration" />
                     </div>
                   </div>
@@ -141,7 +100,7 @@ export default function NotFound() {
                   <div className="space-y-3">
                     <Badge variant="secondary" className="px-4 py-2 text-sm font-medium" role="status" aria-live="polite">
                       <Heart className="w-4 h-4 mr-2" fill="currentColor" aria-label="Heart icon" />
-                      Oops! Hello Kitty got lost
+                      Oops! Page got lost
                     </Badge>
                     
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground">
@@ -149,7 +108,7 @@ export default function NotFound() {
                     </h2>
                     
                     <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-                      This page seems to have wandered off to play with Hello Kitty! 
+                      This page seems to have wandered off to play! 
                       Don't worry, we'll help you find your way back to the magical world of coloring pages and creative fun.
                     </p>
                   </div>
@@ -160,7 +119,7 @@ export default function NotFound() {
 
           {/* Popular Content Suggestions */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Popular Hello Kitty Coloring Pages</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Popular Coloring Pages</h3>
             <div className="flex flex-wrap justify-center gap-2 mb-6">
               <Badge variant="outline" className="text-sm hover:bg-primary/10 transition-colors">
                 <Link href="/library" className="flex items-center space-x-1">
@@ -231,7 +190,7 @@ export default function NotFound() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Create with AI</h3>
-                    <p className="text-sm text-muted-foreground">Custom Hello Kitty art</p>
+                    <p className="text-sm text-muted-foreground">Custom coloring art</p>
                   </div>
                 </Link>
               </CardContent>
@@ -276,7 +235,7 @@ export default function NotFound() {
                     <Link href="/library">Browse All Categories</Link>
                   </Button>
                   <Button variant="outline" size="sm" asChild>
-                    <Link href="/hello-kitty-drawings">Hello Kitty Collection</Link>
+                    <Link href="/library">Coloring Collection</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -287,7 +246,7 @@ export default function NotFound() {
           <div className="pt-8 text-center">
             <p className="text-sm text-muted-foreground/80 flex items-center justify-center space-x-2">
               <Heart className="w-4 h-4 text-primary animate-pulse" fill="currentColor" aria-label="Heart decoration" />
-              <span>Made with love for Hello Kitty fans everywhere</span>
+              <span>Made with love for coloring fans everywhere</span>
               <Heart className="w-4 h-4 text-primary animate-pulse delay-500" fill="currentColor" aria-label="Heart decoration" />
             </p>
           </div>

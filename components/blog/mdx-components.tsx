@@ -5,59 +5,60 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { InfoIcon, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import React from 'react'
 
 // 自定义MDX组件
 export const MDXComponents = {
   // 标准HTML标签优化
-  h1: ({ children, ...props }: any) => (
+  h1: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100" {...props}>
       {children}
     </h1>
   ),
   
-  h2: ({ children, ...props }: any) => (
+  h2: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h2 className="text-2xl font-semibold mt-8 mb-4 text-gray-900 dark:text-gray-100" {...props}>
       {children}
     </h2>
   ),
   
-  h3: ({ children, ...props }: any) => (
+  h3: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h3 className="text-xl font-semibold mt-6 mb-3 text-gray-900 dark:text-gray-100" {...props}>
       {children}
     </h3>
   ),
   
-  p: ({ children, ...props }: any) => (
+  p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
     <p className="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed" {...props}>
       {children}
     </p>
   ),
   
-  ul: ({ children, ...props }: any) => (
+  ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
     <ul className="mb-4 pl-6 space-y-2 list-disc text-gray-700 dark:text-gray-300" {...props}>
       {children}
     </ul>
   ),
   
-  ol: ({ children, ...props }: any) => (
+  ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
     <ol className="mb-4 pl-6 space-y-2 list-decimal text-gray-700 dark:text-gray-300" {...props}>
       {children}
     </ol>
   ),
   
-  li: ({ children, ...props }: any) => (
+  li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
     <li className="leading-relaxed" {...props}>
       {children}
     </li>
   ),
   
-  blockquote: ({ children, ...props }: any) => (
+  blockquote: ({ children, ...props }: React.HTMLAttributes<HTMLQuoteElement>) => (
     <blockquote className="border-l-4 border-primary pl-4 my-6 italic text-gray-600 dark:text-gray-400" {...props}>
       {children}
     </blockquote>
   ),
   
-  code: ({ children, className, ...props }: any) => {
+  code: ({ children, className, ...props }: React.HTMLAttributes<HTMLElement> & { className?: string }) => {
     if (className?.includes('language-')) {
       return (
         <code className={`block bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm ${className}`} {...props}>
@@ -72,13 +73,13 @@ export const MDXComponents = {
     )
   },
   
-  pre: ({ children, ...props }: any) => (
+  pre: ({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) => (
     <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4" {...props}>
       {children}
     </pre>
   ),
   
-  a: ({ href, children, ...props }: any) => {
+  a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
     if (href?.startsWith('http')) {
       return (
         <a 
@@ -99,15 +100,14 @@ export const MDXComponents = {
     )
   },
   
-  img: ({ src, alt, ...props }: any) => (
+  img: ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <div className="my-6">
       <Image
-        src={src}
+        src={src || ''}
         alt={alt || ''}
         width={800}
         height={400}
         className="rounded-lg shadow-md w-full h-auto"
-        {...props}
       />
       {alt && (
         <p className="text-sm text-gray-500 text-center mt-2 italic">

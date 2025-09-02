@@ -17,7 +17,7 @@ export const colorReferences: ColorReference[] = [
   {
     original: "/hello-kitty-coloring-page.png",
     colored: "/references/hello-kitty-colored.svg", // SVG彩色参考图
-    title: "Hello Kitty Classic",
+    title: "Classic Character",
     colorScheme: {
       primary: ["#FF69B4", "#FFFFFF"], // 粉色和白色
       secondary: ["#00BCD4", "#FFDC00"], // 蓝色和黄色

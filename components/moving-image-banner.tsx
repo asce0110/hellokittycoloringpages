@@ -57,30 +57,30 @@ export default function MovingImageBanner({ className }: MovingImageBannerProps)
   }, [refetch])
 
   if (displayImages.length === 0) {
-    // 如果没有hero图片数据，显示默认的Hello Kitty图片
+    // 如果没有hero图片数据，显示默认的图片
     const defaultHeroImages: HeroImageType[] = [
       {
         id: 'default-top-1',
         src: '/hello-kitty-coloring-page.png',
-        alt: 'Hello Kitty 默认图片 1',
+        alt: '默认图片 1',
         heroRow: 'top'
       },
       {
         id: 'default-top-2', 
         src: '/hello-kitty-coloring-page.png',
-        alt: 'Hello Kitty 默认图片 2',
+        alt: '默认图片 2',
         heroRow: 'top'
       },
       {
         id: 'default-bottom-1',
         src: '/hello-kitty-coloring-page.png', 
-        alt: 'Hello Kitty 默认图片 3',
+        alt: '默认图片 3',
         heroRow: 'bottom'
       },
       {
         id: 'default-bottom-2',
         src: '/hello-kitty-coloring-page.png',
-        alt: 'Hello Kitty 默认图片 4', 
+        alt: '默认图片 4', 
         heroRow: 'bottom'
       }
     ]

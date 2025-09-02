@@ -402,7 +402,7 @@ export function ImageUploadModal({ isOpen, onClose, onUpload, type, selectedImag
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="animals">🐾 动物</SelectItem>
-                    <SelectItem value="hello-kitty">🎀 Hello Kitty</SelectItem>
+                    <SelectItem value="cute-characters">🎀 可爱角色</SelectItem>
                     <SelectItem value="scenes">🏞️ 场景</SelectItem>
                     <SelectItem value="holidays">🎄 节日</SelectItem>
                     <SelectItem value="adventure">⚡ 冒险</SelectItem>

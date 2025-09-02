@@ -23,7 +23,7 @@ const STATIC_ROUTES = new Set([
   'debug', 'diagnosis', 'diagnostic', 'privacy', 'terms', 
   'test-favorites-fix', 'test-favorites',
   '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml', // Next.js内置路径
-  'manifest.json', 'icon.png', 'apple-touch-icon.png' // PWA和图标文件
+  'manifest.json', 'icon.png', 'apple-touch-icon.png', 'favicon.svg', 'apple-icon.svg' // PWA和图标文件
 ])
 
 /**

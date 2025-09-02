@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { CalendarDays, Clock, ArrowLeft, ArrowRight, Share2 } from 'lucide-react'
 import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from '@/lib/blog/blog-utils'
-import { compileMDX } from 'next-mdx-remote/rsc'
-import { MDXComponents } from '@/components/blog/mdx-components'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
@@ -51,17 +51,65 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   }
 }
 
-async function renderMDXContent(content: string) {
-  try {
-    const { content: mdxContent } = await compileMDX({
-      source: content,
-      components: MDXComponents,
-    })
-    return mdxContent
-  } catch (error) {
-    console.error('MDX compilation error:', error)
-    return <div>Error rendering content</div>
-  }
+function renderMarkdownContent(content: string) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        h1: ({ children }) => (
+          <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100">
+            {children}
+          </h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-2xl font-semibold mt-8 mb-4 text-gray-900 dark:text-gray-100">
+            {children}
+          </h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-xl font-semibold mt-6 mb-3 text-gray-900 dark:text-gray-100">
+            {children}
+          </h3>
+        ),
+        p: ({ children }) => (
+          <p className="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+            {children}
+          </p>
+        ),
+        ul: ({ children }) => (
+          <ul className="mb-4 pl-6 space-y-2 list-disc text-gray-700 dark:text-gray-300">
+            {children}
+          </ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="mb-4 pl-6 space-y-2 list-decimal text-gray-700 dark:text-gray-300">
+            {children}
+          </ol>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-4 border-primary pl-4 my-6 italic text-gray-600 dark:text-gray-400">
+            {children}
+          </blockquote>
+        ),
+        code: ({ children, className }) => {
+          if (className?.includes('language-')) {
+            return (
+              <code className={`block bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm ${className}`}>
+                {children}
+              </code>
+            )
+          }
+          return (
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono">
+              {children}
+            </code>
+          )
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
@@ -174,7 +222,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           {/* Article Content */}
           <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-gray-700 dark:prose-p:text-gray-300">
-            {await renderMDXContent(post.content)}
+            {renderMarkdownContent(post.content)}
           </div>
         </article>
 

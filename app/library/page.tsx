@@ -397,7 +397,7 @@ export default function LibraryPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading beautiful Hello Kitty coloring pages...</p>
+          <p className="text-gray-600">Loading beautiful coloring pages...</p>
         </div>
       </div>
     )
@@ -502,7 +502,7 @@ export default function LibraryPage() {
               Pro Tip
             </h4>
             <p className="text-sm text-muted-foreground">
-              Use specific keywords like "Hello Kitty birthday party" for better search results!
+              Use specific keywords like "princess birthday party" or "animal coloring" for better search results!
             </p>
           </div>
         </aside>

@@ -68,7 +68,12 @@
       "Bash(netstat:*)",
       "Bash(kill:*)",
       "WebFetch(domain:)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Bash(psql:*)",
+      "Bash(sudo rm:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" PORT=3000 pnpm dev)"
     ],
     "deny": []
   }
