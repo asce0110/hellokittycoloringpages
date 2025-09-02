@@ -106,18 +106,18 @@ export default function MovingImageBanner({ className }: MovingImageBannerProps)
         className
       )}
     >
-      {/* Top row - scrolling left */}
-      <div className="absolute top-12 left-0 w-full overflow-hidden">
+      {/* Top row - scrolling left - 移动端优化定位 */}
+      <div className="absolute top-4 sm:top-12 left-0 w-full overflow-hidden">
         {topRowImages.length > 0 && (
           <div className="flex animate-marquee-left">
             {/* 重复足够多次确保屏幕永远被填满 */}
             {Array.from({ length: 20 }).map((_, repeatIndex) =>
               topRowImages.map((image, imageIndex) => (
-                <div key={`top-${image.id}-${repeatIndex}-${imageIndex}`} className="flex-none mx-2">
+                <div key={`top-${image.id}-${repeatIndex}-${imageIndex}`} className="flex-none mx-1 sm:mx-2">
                   <HeroDefaultImage
                     src={image.src}
                     alt={image.alt}
-                    className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48"
+                    className="rounded-lg shadow-lg w-20 h-20 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 xl:w-44 xl:h-44"
                     priority={repeatIndex < 2 && imageIndex < 4}
                   />
                 </div>
@@ -127,18 +127,18 @@ export default function MovingImageBanner({ className }: MovingImageBannerProps)
         )}
       </div>
 
-      {/* Bottom row - scrolling right */}
-      <div className="absolute bottom-12 left-0 w-full overflow-hidden">
+      {/* Bottom row - scrolling right - 移动端优化定位 */}
+      <div className="absolute bottom-4 sm:bottom-12 left-0 w-full overflow-hidden">
         {bottomRowImages.length > 0 && (
           <div className="flex animate-marquee-right">
             {/* 重复足够多次确保屏幕永远被填满 */}
             {Array.from({ length: 20 }).map((_, repeatIndex) =>
               bottomRowImages.map((image, imageIndex) => (
-                <div key={`bottom-${image.id}-${repeatIndex}-${imageIndex}`} className="flex-none mx-2">
+                <div key={`bottom-${image.id}-${repeatIndex}-${imageIndex}`} className="flex-none mx-1 sm:mx-2">
                   <HeroDefaultImage
                     src={image.src}
                     alt={image.alt}
-                    className="rounded-lg shadow-lg w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-44 lg:h-44 xl:w-48 xl:h-48"
+                    className="rounded-lg shadow-lg w-20 h-20 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 xl:w-44 xl:h-44"
                     priority={repeatIndex < 2 && imageIndex < 4}
                   />
                 </div>
