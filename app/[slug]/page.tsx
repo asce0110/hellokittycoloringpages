@@ -275,26 +275,21 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     actualSlug = legacyCheck.newSlug
   }
   
-  // 🧠 临时禁用简化路由器，使用原有的稳定逻辑
-  // try {
-  //   const { resolveSimpleRoute } = await import('@/lib/simple-router')
-  //   const coloringPageData = await resolveSimpleRoute(actualSlug)
-  //   
-  //   if (coloringPageData) {
-  //     console.log('✅ 简化路由成功:', {
-  //       slug: actualSlug,
-  //       title: coloringPageData.title
-  //     })
-  //     
-  //     return (
-  //       <ColoringPageClient 
-  //         coloringPage={coloringPageData}
-  //       />
-  //     )
-  //   }
-  // } catch (error) {
-  //   console.warn('⚠️ 简化路由失败，降级到原有逻辑:', error)
-  // }
+  // 🧠 重新启用简化路由器作为备用方案
+  let coloringPageFromSimpleRouter: ColoringPageData | null = null
+  try {
+    const { resolveSimpleRoute } = await import('@/lib/simple-router')
+    coloringPageFromSimpleRouter = await resolveSimpleRoute(actualSlug)
+    
+    if (coloringPageFromSimpleRouter) {
+      console.log('✅ 简化路由找到备用数据:', {
+        slug: actualSlug,
+        title: coloringPageFromSimpleRouter.title
+      })
+    }
+  } catch (error) {
+    console.warn('⚠️ 简化路由失败:', error)
+  }
 
   // 🔄 降级到原有逻辑（保持向后兼容）
   let coloringPage: ColoringPageData | null = null
@@ -439,7 +434,13 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
     }
   }
   
-  // 如果还是找不到页面，显示404
+  // 如果还是找不到页面，尝试简化路由器的备用数据
+  if (!coloringPage && coloringPageFromSimpleRouter) {
+    console.log('✅ 使用简化路由器的备用数据')
+    coloringPage = coloringPageFromSimpleRouter
+  }
+  
+  // 最后如果还是找不到页面，显示404
   if (!coloringPage) {
     routeMonitor.logNotFound(actualSlug, { 
       reason: 'no_data_source_found',
