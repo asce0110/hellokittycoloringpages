@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Search, Wand2, Loader2 } from "lucide-react"
+import { Search, Wand2, Loader2, Filter, ChevronDown, ChevronUp, X } from "lucide-react"
 import { LibraryImageCard } from "@/components/library-image-card"
 import { LibraryImage } from "@/lib/types"
 import { demoLibraryImages } from "@/lib/demo-data"
+import { cn } from "@/lib/utils"
 
 // ColoringPage format for backward compatibility with existing filter logic
 type ColoringPage = {
@@ -54,6 +55,8 @@ export default function LibraryPage() {
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([])
   const [selectedTags, setSelectedTags] = React.useState<string[]>([])
   const [searchInput, setSearchInput] = React.useState(searchQuery || '')
+  const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+  const [expandedTagSection, setExpandedTagSection] = React.useState(false)
 
   // 📦 获取初始数据
   const fetchInitialData = async () => {
@@ -405,8 +408,36 @@ export default function LibraryPage() {
 
   return (
     <>
-      <div className="container mx-auto grid md:grid-cols-[280px_1fr] gap-8 px-4 md:px-6 py-8">
-        <aside className="flex flex-col gap-6">
+      <div className="container mx-auto px-4 md:px-6 py-8">
+        {/* Mobile Filter Button */}
+        <div className="md:hidden mb-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Filters
+              {(selectedCategories.length > 0 || selectedTags.length > 0 || searchInput) && (
+                <Badge variant="default" className="text-xs">
+                  {selectedCategories.length + selectedTags.length + (searchInput ? 1 : 0)}
+                </Badge>
+              )}
+            </div>
+            {showMobileFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <div className={cn(
+          "grid gap-8",
+          "md:grid-cols-[280px_1fr]"
+        )}>
+          <aside className={cn(
+            "flex flex-col gap-6",
+            "md:block",
+            showMobileFilters ? "block" : "hidden md:block"
+          )}>
           {/* 搜索框 */}
           <div>
             <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
@@ -459,32 +490,102 @@ export default function LibraryPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold">Popular Tags</h3>
-              {selectedTags.length > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {selectedTags.length} selected
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {selectedTags.length > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {selectedTags.length} selected
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExpandedTagSection(!expandedTagSection)}
+                  className="md:hidden p-1 h-auto"
+                >
+                  {expandedTagSection ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {availableTags.slice(0, 12).map((tag) => { // 只显示前12个最常见的标签
-                const isSelected = selectedTags.includes(tag)
-                return (
+            
+            {/* Mobile: Show only selected tags + 3 most popular when collapsed */}
+            <div className="md:hidden">
+              <div className="flex flex-wrap gap-2">
+                {selectedTags.map((tag) => (
                   <Badge 
                     key={tag} 
-                    variant={isSelected ? "default" : "secondary"} 
+                    variant="default" 
+                    className="cursor-pointer hover:bg-primary/80 transition-colors"
+                    onClick={() => handleTagClick(tag)}
+                  >
+                    {tag}
+                    <X className="h-3 w-3 ml-1" />
+                  </Badge>
+                ))}
+                
+                {!expandedTagSection && selectedTags.length === 0 && availableTags.slice(0, 3).map((tag) => (
+                  <Badge 
+                    key={tag} 
+                    variant="secondary" 
                     className="cursor-pointer hover:bg-secondary/80 transition-colors"
                     onClick={() => handleTagClick(tag)}
                   >
                     {tag}
                   </Badge>
-                )
-              })}
+                ))}
+                
+                {!expandedTagSection && availableTags.length > 3 && (
+                  <Badge 
+                    variant="outline" 
+                    className="cursor-pointer"
+                    onClick={() => setExpandedTagSection(true)}
+                  >
+                    +{availableTags.length - 3} more
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Expanded view for mobile */}
+              {expandedTagSection && (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="flex flex-wrap gap-2">
+                    {availableTags.filter(tag => !selectedTags.includes(tag)).slice(0, 15).map((tag) => (
+                      <Badge 
+                        key={tag} 
+                        variant="secondary" 
+                        className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                        onClick={() => handleTagClick(tag)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Desktop: Show all tags as before */}
+            <div className="hidden md:block">
+              <div className="flex flex-wrap gap-2">
+                {availableTags.slice(0, 12).map((tag) => { // 只显示前12个最常见的标签
+                  const isSelected = selectedTags.includes(tag)
+                  return (
+                    <Badge 
+                      key={tag} 
+                      variant={isSelected ? "default" : "secondary"} 
+                      className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                      onClick={() => handleTagClick(tag)}
+                    >
+                      {tag}
+                    </Badge>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
           {/* 清除过滤器按钮 */}
           {(selectedCategories.length > 0 || selectedTags.length > 0 || searchInput) && (
-            <div>
+            <div className="flex flex-col gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -492,6 +593,16 @@ export default function LibraryPage() {
                 className="w-full"
               >
                 Clear All Filters
+              </Button>
+              
+              {/* Mobile: Close filters button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowMobileFilters(false)}
+                className="w-full md:hidden"
+              >
+                Close Filters
               </Button>
             </div>
           )}
@@ -628,6 +739,7 @@ export default function LibraryPage() {
             </div>
           )}
         </main>
+        </div>
       </div>
 
     </>
