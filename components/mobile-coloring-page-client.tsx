@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { ColoringPageData } from '@/lib/coloring-data'
 import { MobileFloatingToolbar } from './mobile-floating-toolbar'
 import { MobileColorPicker } from './mobile-color-picker'
@@ -32,6 +32,19 @@ interface MobileColoringPageClientProps {
 export function MobileColoringPageClient({ coloringPage }: MobileColoringPageClientProps) {
   const { user, isAuthenticated } = useAuth()
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites()
+  
+  // Process image URL to handle CORS issues
+  const processedImageUrl = useMemo(() => {
+    if (!coloringPage.imageUrl) return ''
+    
+    // If it's an external URL (like R2 storage), use proxy API
+    if (coloringPage.imageUrl.startsWith('https://r2.coloringpagesprintable.net/')) {
+      return `/api/proxy-image?url=${encodeURIComponent(coloringPage.imageUrl)}`
+    }
+    
+    // For local images, use as-is
+    return coloringPage.imageUrl
+  }, [coloringPage.imageUrl])
   
   // UI State
   const [uiMode, setUIMode] = useState<UIMode>('standard')
@@ -203,7 +216,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
           <div className="w-full h-full max-w-sm max-h-[70vh] relative">
             <ColoringCanvas
               ref={canvasRef}
-              imageUrl={coloringPage.imageUrl}
+              imageUrl={processedImageUrl}
               activeColor={selectedColor}
               activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
               brushSize={5}
