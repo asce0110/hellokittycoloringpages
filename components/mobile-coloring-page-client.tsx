@@ -33,18 +33,62 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const { user, isAuthenticated } = useAuth()
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites()
   
+  // Get URL params and localStorage data (same logic as desktop)
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const [localStorageData, setLocalStorageData] = useState<any>(null)
+  
+  // Load localStorage data (same as desktop)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedData = localStorage.getItem(`coloring-page-${coloringPage.slug}`)
+      if (storedData) {
+        try {
+          const parsedData = JSON.parse(storedData)
+          setLocalStorageData(parsedData)
+          console.log('💾 Mobile: 从localStorage加载数据:', parsedData)
+        } catch (error) {
+          console.error('❌ Mobile: localStorage数据解析失败:', error)
+        }
+      }
+    }
+  }, [coloringPage.slug])
+  
+  // Use same priority logic as desktop: URL params > localStorage > props
+  const actualImageUrl = searchParams.get("imageUrl") || localStorageData?.imageUrl || coloringPage.imageUrl
+  const actualTitle = searchParams.get("title") || localStorageData?.title || coloringPage.title
+  const actualDescription = searchParams.get("description") || localStorageData?.description || coloringPage.description
+  
+  console.log('📱 Mobile ColoringPageClient - Using image info:', {
+    fromParams: {
+      imageUrl: searchParams.get("imageUrl"),
+      title: searchParams.get("title"),
+      description: searchParams.get("description")
+    },
+    fromLocalStorage: localStorageData,
+    fromProps: {
+      imageUrl: coloringPage.imageUrl,
+      title: coloringPage.title,
+      description: coloringPage.description
+    },
+    final: {
+      imageUrl: actualImageUrl,
+      title: actualTitle,
+      description: actualDescription
+    }
+  })
+  
   // Process image URL to handle CORS issues
   const processedImageUrl = useMemo(() => {
-    if (!coloringPage.imageUrl) return ''
+    if (!actualImageUrl) return ''
     
     // If it's an external URL (like R2 storage), use proxy API
-    if (coloringPage.imageUrl.startsWith('https://r2.coloringpagesprintable.net/')) {
-      return `/api/proxy-image?url=${encodeURIComponent(coloringPage.imageUrl)}`
+    if (actualImageUrl.startsWith('https://r2.coloringpagesprintable.net/')) {
+      return `/api/proxy-image?url=${encodeURIComponent(actualImageUrl)}`
     }
     
     // For local images, use as-is
-    return coloringPage.imageUrl
-  }, [coloringPage.imageUrl])
+    return actualImageUrl
+  }, [actualImageUrl])
   
   // UI State
   const [uiMode, setUIMode] = useState<UIMode>('standard')
@@ -115,14 +159,14 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const handleShare = useCallback(() => {
     if (navigator.share) {
       navigator.share({
-        title: coloringPage.title,
-        text: `Check out my coloring of ${coloringPage.title}!`,
+        title: actualTitle,
+        text: `Check out my coloring of ${actualTitle}!`,
         url: window.location.href
       })
     } else {
       navigator.clipboard.writeText(window.location.href)
     }
-  }, [coloringPage.title])
+  }, [actualTitle])
 
   const handleFavoriteToggle = useCallback(async () => {
     if (!isAuthenticated) return
@@ -171,7 +215,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
              style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-gray-900 truncate">
-              {coloringPage.title}
+              {actualTitle}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="secondary" className="text-xs">
