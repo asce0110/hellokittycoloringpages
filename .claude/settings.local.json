@@ -75,7 +75,9 @@
       "Bash(sudo rm:*)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" PORT=3000 pnpm dev)",
       "Bash(powershell:*)",
-      "WebFetch(domain:coloringpagesprintable.net)"
+      "WebFetch(domain:coloringpagesprintable.net)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:react.dev)"
     ],
     "deny": []
   }
