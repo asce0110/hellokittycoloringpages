@@ -73,7 +73,8 @@
       "Bash(git push:*)",
       "Bash(psql:*)",
       "Bash(sudo rm:*)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" PORT=3000 pnpm dev)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" PORT=3000 pnpm dev)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }
