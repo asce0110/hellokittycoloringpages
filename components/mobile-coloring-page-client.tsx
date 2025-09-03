@@ -58,6 +58,19 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const actualTitle = searchParams.get("title") || localStorageData?.title || coloringPage.title
   const actualDescription = searchParams.get("description") || localStorageData?.description || coloringPage.description
   
+  // Process image URL to handle CORS issues
+  const processedImageUrl = useMemo(() => {
+    if (!actualImageUrl) return ''
+    
+    // If it's an external URL (like R2 storage), use proxy API
+    if (actualImageUrl.startsWith('https://r2.coloringpagesprintable.net/')) {
+      return `/api/proxy-image?url=${encodeURIComponent(actualImageUrl)}`
+    }
+    
+    // For local images, use as-is
+    return actualImageUrl
+  }, [actualImageUrl])
+  
   console.log('📱 Mobile ColoringPageClient - Using image info:', {
     fromParams: {
       imageUrl: searchParams.get("imageUrl"),
@@ -74,21 +87,13 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       imageUrl: actualImageUrl,
       title: actualTitle,
       description: actualDescription
+    },
+    processed: {
+      imageUrl: processedImageUrl,
+      isR2Proxy: actualImageUrl?.startsWith('https://r2.coloringpagesprintable.net/'),
+      isDemo: actualImageUrl?.includes('demo') || actualImageUrl?.includes('placeholder')
     }
   })
-  
-  // Process image URL to handle CORS issues
-  const processedImageUrl = useMemo(() => {
-    if (!actualImageUrl) return ''
-    
-    // If it's an external URL (like R2 storage), use proxy API
-    if (actualImageUrl.startsWith('https://r2.coloringpagesprintable.net/')) {
-      return `/api/proxy-image?url=${encodeURIComponent(actualImageUrl)}`
-    }
-    
-    // For local images, use as-is
-    return actualImageUrl
-  }, [actualImageUrl])
   
   // UI State
   const [uiMode, setUIMode] = useState<UIMode>('standard')
@@ -98,6 +103,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const [isDrawing, setIsDrawing] = useState(false)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const [brushSize, setBrushSize] = useState(5)
+  const [tonerMode, setTonerMode] = useState<'darken' | 'lighten'>('darken')
+  const [tonerIntensity, setTonerIntensity] = useState(0.3)
   
   // Canvas ref with correct type
   const canvasRef = useRef<{
@@ -272,7 +280,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               imageUrl={processedImageUrl}
               activeColor={selectedColor}
               activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
-              brushSize={5}
+              brushSize={brushSize}
+              tonerMode={tonerMode}
+              tonerIntensity={tonerIntensity}
               onHistoryChange={setCanUndo}
             />
           </div>
@@ -316,6 +326,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             onClear={handleClear}
             canUndo={canUndo}
             canRedo={canRedo}
+            brushSize={brushSize}
+            onBrushSizeChange={setBrushSize}
             className="absolute left-4 top-20 safe-area-aware"
           />
         )}

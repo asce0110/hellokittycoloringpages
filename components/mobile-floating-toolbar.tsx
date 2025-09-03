@@ -22,6 +22,8 @@ interface MobileFloatingToolbarProps {
   onClear: () => void
   canUndo: boolean
   canRedo: boolean
+  brushSize: number
+  onBrushSizeChange: (size: number) => void
   className?: string
 }
 
@@ -33,6 +35,8 @@ export function MobileFloatingToolbar({
   onClear,
   canUndo,
   canRedo,
+  brushSize,
+  onBrushSizeChange,
   className
 }: MobileFloatingToolbarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -79,7 +83,11 @@ export function MobileFloatingToolbar({
           <div className="text-xs font-bold text-white mt-2 px-3 py-1 bg-black/50 rounded-full border border-gray-600">
             {(() => {
               const currentTool = tools.find(t => t.id === selectedTool)
-              return currentTool?.label || 'Tool'
+              const label = currentTool?.label || 'Tool'
+              if (selectedTool !== 'fill') {
+                return `${label} (${brushSize})`
+              }
+              return label
             })()}
           </div>
           
@@ -130,6 +138,38 @@ export function MobileFloatingToolbar({
                 </div>
               )
             })}
+            
+            {/* Divider */}
+            <div className="h-px bg-gray-600 mx-2 my-2" />
+            
+            {/* Brush Size Controls */}
+            {selectedTool !== 'fill' && (
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-xs font-bold text-white px-3 py-1 bg-black/50 rounded-full border border-gray-600">
+                  Size: {brushSize}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onBrushSizeChange(Math.max(1, brushSize - 2))}
+                    className="w-10 h-10 p-0 rounded-full bg-gray-700 text-white hover:bg-gray-600 border-2 border-gray-600"
+                    title="Decrease Size"
+                  >
+                    -
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onBrushSizeChange(Math.min(50, brushSize + 2))}
+                    className="w-10 h-10 p-0 rounded-full bg-gray-700 text-white hover:bg-gray-600 border-2 border-gray-600"
+                    title="Increase Size"
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+            )}
             
             {/* Divider */}
             <div className="h-px bg-gray-600 mx-2 my-2" />
