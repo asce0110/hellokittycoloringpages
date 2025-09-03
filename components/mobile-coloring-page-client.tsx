@@ -120,7 +120,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     } else {
       await addToFavorites(coloringPage.id)
     }
-  }, [isAuthenticated, coloringPage.id, isFavorited, addToFavorites, removeFromFavorites])
+  }, [isAuthenticated, coloringPage.id, isFavorite, addToFavorites, removeFromFavorites])
 
   // Safe area padding for devices with notches
   useEffect(() => {
