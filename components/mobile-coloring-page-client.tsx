@@ -31,7 +31,7 @@ interface MobileColoringPageClientProps {
 
 export function MobileColoringPageClient({ coloringPage }: MobileColoringPageClientProps) {
   const { user, isAuthenticated } = useAuth()
-  const { isFavorited, addToFavorites, removeFromFavorites } = useFavorites()
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites()
   
   // UI State
   const [uiMode, setUIMode] = useState<UIMode>('standard')
@@ -42,8 +42,13 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   
-  // Canvas ref
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Canvas ref with correct type
+  const canvasRef = useRef<{
+    undo: () => void
+    reset: () => void
+    download: (filename: string) => void
+    print: () => void
+  }>(null)
   
   // Quick colors for easy access
   const quickColors = [
@@ -76,34 +81,40 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   // Handle canvas actions
   const handleUndo = useCallback(() => {
-    // Canvas undo logic will be implemented
-    console.log('Undo action')
+    canvasRef.current?.undo()
   }, [])
 
   const handleRedo = useCallback(() => {
-    // Canvas redo logic will be implemented
-    console.log('Redo action')
+    // Note: Current canvas doesn't support redo, but keep for future enhancement
+    console.log('Redo action - not yet implemented')
   }, [])
 
   const handleClear = useCallback(() => {
-    // Canvas clear logic will be implemented
-    console.log('Clear canvas')
+    if (confirm("Clear all coloring? This cannot be undone.")) {
+      canvasRef.current?.reset()
+    }
   }, [])
 
   const handleDownload = useCallback(() => {
-    // Canvas download logic will be implemented
-    console.log('Download image')
-  }, [])
+    canvasRef.current?.download(`${coloringPage.slug}.png`)
+  }, [coloringPage.slug])
 
   const handleShare = useCallback(() => {
-    // Share functionality
-    console.log('Share image')
-  }, [])
+    if (navigator.share) {
+      navigator.share({
+        title: coloringPage.title,
+        text: `Check out my coloring of ${coloringPage.title}!`,
+        url: window.location.href
+      })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+    }
+  }, [coloringPage.title])
 
   const handleFavoriteToggle = useCallback(async () => {
     if (!isAuthenticated) return
     
-    const isFav = isFavorited(coloringPage.id)
+    const isFav = isFavorite(coloringPage.id)
     if (isFav) {
       await removeFromFavorites(coloringPage.id)
     } else {
@@ -169,7 +180,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               >
                 <Heart className={cn(
                   "h-5 w-5",
-                  isFavorited(coloringPage.id) ? "fill-red-500 text-red-500" : "text-gray-500"
+                  isFavorite(coloringPage.id) ? "fill-red-500 text-red-500" : "text-gray-500"
                 )} />
               </Button>
             )}
@@ -193,13 +204,10 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             <ColoringCanvas
               ref={canvasRef}
               imageUrl={coloringPage.imageUrl}
-              tool={selectedTool}
-              color={selectedColor}
-              onDrawingStart={handleDrawingStart}
-              onDrawingEnd={handleDrawingEnd}
-              onUndoStateChange={setCanUndo}
-              onRedoStateChange={setCanRedo}
-              className="w-full h-full object-contain border rounded-lg shadow-lg"
+              activeColor={selectedColor}
+              activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
+              brushSize={5}
+              onHistoryChange={setCanUndo}
             />
           </div>
         </div>
