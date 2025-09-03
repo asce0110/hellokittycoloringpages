@@ -23,6 +23,7 @@ const STATIC_ROUTES = new Set([
   'api', 'color', // 包含旧的color路径用于重定向
   'debug', 'diagnosis', 'diagnostic', 'privacy', 'terms', 
   'test-favorites-fix', 'test-favorites',
+  'ai-coloring', 'blog', // 移动端导航中的页面
   '_next', 'favicon.ico', 'robots.txt', 'sitemap.xml', // Next.js内置路径
   'manifest.json', 'icon.png', 'apple-touch-icon.png', 'favicon.svg', 'apple-icon.svg' // PWA和图标文件
 ])
