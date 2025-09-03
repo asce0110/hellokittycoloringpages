@@ -328,7 +328,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             canRedo={canRedo}
             brushSize={brushSize}
             onBrushSizeChange={setBrushSize}
-            className="absolute left-4 top-20 safe-area-aware"
           />
         )}
 
