@@ -277,8 +277,8 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Fresh Images Grid */}
-            <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {/* Fresh Images Grid - 移动端优化为2列 */}
+            <div className="mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
               {loading ? (
                 // Loading skeleton
                 Array.from({ length: 4 }).map((_, i) => (

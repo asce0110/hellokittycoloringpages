@@ -305,7 +305,7 @@ export default function CreatePage() {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {generatedImages.map((generation) => (
               <Card key={generation.id} className="overflow-hidden group cursor-pointer hover:shadow-lg transition-all">
                 <CardContent className="p-0">

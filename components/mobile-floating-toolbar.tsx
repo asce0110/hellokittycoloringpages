@@ -55,7 +55,7 @@ export function MobileFloatingToolbar({
   return (
     <div className={cn("flex flex-col items-center gap-3", className)}>
       {/* Main Tool Selector */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-full shadow-xl border-2 border-white/50 p-2">
+      <div className="bg-gray-900/90 backdrop-blur-sm rounded-2xl shadow-2xl border-2 border-gray-700 p-3">
         <div className="flex flex-col items-center">
           {/* Currently Selected Tool */}
           <Button
@@ -63,20 +63,20 @@ export function MobileFloatingToolbar({
             size="sm"
             onClick={toggleExpanded}
             className={cn(
-              "w-14 h-14 p-0 rounded-full transition-all shadow-md",
-              "bg-blue-500 text-white hover:bg-blue-600 hover:scale-105",
-              "border-2 border-white"
+              "w-16 h-16 p-0 rounded-xl transition-all shadow-lg",
+              "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:scale-105",
+              "border-2 border-blue-400"
             )}
           >
             {(() => {
               const currentTool = tools.find(t => t.id === selectedTool)
               const Icon = currentTool?.icon || Brush
-              return <Icon className="h-7 w-7" />
+              return <Icon className="h-8 w-8" />
             })()}
           </Button>
 
           {/* Tool Label */}
-          <div className="text-xs font-medium text-gray-700 mt-1 px-2 py-1 bg-white/80 rounded-full">
+          <div className="text-xs font-bold text-white mt-2 px-3 py-1 bg-black/50 rounded-full border border-gray-600">
             {(() => {
               const currentTool = tools.find(t => t.id === selectedTool)
               return currentTool?.label || 'Tool'
@@ -88,12 +88,12 @@ export function MobileFloatingToolbar({
             variant="ghost"
             size="sm"
             onClick={toggleExpanded}
-            className="w-8 h-8 p-0 rounded-full text-gray-500 hover:text-gray-700 mt-1"
+            className="w-10 h-10 p-0 rounded-full text-gray-300 hover:text-white hover:bg-gray-800 mt-2 border border-gray-600"
           >
             {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-5 w-5" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-5 w-5" />
             )}
           </Button>
         </div>
@@ -101,30 +101,30 @@ export function MobileFloatingToolbar({
 
       {/* Expanded Tool Options */}
       {isExpanded && (
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-white/50 p-3">
-          <div className="flex flex-col gap-3">
+        <div className="bg-gray-900/90 backdrop-blur-sm rounded-2xl shadow-2xl border-2 border-gray-700 p-4">
+          <div className="flex flex-col gap-4">
             {tools.map((tool) => {
               const Icon = tool.icon
               const isSelected = selectedTool === tool.id
               
               return (
-                <div key={tool.id} className="flex flex-col items-center gap-1">
+                <div key={tool.id} className="flex flex-col items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleToolSelect(tool.id)}
                     className={cn(
-                      "w-12 h-12 p-0 rounded-full transition-all shadow-md",
+                      "w-14 h-14 p-0 rounded-xl transition-all shadow-lg",
                       "touch-manipulation", // Optimize for touch
                       isSelected
-                        ? "bg-blue-500 text-white scale-110 border-2 border-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105 border border-gray-300"
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white scale-110 border-2 border-blue-400"
+                        : "bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-105 border-2 border-gray-600 hover:border-gray-500"
                     )}
                     title={tool.label}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-6 w-6" />
                   </Button>
-                  <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+                  <span className="text-xs font-bold text-white px-3 py-1 bg-black/50 rounded-full border border-gray-600">
                     {tool.label}
                   </span>
                 </div>
@@ -132,68 +132,68 @@ export function MobileFloatingToolbar({
             })}
             
             {/* Divider */}
-            <div className="h-px bg-gray-300 mx-2 my-2" />
+            <div className="h-px bg-gray-600 mx-2 my-2" />
             
             {/* Action Buttons */}
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onUndo}
                 disabled={!canUndo}
                 className={cn(
-                  "w-12 h-12 p-0 rounded-full transition-all shadow-md border",
+                  "w-14 h-14 p-0 rounded-xl transition-all shadow-lg border-2",
                   "touch-manipulation",
                   canUndo 
-                    ? "bg-green-100 text-green-700 hover:bg-green-200 hover:scale-105 border-green-300" 
-                    : "bg-gray-50 text-gray-400 border-gray-200 opacity-50 cursor-not-allowed"
+                    ? "bg-green-600 text-white hover:bg-green-500 hover:scale-105 border-green-500" 
+                    : "bg-gray-800 text-gray-500 border-gray-700 opacity-50 cursor-not-allowed"
                 )}
                 title="Undo"
               >
-                <Undo2 className="h-5 w-5" />
+                <Undo2 className="h-6 w-6" />
               </Button>
-              <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+              <span className="text-xs font-bold text-white px-3 py-1 bg-black/50 rounded-full border border-gray-600">
                 Undo
               </span>
             </div>
             
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onRedo}
                 disabled={!canRedo}
                 className={cn(
-                  "w-12 h-12 p-0 rounded-full transition-all shadow-md border",
+                  "w-14 h-14 p-0 rounded-xl transition-all shadow-lg border-2",
                   "touch-manipulation",
                   canRedo 
-                    ? "bg-green-100 text-green-700 hover:bg-green-200 hover:scale-105 border-green-300" 
-                    : "bg-gray-50 text-gray-400 border-gray-200 opacity-50 cursor-not-allowed"
+                    ? "bg-green-600 text-white hover:bg-green-500 hover:scale-105 border-green-500" 
+                    : "bg-gray-800 text-gray-500 border-gray-700 opacity-50 cursor-not-allowed"
                 )}
                 title="Redo"
               >
-                <Redo2 className="h-5 w-5" />
+                <Redo2 className="h-6 w-6" />
               </Button>
-              <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+              <span className="text-xs font-bold text-white px-3 py-1 bg-black/50 rounded-full border border-gray-600">
                 Redo
               </span>
             </div>
             
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClear}
                 className={cn(
-                  "w-12 h-12 p-0 rounded-full transition-all shadow-md border",
+                  "w-14 h-14 p-0 rounded-xl transition-all shadow-lg border-2",
                   "touch-manipulation",
-                  "bg-red-100 text-red-600 hover:bg-red-200 hover:scale-105 border-red-300"
+                  "bg-red-600 text-white hover:bg-red-500 hover:scale-105 border-red-500"
                 )}
                 title="Clear"
               >
-                <RotateCcw className="h-5 w-5" />
+                <RotateCcw className="h-6 w-6" />
               </Button>
-              <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+              <span className="text-xs font-bold text-white px-3 py-1 bg-black/50 rounded-full border border-gray-600">
                 Clear
               </span>
             </div>

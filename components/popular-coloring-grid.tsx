@@ -29,13 +29,13 @@ export function PopularColoringGrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // 网格列数样式映射 - 优化少数图片的显示
+  // 网格列数样式映射 - 移动端优化为2列
   const gridColsClass = {
-    'auto': popularPages.length <= 2 ? 'grid-cols-1 sm:grid-cols-2 justify-center' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-    '2': 'grid-cols-1 sm:grid-cols-2 justify-center',
-    '3': 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
-    '4': 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-    '5': 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+    'auto': popularPages.length <= 2 ? 'grid-cols-2 sm:grid-cols-2 justify-center' : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+    '2': 'grid-cols-2 sm:grid-cols-2 justify-center',
+    '3': 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3',
+    '4': 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+    '5': 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
   }
   
   // 获取热门内容
