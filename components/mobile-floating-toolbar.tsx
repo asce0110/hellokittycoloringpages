@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
-  PaintBucket, 
+  Droplets, 
   Brush, 
   Palette, 
   Undo2, 
@@ -39,7 +39,7 @@ export function MobileFloatingToolbar({
 
   const tools = [
     { id: 'brush' as const, icon: Brush, label: 'Brush' },
-    { id: 'fill' as const, icon: PaintBucket, label: 'Fill' },
+    { id: 'fill' as const, icon: Droplets, label: 'Smart Fill' },
     { id: 'toner' as const, icon: Palette, label: 'Toner' },
   ]
 
@@ -55,7 +55,7 @@ export function MobileFloatingToolbar({
   return (
     <div className={cn("flex flex-col items-center gap-3", className)}>
       {/* Main Tool Selector */}
-      <div className="bg-white rounded-full shadow-lg border border-gray-200 p-1">
+      <div className="bg-white/95 backdrop-blur-sm rounded-full shadow-xl border-2 border-white/50 p-2">
         <div className="flex flex-col items-center">
           {/* Currently Selected Tool */}
           <Button
@@ -63,25 +63,32 @@ export function MobileFloatingToolbar({
             size="sm"
             onClick={toggleExpanded}
             className={cn(
-              "w-12 h-12 p-0 rounded-full transition-all",
-              "bg-blue-100 text-blue-600 hover:bg-blue-200"
+              "w-14 h-14 p-0 rounded-full transition-all shadow-md",
+              "bg-blue-500 text-white hover:bg-blue-600 hover:scale-105",
+              "border-2 border-white"
             )}
           >
             {(() => {
               const currentTool = tools.find(t => t.id === selectedTool)
               const Icon = currentTool?.icon || Brush
-              return <Icon className="h-6 w-6" />
+              return <Icon className="h-7 w-7" />
             })()}
           </Button>
 
-          {/* Expand/Collapse Indicator */}
-          <div className="h-1 w-6 bg-gray-300 rounded-full my-1" />
+          {/* Tool Label */}
+          <div className="text-xs font-medium text-gray-700 mt-1 px-2 py-1 bg-white/80 rounded-full">
+            {(() => {
+              const currentTool = tools.find(t => t.id === selectedTool)
+              return currentTool?.label || 'Tool'
+            })()}
+          </div>
           
+          {/* Expand/Collapse Indicator */}
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleExpanded}
-            className="w-8 h-8 p-0 rounded-full text-gray-400 hover:text-gray-600"
+            className="w-8 h-8 p-0 rounded-full text-gray-500 hover:text-gray-700 mt-1"
           >
             {isExpanded ? (
               <ChevronUp className="h-4 w-4" />
@@ -94,83 +101,102 @@ export function MobileFloatingToolbar({
 
       {/* Expanded Tool Options */}
       {isExpanded && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-2">
-          <div className="flex flex-col gap-2">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border-2 border-white/50 p-3">
+          <div className="flex flex-col gap-3">
             {tools.map((tool) => {
               const Icon = tool.icon
               const isSelected = selectedTool === tool.id
               
               return (
-                <Button
-                  key={tool.id}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToolSelect(tool.id)}
-                  className={cn(
-                    "w-12 h-12 p-0 rounded-full transition-all",
-                    "touch-manipulation", // Optimize for touch
-                    isSelected
-                      ? "bg-blue-100 text-blue-600 scale-110"
-                      : "hover:bg-gray-100 hover:scale-105"
-                  )}
-                  title={tool.label}
-                >
-                  <Icon className="h-5 w-5" />
-                </Button>
+                <div key={tool.id} className="flex flex-col items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToolSelect(tool.id)}
+                    className={cn(
+                      "w-12 h-12 p-0 rounded-full transition-all shadow-md",
+                      "touch-manipulation", // Optimize for touch
+                      isSelected
+                        ? "bg-blue-500 text-white scale-110 border-2 border-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105 border border-gray-300"
+                    )}
+                    title={tool.label}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </Button>
+                  <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+                    {tool.label}
+                  </span>
+                </div>
               )
             })}
             
             {/* Divider */}
-            <div className="h-px bg-gray-200 mx-2 my-1" />
+            <div className="h-px bg-gray-300 mx-2 my-2" />
             
             {/* Action Buttons */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onUndo}
-              disabled={!canUndo}
-              className={cn(
-                "w-12 h-12 p-0 rounded-full transition-all",
-                "touch-manipulation",
-                canUndo 
-                  ? "hover:bg-gray-100 hover:scale-105" 
-                  : "opacity-50 cursor-not-allowed"
-              )}
-              title="Undo"
-            >
-              <Undo2 className="h-5 w-5" />
-            </Button>
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onUndo}
+                disabled={!canUndo}
+                className={cn(
+                  "w-12 h-12 p-0 rounded-full transition-all shadow-md border",
+                  "touch-manipulation",
+                  canUndo 
+                    ? "bg-green-100 text-green-700 hover:bg-green-200 hover:scale-105 border-green-300" 
+                    : "bg-gray-50 text-gray-400 border-gray-200 opacity-50 cursor-not-allowed"
+                )}
+                title="Undo"
+              >
+                <Undo2 className="h-5 w-5" />
+              </Button>
+              <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+                Undo
+              </span>
+            </div>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRedo}
-              disabled={!canRedo}
-              className={cn(
-                "w-12 h-12 p-0 rounded-full transition-all",
-                "touch-manipulation",
-                canRedo 
-                  ? "hover:bg-gray-100 hover:scale-105" 
-                  : "opacity-50 cursor-not-allowed"
-              )}
-              title="Redo"
-            >
-              <Redo2 className="h-5 w-5" />
-            </Button>
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRedo}
+                disabled={!canRedo}
+                className={cn(
+                  "w-12 h-12 p-0 rounded-full transition-all shadow-md border",
+                  "touch-manipulation",
+                  canRedo 
+                    ? "bg-green-100 text-green-700 hover:bg-green-200 hover:scale-105 border-green-300" 
+                    : "bg-gray-50 text-gray-400 border-gray-200 opacity-50 cursor-not-allowed"
+                )}
+                title="Redo"
+              >
+                <Redo2 className="h-5 w-5" />
+              </Button>
+              <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+                Redo
+              </span>
+            </div>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClear}
-              className={cn(
-                "w-12 h-12 p-0 rounded-full transition-all",
-                "touch-manipulation",
-                "hover:bg-red-50 hover:text-red-600 hover:scale-105"
-              )}
-              title="Clear"
-            >
-              <RotateCcw className="h-5 w-5" />
-            </Button>
+            <div className="flex flex-col items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClear}
+                className={cn(
+                  "w-12 h-12 p-0 rounded-full transition-all shadow-md border",
+                  "touch-manipulation",
+                  "bg-red-100 text-red-600 hover:bg-red-200 hover:scale-105 border-red-300"
+                )}
+                title="Clear"
+              >
+                <RotateCcw className="h-5 w-5" />
+              </Button>
+              <span className="text-xs font-medium text-gray-600 px-2 py-0.5 bg-white/80 rounded-full">
+                Clear
+              </span>
+            </div>
           </div>
         </div>
       )}
