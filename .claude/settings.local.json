@@ -74,7 +74,8 @@
       "Bash(psql:*)",
       "Bash(sudo rm:*)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" PORT=3000 pnpm dev)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "WebFetch(domain:coloringpagesprintable.net)"
     ],
     "deny": []
   }

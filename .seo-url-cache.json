@@ -1,65 +1,37 @@
 {
-  "garden-watering-can-coloring-pages": {
-    "imageUrl": "https://r2.coloringpagesprintable.net/uploads/1756612798492-buu384l2tal.blob",
-    "title": "Garden Watering Can Coloring Pages - Free Gardening Art",
-    "description": "Helpful watering can coloring pages that nurture growth! Perfect for gardening and plant care themes.",
-    "libraryImageId": "0d0ce445-239f-4424-992f-f1d28185e8c5",
-    "timestamp": 1756819239263
-  },
-  "handy-toolbox-coloring-pages-useful-toolbox": {
-    "imageUrl": "https://r2.coloringpagesprintable.net/uploads/1756611946396-4sbjjzvqueu.blob",
-    "title": "Handy Toolbox Coloring Pages - Free Workshop Art",
-    "description": "Useful toolbox coloring pages for little builders! Perfect for construction and fixing themes.",
-    "libraryImageId": "3cda4646-2553-483b-965b-a1686a059241",
-    "timestamp": 1756819243483
-  },
-  "adorable-bunny-coloring-pages": {
-    "imageUrl": "https://r2.coloringpagesprintable.net/uploads/1756562649359-mffg6t9vx9i.blob",
-    "title": "Adorable Bunny Coloring Pages - Free Printable for Toddlers",
-    "description": "Sweet bunny coloring pages that hop into children's hearts! Perfect for Easter or everyday fun.",
-    "libraryImageId": "b47b3afb-c68e-4255-8332-1dfe5da619ba",
-    "timestamp": 1756819248411
-  },
-  "looking-binoculars-coloring-pages": {
+  "looking-binoculars-coloring-pages-spotting-binoculars": {
     "imageUrl": "https://r2.coloringpagesprintable.net/uploads/1756617882165-7d5ta9r6fxj.blob",
     "title": "Looking Binoculars Coloring Pages - Free Explorer Art",
     "description": "Spotting binoculars coloring pages for little explorers! Perfect for bird watching and adventure themes.",
     "libraryImageId": "40d95724-42db-4b78-b62f-8a384425b477",
-    "timestamp": 1756824479816
+    "timestamp": 1756824018581
   },
   "beach-bucket-coloring-pages": {
     "imageUrl": "/hello-kitty-coloring-page.png",
     "title": "Beach Bucket",
     "description": "Color the beautiful beach bucket design",
     "libraryImageId": "beach-bucket-coloring-pages",
-    "timestamp": 1756824488864
+    "timestamp": 1756824177906
   },
   "princess-castle-coloring-pages": {
     "imageUrl": "/hello-kitty-coloring-page.png",
     "title": "Princess Castle",
     "description": "Color the beautiful princess castle design",
     "libraryImageId": "princess-castle-coloring-pages",
-    "timestamp": 1756824488866
+    "timestamp": 1756824177909
   },
   "space-adventure-coloring-pages": {
     "imageUrl": "/astronaut-cat-coloring-page.png",
     "title": "Space Adventure",
     "description": "Color the beautiful space adventure design",
     "libraryImageId": "space-adventure-coloring-pages",
-    "timestamp": 1756824488874
+    "timestamp": 1756824177921
   },
   "garden-flowers-coloring-pages": {
     "imageUrl": "/cute-kitty-coloring-page.png",
     "title": "Garden Flowers",
     "description": "Color the beautiful garden flowers design",
     "libraryImageId": "garden-flowers-coloring-pages",
-    "timestamp": 1756824488885
-  },
-  "stargazing-telescope-coloring-pages": {
-    "imageUrl": "https://r2.coloringpagesprintable.net/uploads/1756616769484-fx5s4m35i47.blob",
-    "title": "Stargazing Telescope Coloring Pages - Free Astronomy Art",
-    "description": "Observing telescope coloring pages that reach for the stars! Perfect for astronomy and space themes.",
-    "libraryImageId": "4e852723-2560-4e25-b2ea-35da209ed2de",
-    "timestamp": 1756824502757
+    "timestamp": 1756824177928
   }
 }

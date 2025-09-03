@@ -1,0 +1,276 @@
+/* Mobile Coloring Interface Styles */
+/* These styles enhance the mobile drawing experience with optimized touch interactions */
+
+/* Prevent text selection and touch callouts during drawing */
+.mobile-drawing-area {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+/* Enhanced touch target sizes for mobile */
+.mobile-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Thumb-friendly positioning zones */
+.thumb-zone-easy {
+  /* Bottom-right area easily reachable by right thumb */
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 30vw;
+  height: 40vh;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.thumb-zone-medium {
+  /* Extended comfortable reach area */
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 50vw;
+  height: 60vh;
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* Floating element animations */
+.mobile-float-in {
+  animation: mobileFloatIn 0.3s ease-out forwards;
+}
+
+.mobile-float-out {
+  animation: mobileFloatOut 0.2s ease-in forwards;
+}
+
+@keyframes mobileFloatIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes mobileFloatOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+}
+
+/* Draggable element styles */
+.mobile-draggable {
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-draggable:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+/* Color picker gradient backgrounds for better visual hierarchy */
+.mobile-color-picker-bg {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.mobile-toolbar-bg {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Safe area handling for devices with notches */
+@supports (padding: max(0px)) {
+  .mobile-safe-top {
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+  
+  .mobile-safe-bottom {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  
+  .mobile-safe-left {
+    padding-left: max(20px, env(safe-area-inset-left));
+  }
+  
+  .mobile-safe-right {
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+}
+
+/* Improved touch feedback */
+.mobile-button {
+  transition: all 0.15s ease;
+  transform-origin: center;
+}
+
+.mobile-button:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* Optimized scrolling for mobile panels */
+.mobile-panel-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbars but maintain functionality on mobile */
+.mobile-panel-scroll::-webkit-scrollbar {
+  width: 2px;
+}
+
+.mobile-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1px;
+}
+
+/* Canvas container optimizations */
+.mobile-canvas-container {
+  /* Prevent bounce scrolling on iOS */
+  overscroll-behavior: none;
+  /* Optimize compositing for smooth drawing */
+  will-change: transform;
+  /* Contain layout shifts */
+  contain: layout style paint;
+}
+
+/* Tool indicators */
+.mobile-tool-active {
+  position: relative;
+}
+
+.mobile-tool-active::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.7;
+}
+
+/* Responsive text sizing for mobile */
+.mobile-text-xs { font-size: 10px; line-height: 14px; }
+.mobile-text-sm { font-size: 12px; line-height: 16px; }
+.mobile-text-base { font-size: 14px; line-height: 20px; }
+.mobile-text-lg { font-size: 16px; line-height: 24px; }
+
+/* Color palette optimizations */
+.mobile-color-grid {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.mobile-color-button {
+  aspect-ratio: 1;
+  border: 2px solid #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-color-button:active {
+  transform: scale(0.9);
+}
+
+.mobile-color-button.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  transform: scale(1.1);
+}
+
+/* Fullscreen mode styles */
+.mobile-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for better mobile support */
+  z-index: 9999;
+  background: #ffffff;
+}
+
+/* Landscape mode optimizations */
+@media (orientation: landscape) {
+  .mobile-landscape-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .mobile-landscape-sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mobile-toolbar-bg {
+    background: rgba(31, 41, 55, 0.95);
+    color: #f9fafb;
+  }
+  
+  .mobile-color-picker-bg {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-float-in,
+  .mobile-float-out,
+  .mobile-draggable,
+  .mobile-button,
+  .mobile-color-button {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-color-button {
+    border-width: 3px;
+    border-color: #000000;
+  }
+  
+  .mobile-color-button.selected {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px #0066cc;
+  }
+}

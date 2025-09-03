@@ -12,8 +12,10 @@ import { Droplets, Paintbrush, Download, Printer, Undo, RotateCcw, Palette, Pipe
 import { ColoringCanvas } from "@/components/coloring-canvas"
 import { ReferenceImagePanel } from "@/components/reference-image-panel"
 import { ColoringPageSEOLayout } from "@/components/coloring-page-seo-layout"
+import { MobileColoringPageClient } from "@/components/mobile-coloring-page-client"
 import { useSEOOptimization } from "@/hooks/use-seo-optimization"
 import { useViewTracking } from "@/hooks/use-view-tracking"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { ColoringPageData } from "@/lib/coloring-data"
 
@@ -42,6 +44,12 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
   const searchParams = useSearchParams()
   const { trackUserEngagement } = useSEOOptimization(coloringPage)
   const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
+  const isMobile = useIsMobile()
+
+  // Use mobile-optimized component on mobile devices
+  if (isMobile) {
+    return <MobileColoringPageClient coloringPage={coloringPage} />
+  }
   
   // 🎯 添加浏览量追踪 - 优先使用libraryImageId，其次使用id（如果不是slug）
   const imageIdForTracking = (coloringPage as any).libraryImageId || 
