@@ -23,6 +23,14 @@ interface MobileColorPickerProps {
   selectedColor: string
   onColorSelect: (color: string) => void
   quickColors: string[]
+  colorPalette?: {
+    primary: string[]
+    secondary: string[]
+    pastels: string[]
+    vibrant: string[]
+    earth: string[]
+    cool: string[]
+  }
 }
 
 export function MobileColorPicker({
@@ -30,32 +38,22 @@ export function MobileColorPicker({
   onClose,
   selectedColor,
   onColorSelect,
-  quickColors
+  quickColors,
+  colorPalette
 }: MobileColorPickerProps) {
   const [customColor, setCustomColor] = useState('#000000')
   const [recentColors, setRecentColors] = useState<string[]>([])
   const [favoriteColors, setFavoriteColors] = useState<string[]>([])
   const [supportsEyedropper, setSupportsEyedropper] = useState(false)
 
-  // Predefined color palettes
-  const colorPalettes = {
-    basic: [
-      '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00',
-      '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB', '#A52A2A',
-      '#808080', '#C0C0C0', '#800000', '#008000', '#000080', '#808000'
-    ],
-    warm: [
-      '#FF6B6B', '#FF8E53', '#FF6B35', '#F7931E', '#FFD23F', '#FF9FF3',
-      '#F368E0', '#BF95F9', '#9775FA', '#845EC2', '#B39BC8', '#FFB3BA'
-    ],
-    cool: [
-      '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8',
-      '#A8E6CF', '#C7CEEA', '#B4E7CE', '#AED6F1', '#A9CCE3', '#D5A6BD'
-    ],
-    pastels: [
-      '#FFE5E5', '#FFF0E5', '#FFFBE5', '#F0FFF0', '#E5F7FF', '#F0E5FF',
-      '#FFE5F0', '#E5FFE5', '#E5E5FF', '#FFF5E5', '#F5FFE5', '#E5FFF5'
-    ]
+  // Use provided color palette or default
+  const colorPalettes = colorPalette || {
+    primary: ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00'],
+    secondary: ['#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB', '#A52A2A'],
+    pastels: ['#FFB6C1', '#98FB98', '#87CEEB', '#DDA0DD', '#F0E68C', '#FFE4E1'],
+    vibrant: ['#FF1493', '#00CED1', '#FF4500', '#32CD32', '#8A2BE2', '#FF6347'],
+    earth: ['#8B4513', '#228B22', '#2F4F4F', '#B22222', '#DAA520', '#CD853F'],
+    cool: ['#4682B4', '#2E8B57', '#708090', '#483D8B', '#5F9EA0', '#6495ED']
   }
 
   // Check for EyeDropper API support
@@ -258,27 +256,33 @@ export function MobileColorPicker({
             </TabsList>
 
             {/* Palette Tab */}
-            <TabsContent value="palette" className="px-6 py-4 overflow-auto max-h-[50vh]">
-              <div className="space-y-6">
+            <TabsContent value="palette" className="px-4 py-4 overflow-auto max-h-[55vh]">
+              <div className="space-y-4">
                 {Object.entries(colorPalettes).map(([name, colors]) => (
-                  <div key={name}>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3 capitalize">
-                      {name} Colors
+                  <div key={name} className="bg-gray-50 rounded-xl p-3">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3 capitalize flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[0] }}></div>
+                      {name === 'primary' ? 'Essential' : 
+                       name === 'secondary' ? 'Popular' : 
+                       name === 'pastels' ? 'Pastels' : 
+                       name === 'vibrant' ? 'Vibrant' : 
+                       name === 'earth' ? 'Earth Tones' : 
+                       'Cool Tones'} Colors
                     </h3>
-                    <div className="grid grid-cols-6 gap-3">
+                    <div className="grid grid-cols-6 gap-2">
                       {colors.map((color) => (
                         <button
                           key={color}
                           onClick={() => handleColorSelect(color)}
                           className={cn(
-                            "w-12 h-12 rounded-xl border-2 shadow-sm transition-all",
-                            "touch-manipulation active:scale-95",
+                            "w-11 h-11 rounded-lg border-2 shadow-sm transition-all",
+                            "touch-manipulation active:scale-95 hover:scale-105",
                             selectedColor === color 
-                              ? "border-blue-500 ring-2 ring-blue-200" 
-                              : "border-gray-200 hover:border-gray-300"
+                              ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
+                              : "border-gray-300 hover:border-gray-400"
                           )}
                           style={{ backgroundColor: color }}
-                          title={color}
+                          title={`${color} - ${name} palette`}
                         />
                       ))}
                     </div>

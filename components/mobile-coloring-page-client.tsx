@@ -107,11 +107,20 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     print: () => void
   }>(null)
   
-  // Quick colors for easy access
+  // Expanded color palette for better selection
+  const colorPalette = {
+    primary: ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00'],
+    secondary: ['#FF00FF', '#00FFFF', '#FFA500', '#800080', '#FFC0CB', '#A52A2A'],
+    pastels: ['#FFB6C1', '#98FB98', '#87CEEB', '#DDA0DD', '#F0E68C', '#FFE4E1'],
+    vibrant: ['#FF1493', '#00CED1', '#FF4500', '#32CD32', '#8A2BE2', '#FF6347'],
+    earth: ['#8B4513', '#228B22', '#2F4F4F', '#B22222', '#DAA520', '#CD853F'],
+    cool: ['#4682B4', '#2E8B57', '#708090', '#483D8B', '#5F9EA0', '#6495ED']
+  }
+  
+  // Quick access colors for right panel
   const quickColors = [
-    '#000000', '#FF0000', '#00FF00', '#0000FF',
-    '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500',
-    '#800080', '#FFC0CB', '#A52A2A', '#808080'
+    ...colorPalette.primary.slice(0, 4),
+    ...colorPalette.secondary.slice(0, 2)
   ]
 
   // Handle drawing state changes
@@ -307,7 +316,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             onClear={handleClear}
             canUndo={canUndo}
             canRedo={canRedo}
-            className="absolute left-4 top-1/2 -translate-y-1/2"
+            className="absolute left-4 top-20 safe-area-aware"
           />
         )}
 
@@ -357,6 +366,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         selectedColor={selectedColor}
         onColorSelect={setSelectedColor}
         quickColors={quickColors}
+        colorPalette={colorPalette}
       />
     </div>
   )
