@@ -45,11 +45,6 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
   const { trackUserEngagement } = useSEOOptimization(coloringPage)
   const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
   const isMobile = useIsMobile()
-
-  // Use mobile-optimized component on mobile devices
-  if (isMobile) {
-    return <MobileColoringPageClient coloringPage={coloringPage} />
-  }
   
   // 🎯 添加浏览量追踪 - 优先使用libraryImageId，其次使用id（如果不是slug）
   const imageIdForTracking = (coloringPage as any).libraryImageId || 
@@ -203,6 +198,11 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
     if (!userColors.includes(color) && userColors.length < 12) {
       setUserColors(prev => [...prev, color])
     }
+  }
+
+  // Use mobile-optimized component on mobile devices (after all hooks)
+  if (isMobile) {
+    return <MobileColoringPageClient coloringPage={coloringPage} />
   }
 
   return (
