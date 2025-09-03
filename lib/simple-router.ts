@@ -122,3 +122,4 @@ function selectImageForKeywords(keywords: string[]): string {
   // 默认图片
   return '/hello-kitty-coloring-page.png'
 }
+

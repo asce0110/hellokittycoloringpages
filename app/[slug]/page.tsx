@@ -7,6 +7,7 @@ import {
   mapLegacySlugToNew,
   ColoringPageData 
 } from "@/lib/coloring-data"
+import { getSeoUrlData, getLibraryImages } from "@/lib/api-utils"
 import { ColoringPageClient } from "./coloring-page-client"
 import routeMonitor from "@/lib/route-monitoring"
 
@@ -115,21 +116,9 @@ export async function generateMetadata({ params, searchParams }: SlugPageProps):
   if (!coloringPage) {
     try {
       console.log('🔍 generateMetadata: 尝试SEO API查找:', resolvedParams.slug)
-      const seoResponse = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''}/api/seo-url?slug=${encodeURIComponent(resolvedParams.slug)}`, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      })
+      const seoData = await getSeoUrlData(resolvedParams.slug)
       
-      console.log('🔍 generateMetadata: SEO API响应状态:', seoResponse.status)
-      
-      if (seoResponse.ok) {
-        const seoResult = await seoResponse.json()
-        console.log('🔍 generateMetadata: SEO API响应数据:', seoResult)
-        const seoData = seoResult.data
-        
-        if (seoData) {
+      if (seoData) {
           coloringPage = {
             id: seoData.libraryImageId || resolvedParams.slug, // 🎯 优先使用真实图片ID
             slug: resolvedParams.slug,
@@ -148,12 +137,11 @@ export async function generateMetadata({ params, searchParams }: SlugPageProps):
             libraryImageId: seoData.libraryImageId // 🎯 保存真实图片ID用于浏览量追踪
           }
           
-          console.log('✅ generateMetadata: 从SEO存储API中找到页面数据:', {
-            slug: resolvedParams.slug,
-            title: seoData.title,
-            imageUrl: seoData.imageUrl
-          })
-        }
+        console.log('✅ generateMetadata: 从SEO存储API中找到页面数据:', {
+          slug: resolvedParams.slug,
+          title: seoData.title,
+          imageUrl: seoData.imageUrl
+        })
       } else {
         console.log('⚠️ generateMetadata: SEO URL存储中未找到数据:', resolvedParams.slug)
       }
@@ -166,17 +154,9 @@ export async function generateMetadata({ params, searchParams }: SlugPageProps):
   if (!coloringPage) {
     try {
       // 尝试通过API获取库数据并匹配slug
-      const libraryResponse = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''}/api/library-images?limit=100`, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      })
+      const libraryImages = await getLibraryImages(100)
       
-      if (libraryResponse.ok) {
-        const libraryResult = await libraryResponse.json()
-        const libraryImages = libraryResult.data || []
-        
+      if (libraryImages && libraryImages.length > 0) {
         // 尝试找到匹配的图片
         const matchingImage = libraryImages.find((img: any) => {
           const imageSlug = img.title.toLowerCase()
@@ -321,17 +301,9 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
   // 🎯 首先尝试从SEO URL存储中查找（通过API调用）
   if (!coloringPage) {
     try {
-      const seoResponse = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''}/api/seo-url?slug=${encodeURIComponent(actualSlug)}`, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      })
+      const seoData = await getSeoUrlData(actualSlug)
       
-      if (seoResponse.ok) {
-        const seoResult = await seoResponse.json()
-        const seoData = seoResult.data
-        
+      if (seoData) {
         // 记录SEO缓存命中
         routeMonitor.logSeoCacheHit(actualSlug, seoData.title)
         
@@ -373,17 +345,9 @@ export default async function SlugPage({ params, searchParams }: SlugPageProps) 
   if (!coloringPage) {
     try {
       // 尝试通过API获取库数据并匹配slug
-      const libraryResponse = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : ''}/api/library-images?limit=100`, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      })
+      const libraryImages = await getLibraryImages(100)
       
-      if (libraryResponse.ok) {
-        const libraryResult = await libraryResponse.json()
-        const libraryImages = libraryResult.data || []
-        
+      if (libraryImages && libraryImages.length > 0) {
         // 尝试找到匹配的图片
         const matchingImage = libraryImages.find((img: any) => {
           const imageSlug = img.title.toLowerCase()

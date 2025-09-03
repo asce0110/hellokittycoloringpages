@@ -47,3 +47,4 @@ export async function simplePreload(): Promise<void> {
     console.error('❌ 简化预加载失败:', error)
   }
 }
+

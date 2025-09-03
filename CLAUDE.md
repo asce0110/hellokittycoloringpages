@@ -1,3 +1,114 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is a Next.js 15 full-stack application for AI-powered printable coloring pages, targeting the domain `coloringpagesprintable.net`. The platform combines AI image generation, user management, and SEO optimization for the "coloring pages printable" market.
+
+## Tech Stack
+
+- **Framework**: Next.js 15.1.7 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: Supabase (PostgreSQL) 
+- **AI Services**: OpenAI DALL-E + Stability AI
+- **Storage**: AWS S3
+- **Deployment**: Cloudflare Pages
+
+## Development Commands
+
+```bash
+# Development
+npm run dev              # Start development server
+
+# Build & Deploy
+npm run build           # Production build
+npm run pages:build     # Build for Cloudflare Pages
+npm run deploy          # Deploy to Cloudflare Pages
+
+# Database & Content
+npm run seed:prompts    # Seed AI prompt templates
+npm run db:migrate      # Run database migrations
+
+# Code Quality
+npm run lint            # ESLint (configured to ignore build errors)
+```
+
+## Architecture Overview
+
+### App Router Structure
+- `app/[slug]/` - Dynamic SEO-friendly routes
+- `app/admin/` - Admin dashboard with analytics
+- `app/api/` - Backend API endpoints
+- `app/library/` - Main coloring pages gallery
+- `app/create/` - AI generation interface
+
+### Key Systems
+
+#### AI Content Generation
+- Dual AI provider support (OpenAI DALL-E + Stability AI)
+- Template-based prompt system with variable substitution
+- User limit management (5 free, 50 pro daily)
+- Generated content stored in Supabase with S3 file storage
+
+#### SEO Architecture  
+- SEO URL generation and reconstruction system
+- Structured JSON-LD schema markup
+- Mobile-first responsive design with dedicated mobile components
+- Content targeting "coloring pages printable" and related keywords
+
+#### User Management
+- Supabase Auth integration
+- Role-based permissions (user/pro/admin)
+- Usage tracking and subscription management
+- Favorites and generation history
+
+### Database Schema (Supabase)
+- `users` - User accounts and subscription status
+- `library_images` - Curated coloring page collection
+- `generation_history` - AI-generated user content
+- `user_favorites` - User bookmarking system
+- `analytics_stats` - Usage analytics
+- `prompt_templates` - AI generation templates
+
+## Component Organization
+
+- `components/ui/` - shadcn/ui components
+- `components/mobile-*` - Mobile-specific layouts
+- `components/blog/` - Blog/MDX components
+- `hooks/` - Custom React hooks
+- `lib/` - Utility functions and configurations
+
+## Special Considerations
+
+### SEO Focus
+- All content should target "coloring pages printable" keywords
+- URLs should be SEO-friendly with proper slug generation
+- Meta descriptions should emphasize "free", "printable", "AI-generated"
+- Keyword density: "coloring pages printable" (1.0-1.5%)
+
+### Image Processing
+- High-resolution print-ready formats required
+- Browser-based image compression with fallbacks
+- S3 integration for file storage and CDN delivery
+
+### Mobile Optimization
+- Dedicated mobile components and layouts
+- Touch-friendly interfaces for generation and browsing
+- Responsive image handling
+
+### Performance
+- Startup preloading system implemented
+- Image optimization and compression
+- CDN integration for static assets
+
+## Business Logic
+
+- Freemium model with daily generation limits
+- User analytics and admin dashboard
+- Multi-difficulty content organization (easy/medium/complex)
+- Print optimization for physical coloring pages
 
 ## SEO关键词策略 (基于真实Google Ads数据)
 
