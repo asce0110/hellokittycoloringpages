@@ -20,7 +20,7 @@ export async function GET() {
           .limit(500) // Reasonable limit for image sitemap
 
         if (!error && libraryImages) {
-          libraryImages.forEach(image => {
+          libraryImages.forEach((image: any) => {
             const slug = generateSEOSlug(image.title, image.id)
             const pageUrl = `${baseUrl}/${slug}`
             
