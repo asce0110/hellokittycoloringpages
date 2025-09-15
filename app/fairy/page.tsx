@@ -203,79 +203,79 @@ export default function FairyColoringPagesPage() {
       return acc
     }, {} as Record<string, number>)
     
-    // 为每个类型定义显示信息
+    // 为每个类型定义显示信息 - 添加暗黑模式支持
     const typeConfig: Record<string, { name: string; description: string; emoji: string; color: string }> = {
       'castle': {
         name: 'Castle Fairies',
         description: 'Enchanting fairy princesses in magical castle settings',
         emoji: '🏰',
-        color: 'bg-indigo-100 text-indigo-800'
+        color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700/50'
       },
       'royal': {
         name: 'Royal Fairies',
         description: 'Majestic fairies with crowns and royal elements',
         emoji: '👑',
-        color: 'bg-yellow-100 text-yellow-800'
+        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700/50'
       },
       'butterfly': {
         name: 'Butterfly Fairies',
         description: 'Graceful fairies with delicate butterfly wings',
         emoji: '🦋',
-        color: 'bg-purple-100 text-purple-800'
+        color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700/50'
       },
       'garden': {
         name: 'Garden Fairies',
         description: 'Magical fairies tending to beautiful gardens',
         emoji: '🌺',
-        color: 'bg-yellow-100 text-yellow-800'
+        color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700/50'
       },
       'woodland': {
         name: 'Woodland Fairies',
         description: 'Enchanting forest sprites and woodland fairy adventures',
         emoji: '🧚‍♀️',
-        color: 'bg-green-100 text-green-800'
+        color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700/50'
       },
       'dancing': {
         name: 'Dancing Fairies',
         description: 'Graceful fairies in elegant dance poses',
         emoji: '💃',
-        color: 'bg-pink-100 text-pink-800'
+        color: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-700/50'
       },
       'sea': {
         name: 'Sea Fairies',
         description: 'Mystical water fairies and mermaids',
         emoji: '🧜‍♀️',
-        color: 'bg-cyan-100 text-cyan-800'
+        color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700/50'
       },
       'ice': {
         name: 'Ice Fairies',
         description: 'Beautiful winter and snow fairies',
         emoji: '❄️',
-        color: 'bg-blue-100 text-blue-800'
+        color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700/50'
       },
       'fire': {
         name: 'Fire Fairies',
         description: 'Powerful flame and phoenix fairies',
         emoji: '🔥',
-        color: 'bg-red-100 text-red-800'
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700/50'
       },
       'moon': {
         name: 'Moon Fairies',
         description: 'Mystical night and star fairies',
         emoji: '🌙',
-        color: 'bg-slate-100 text-slate-800'
+        color: 'bg-slate-100 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-600/50'
       },
       'sun': {
         name: 'Sun Fairies',
         description: 'Radiant golden and light fairies',
         emoji: '☀️',
-        color: 'bg-orange-100 text-orange-800'
+        color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700/50'
       },
       'fairy': {
         name: 'General Fairies',
         description: 'Beautiful general fairy designs',
         emoji: '✨',
-        color: 'bg-violet-100 text-violet-800'
+        color: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700/50'
       }
     }
     
@@ -394,16 +394,16 @@ export default function FairyColoringPagesPage() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {fairyCategories.map((category, index) => {
-              // Create unique gradient combinations for each category
+              // Create unique gradient combinations for each category - 暗黑模式适配
               const gradients = [
-                'from-purple-100 via-pink-50 to-purple-100',
-                'from-blue-100 via-purple-50 to-blue-100', 
-                'from-pink-100 via-rose-50 to-pink-100',
-                'from-indigo-100 via-blue-50 to-indigo-100',
-                'from-emerald-100 via-green-50 to-emerald-100',
-                'from-yellow-100 via-amber-50 to-yellow-100',
-                'from-rose-100 via-pink-50 to-rose-100',
-                'from-cyan-100 via-blue-50 to-cyan-100',
+                'from-purple-100 via-pink-50 to-purple-100 dark:from-purple-900/20 dark:via-pink-900/10 dark:to-purple-900/20',
+                'from-blue-100 via-purple-50 to-blue-100 dark:from-blue-900/20 dark:via-purple-900/10 dark:to-blue-900/20', 
+                'from-pink-100 via-rose-50 to-pink-100 dark:from-pink-900/20 dark:via-rose-900/10 dark:to-pink-900/20',
+                'from-indigo-100 via-blue-50 to-indigo-100 dark:from-indigo-900/20 dark:via-blue-900/10 dark:to-indigo-900/20',
+                'from-emerald-100 via-green-50 to-emerald-100 dark:from-emerald-900/20 dark:via-green-900/10 dark:to-emerald-900/20',
+                'from-yellow-100 via-amber-50 to-yellow-100 dark:from-yellow-900/20 dark:via-amber-900/10 dark:to-yellow-900/20',
+                'from-rose-100 via-pink-50 to-rose-100 dark:from-rose-900/20 dark:via-pink-900/10 dark:to-rose-900/20',
+                'from-cyan-100 via-blue-50 to-cyan-100 dark:from-cyan-900/20 dark:via-blue-900/10 dark:to-cyan-900/20',
               ]
               
               const shadowColors = [
@@ -418,20 +418,20 @@ export default function FairyColoringPagesPage() {
               ]
               
               const hoverGradients = [
-                'group-hover:from-purple-200 group-hover:via-pink-100 group-hover:to-purple-200',
-                'group-hover:from-blue-200 group-hover:via-purple-100 group-hover:to-blue-200',
-                'group-hover:from-pink-200 group-hover:via-rose-100 group-hover:to-pink-200',
-                'group-hover:from-indigo-200 group-hover:via-blue-100 group-hover:to-indigo-200',
-                'group-hover:from-emerald-200 group-hover:via-green-100 group-hover:to-emerald-200',
-                'group-hover:from-yellow-200 group-hover:via-amber-100 group-hover:to-yellow-200',
-                'group-hover:from-rose-200 group-hover:via-pink-100 group-hover:to-rose-200',
-                'group-hover:from-cyan-200 group-hover:via-blue-100 group-hover:to-cyan-200',
+                'group-hover:from-purple-200 group-hover:via-pink-100 group-hover:to-purple-200 dark:group-hover:from-purple-800/30 dark:group-hover:via-pink-800/20 dark:group-hover:to-purple-800/30',
+                'group-hover:from-blue-200 group-hover:via-purple-100 group-hover:to-blue-200 dark:group-hover:from-blue-800/30 dark:group-hover:via-purple-800/20 dark:group-hover:to-blue-800/30',
+                'group-hover:from-pink-200 group-hover:via-rose-100 group-hover:to-pink-200 dark:group-hover:from-pink-800/30 dark:group-hover:via-rose-800/20 dark:group-hover:to-pink-800/30',
+                'group-hover:from-indigo-200 group-hover:via-blue-100 group-hover:to-indigo-200 dark:group-hover:from-indigo-800/30 dark:group-hover:via-blue-800/20 dark:group-hover:to-indigo-800/30',
+                'group-hover:from-emerald-200 group-hover:via-green-100 group-hover:to-emerald-200 dark:group-hover:from-emerald-800/30 dark:group-hover:via-green-800/20 dark:group-hover:to-emerald-800/30',
+                'group-hover:from-yellow-200 group-hover:via-amber-100 group-hover:to-yellow-200 dark:group-hover:from-yellow-800/30 dark:group-hover:via-amber-800/20 dark:group-hover:to-yellow-800/30',
+                'group-hover:from-rose-200 group-hover:via-pink-100 group-hover:to-rose-200 dark:group-hover:from-rose-800/30 dark:group-hover:via-pink-800/20 dark:group-hover:to-rose-800/30',
+                'group-hover:from-cyan-200 group-hover:via-blue-100 group-hover:to-cyan-200 dark:group-hover:from-cyan-800/30 dark:group-hover:via-blue-800/20 dark:group-hover:to-cyan-800/30',
               ]
               
               return (
                 <Card 
                   key={category.id} 
-                  className={`group cursor-pointer transition-all duration-500 hover:-translate-y-3 hover:rotate-1 border-2 border-white/80 backdrop-blur-sm ${shadowColors[index % shadowColors.length]} hover:shadow-2xl overflow-hidden relative`}
+                  className={`group cursor-pointer transition-all duration-500 hover:-translate-y-3 hover:rotate-1 border-2 border-white/80 dark:border-gray-700/50 backdrop-blur-sm ${shadowColors[index % shadowColors.length]} hover:shadow-2xl overflow-hidden relative`}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   {/* Animated background gradient */}
@@ -458,7 +458,7 @@ export default function FairyColoringPagesPage() {
                       </Badge>
                     </div>
                     
-                    <h3 className="text-xl font-bold mb-3 group-hover:text-purple-700 transition-colors duration-300 drop-shadow-sm">
+                    <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300 drop-shadow-sm">
                       {category.name}
                     </h3>
                     
@@ -470,7 +470,7 @@ export default function FairyColoringPagesPage() {
                       asChild 
                       variant="outline" 
                       size="sm" 
-                      className="w-full bg-white/80 backdrop-blur-sm border-white/60 hover:bg-white hover:shadow-lg transition-all duration-300 group-hover:border-purple-300 group-hover:text-purple-700 font-medium"
+                      className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-white/60 dark:border-gray-600/60 hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg transition-all duration-300 group-hover:border-purple-300 dark:group-hover:border-purple-600 group-hover:text-purple-700 dark:group-hover:text-purple-300 font-medium text-gray-900 dark:text-gray-100"
                     >
                       <Link href={`/library?category=fairy&type=${category.id}`}>
                         <Wand2 className="w-4 h-4 mr-2" />
