@@ -187,40 +187,6 @@ export default function FairyPrincessColoringPagesPage() {
     return emojis[category as keyof typeof emojis] || '🧚‍♀️'
   }
   
-  const princessCategories = [
-    {
-      id: 'castle',
-      name: 'Castle Fairy Princesses',
-      description: 'Majestic fairy princesses in enchanted castle settings',
-      emoji: '🏰',
-      color: 'bg-purple-100 text-purple-800',
-      longTail: 'fairy princess castle coloring pages'
-    },
-    {
-      id: 'garden',
-      name: 'Garden Fairy Princesses', 
-      description: 'Beautiful princesses with fairy wings in magical gardens',
-      emoji: '🌸',
-      color: 'bg-pink-100 text-pink-800',
-      longTail: 'fairy princess garden coloring pages'
-    },
-    {
-      id: 'butterfly',
-      name: 'Butterfly Fairy Princesses',
-      description: 'Graceful princesses with delicate butterfly fairy wings',
-      emoji: '🦋',
-      color: 'bg-blue-100 text-blue-800',
-      longTail: 'butterfly fairy princess coloring pages'
-    },
-    {
-      id: 'crown',
-      name: 'Crown Fairy Princesses',
-      description: 'Royal fairy princesses with magical crowns and tiaras',
-      emoji: '👑',
-      color: 'bg-yellow-100 text-yellow-800',
-      longTail: 'fairy princess crown coloring pages'
-    }
-  ]
   
   return (
     <div className="flex flex-col">
@@ -292,52 +258,6 @@ export default function FairyPrincessColoringPagesPage() {
         </div>
       </section>
 
-      {/* Long-tail Keyword Categories */}
-      <section className="w-full py-16 bg-white dark:bg-gray-950">
-        <div className="container px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Explore Fairy Princess Coloring Themes
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-              Each category targets specific <strong>fairy princess coloring pages</strong> themes with unique magical adventures. 
-              Find the perfect <em>printable fairy princess designs</em> for every creative mood.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {princessCategories.map((category) => (
-              <Card key={category.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <CardContent className="p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-4xl">{category.emoji}</span>
-                    <Badge className={category.color}>
-                      Premium Collection
-                    </Badge>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-3 group-hover:text-purple-600 transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                    {category.description}
-                  </p>
-                  <div className="mb-6">
-                    <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
-                      Long-tail: "{category.longTail}"
-                    </Badge>
-                  </div>
-                  <Button asChild className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
-                    <Link href={`/library?category=fairy&theme=${category.id}`}>
-                      <Crown className="mr-2 h-4 w-4" />
-                      View {category.name} →
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Featured Fairy Princess Coloring Pages Grid */}
       <section className="w-full py-16 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-purple-900/10 dark:via-pink-900/10 dark:to-blue-900/10">
