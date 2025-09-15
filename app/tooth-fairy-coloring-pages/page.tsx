@@ -275,9 +275,11 @@ export default function ToothFairyColoringPagesPage() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8">
-                <Download className="mr-2 h-5 w-5" />
-                Download Free Tooth Fairy Pages
+              <Button asChild size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8">
+                <Link href="/library?category=fairy">
+                  <Star className="mr-2 h-5 w-5" />
+                  Browse Available Fairy Pages
+                </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-purple-200 text-purple-700 hover:bg-purple-50 px-8">
                 <Link href="/fairy">

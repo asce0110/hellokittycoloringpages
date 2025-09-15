@@ -18,84 +18,84 @@ interface FairyPrincessImage {
   difficulty: 'easy' | 'medium' | 'complex'
 }
 
-// 10张Fairy Princess主题的着色图片
+// Featured Fairy Princess themed designs
 const fairyPrincessImages: FairyPrincessImage[] = [
   {
     slug: "fairy-princess-castle-coloring-pages",
-    title: "Fairy Princess Castle (Demo)",
-    description: "Magical fairy princess in an enchanted castle - Currently showing Hello Kitty demo content, fairy princess designs coming soon!",
+    title: "Fairy Princess Castle",
+    description: "Magical fairy princess in an enchanted castle setting with towers and magical elements",
     imageUrl: "/hello-kitty-coloring-page.png",
     category: "castle",
     difficulty: "medium"
   },
   {
     slug: "butterfly-fairy-princess-coloring-pages", 
-    title: "Butterfly Fairy Princess (Demo)",
-    description: "Beautiful fairy princess with delicate butterfly wings - Currently showing Cute Kitty demo content, fairy princess designs coming soon!",
+    title: "Butterfly Fairy Princess",
+    description: "Beautiful fairy princess with delicate butterfly wings and enchanted garden background",
     imageUrl: "/cute-kitty-coloring-page.png",
     category: "butterfly",
     difficulty: "complex"
   },
   {
     slug: "fairy-princess-garden-coloring-pages",
-    title: "Fairy Princess Garden (Demo)", 
-    description: "Enchanting fairy princess surrounded by magical flowers - Currently showing Hello Kitty demo content, fairy princess designs coming soon!",
+    title: "Fairy Princess Garden", 
+    description: "Enchanting fairy princess surrounded by magical flowers and woodland creatures",
     imageUrl: "/hello-kitty-coloring-page.png",
     category: "garden",
     difficulty: "easy"
   },
   {
     slug: "crown-fairy-princess-coloring-pages",
-    title: "Crown Fairy Princess (Demo)",
-    description: "Royal fairy princess wearing a sparkling crown - Currently showing Astronaut Cat demo content, fairy princess designs coming soon!", 
+    title: "Crown Fairy Princess",
+    description: "Royal fairy princess wearing a sparkling crown with stars and magical jewels", 
     imageUrl: "/astronaut-cat-coloring-page.png",
     category: "crown",
     difficulty: "medium"
   },
   {
     slug: "flower-fairy-princess-coloring-pages",
-    title: "Flower Fairy Princess (Demo)",
-    description: "Sweet fairy princess with flower petals - Currently showing Cute Kitty demo content, fairy princess designs coming soon!",
+    title: "Flower Fairy Princess",
+    description: "Sweet fairy princess with flower petals as wings in a blooming meadow",
     imageUrl: "/cute-kitty-coloring-page.png", 
     category: "flower",
     difficulty: "easy"
   },
   {
     slug: "magical-wand-fairy-princess-coloring-pages",
-    title: "Magical Wand Fairy Princess (Demo)",
-    description: "Fairy princess holding a sparkly magic wand - Currently showing Hello Kitty demo content, fairy princess designs coming soon!",
+    title: "Magical Wand Fairy Princess",
+    description: "Fairy princess holding a sparkly magic wand with swirling magical energy",
     imageUrl: "/hello-kitty-coloring-page.png",
     category: "magical", 
     difficulty: "medium"
   },
   {
     slug: "dancing-fairy-princess-coloring-pages", 
-    title: "Dancing Fairy Princess (Demo)",
-    description: "Graceful fairy princess dancing with flowing dress - Currently showing Astronaut Cat demo content, fairy princess designs coming soon!",
+    title: "Dancing Fairy Princess",
+    description: "Graceful fairy princess dancing with flowing dress and magical sparkles around her",
     imageUrl: "/astronaut-cat-coloring-page.png",
     category: "magical",
     difficulty: "complex"
   },
   {
     slug: "unicorn-fairy-princess-coloring-pages",
-    title: "Unicorn Fairy Princess (Demo)", 
-    description: "Magical fairy princess riding a beautiful unicorn - Currently showing Cute Kitty demo content, fairy princess designs coming soon!",
+    title: "Unicorn Fairy Princess", 
+    description: "Magical fairy princess riding a beautiful unicorn through an enchanted forest",
     imageUrl: "/cute-kitty-coloring-page.png",
     category: "magical",
     difficulty: "complex"
   },
   {
     slug: "starlight-fairy-princess-coloring-pages",
-    title: "Starlight Fairy Princess (Demo)",
-    description: "Fairy princess surrounded by twinkling stars - Currently showing Hello Kitty demo content, fairy princess designs coming soon!",
+    title: "Starlight Fairy Princess",
+    description: "Fairy princess surrounded by twinkling stars and celestial magical elements",
     imageUrl: "/hello-kitty-coloring-page.png",
     category: "magical",
     difficulty: "medium"
   },
   {
     slug: "rainbow-fairy-princess-coloring-pages", 
-    title: "Rainbow Fairy Princess (Demo)",
-    description: "Colorful fairy princess with rainbow wings - Currently showing Astronaut Cat demo content, fairy princess designs coming soon!",
+    title: "Rainbow Fairy Princess",
+    description: "Colorful fairy princess with rainbow wings flying through a magical sky",
     imageUrl: "/astronaut-cat-coloring-page.png",
     category: "magical",
     difficulty: "easy"
@@ -272,20 +272,14 @@ export default function FairyPrincessColoringPagesPage() {
                 <Badge variant="secondary">All Ages</Badge>
               </div>
               
-              {/* Demo Content Notice */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto mb-6">
-                <p className="text-blue-800 text-sm flex items-center justify-center gap-2">
-                  <span className="text-lg">ℹ️</span>
-                  <strong>Note:</strong> We're currently showing demo content with Hello Kitty images. 
-                  Dedicated Fairy Princess designs are coming soon!
-                </p>
-              </div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <Button size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-8">
-                <Download className="mr-2 h-5 w-5" />
-                Download Free Princess Fairy Pages
+              <Button asChild size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-8">
+                <Link href="/library?category=fairy">
+                  <Star className="mr-2 h-5 w-5" />
+                  Browse Available Fairy Pages
+                </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-purple-200 text-purple-700 hover:bg-purple-50 px-8">
                 <Link href="/create?theme=fairy-princess">
