@@ -110,7 +110,7 @@ export async function GET() {
 
         if (!error && libraryImages) {
           // Generate SEO-friendly URLs for each coloring page
-          libraryImages.forEach(image => {
+          libraryImages.forEach((image: any) => {
             const slug = generateSEOSlug(image.title, image.id)
             dynamicPages.push({
               url: `${baseUrl}/${slug}`,
