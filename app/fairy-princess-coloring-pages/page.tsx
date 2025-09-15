@@ -327,7 +327,7 @@ export default function FairyPrincessColoringPagesPage() {
                     </Badge>
                   </div>
                   <Button asChild className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
-                    <Link href={`/fairy-princess-coloring-pages/${category.id}`}>
+                    <Link href={`/library?category=fairy&theme=${category.id}`}>
                       <Crown className="mr-2 h-4 w-4" />
                       View {category.name} →
                     </Link>
