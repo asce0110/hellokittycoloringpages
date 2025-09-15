@@ -92,8 +92,11 @@ ${blogPosts.map(post => `  <!-- Blog post: ${post.title || 'Blog post'} -->
       status: 200,
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, max-age=7200, s-maxage=7200', // Cache for 2 hours
+        'Cache-Control': 'no-cache, no-store, must-revalidate', // Force cache refresh
+        'Pragma': 'no-cache', 
+        'Expires': '0',
         'X-Robots-Tag': 'noindex',
+        'Last-Modified': new Date().toISOString(),
       },
     })
 

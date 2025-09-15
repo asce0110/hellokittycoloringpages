@@ -99,8 +99,11 @@ ${imagePages.map(page => `  <url>
       status: 200,
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Cache for 1 hour
+        'Cache-Control': 'no-cache, no-store, must-revalidate', // Force cache refresh
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'X-Robots-Tag': 'noindex',
+        'Last-Modified': currentDate,
       },
     })
 
