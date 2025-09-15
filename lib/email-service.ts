@@ -73,7 +73,7 @@ export class EmailService {
         subject: newsletter.subject,
         html: newsletter.htmlContent,
         text: newsletter.textContent,
-        reply_to: this.config.replyTo,
+        replyTo: this.config.replyTo,
       })
 
       return {
@@ -178,7 +178,7 @@ export class EmailService {
   private async sendWithNodemailer(newsletter: NewsletterEmail) {
     const nodemailer = await import('nodemailer')
     
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_SECURE === 'true',

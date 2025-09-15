@@ -13,6 +13,11 @@ interface NewsletterSendRequest {
   testEmail?: string // For testing, send only to this email
 }
 
+interface NewsletterSubscriber {
+  email: string
+  is_active: boolean
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: NewsletterSendRequest = await request.json()
@@ -58,10 +63,10 @@ export async function POST(request: NextRequest) {
             // Fallback to file storage
             const fallbackPath = join(process.cwd(), 'data', 'newsletter-subscribers.json')
             try {
-              const fallbackData = JSON.parse(readFileSync(fallbackPath, 'utf-8'))
+              const fallbackData: NewsletterSubscriber[] = JSON.parse(readFileSync(fallbackPath, 'utf-8'))
               recipients = fallbackData
-                .filter((sub: any) => sub.is_active)
-                .map((sub: any) => sub.email)
+                .filter((sub: NewsletterSubscriber) => sub.is_active)
+                .map((sub: NewsletterSubscriber) => sub.email)
             } catch (fileError) {
               console.error('File fallback also failed:', fileError)
               return NextResponse.json(
@@ -70,7 +75,7 @@ export async function POST(request: NextRequest) {
               )
             }
           } else {
-            recipients = data.map(sub => sub.email)
+            recipients = data.map((sub: { email: string }) => sub.email)
           }
         } else {
           throw new Error('Supabase not configured')
@@ -80,10 +85,10 @@ export async function POST(request: NextRequest) {
         // Fallback to file storage
         const fallbackPath = join(process.cwd(), 'data', 'newsletter-subscribers.json')
         try {
-          const fallbackData = JSON.parse(readFileSync(fallbackPath, 'utf-8'))
+          const fallbackData: NewsletterSubscriber[] = JSON.parse(readFileSync(fallbackPath, 'utf-8'))
           recipients = fallbackData
-            .filter((sub: any) => sub.is_active)
-            .map((sub: any) => sub.email)
+            .filter((sub: NewsletterSubscriber) => sub.is_active)
+            .map((sub: NewsletterSubscriber) => sub.email)
         } catch (fileError) {
           console.error('File fallback also failed:', fileError)
           return NextResponse.json(
