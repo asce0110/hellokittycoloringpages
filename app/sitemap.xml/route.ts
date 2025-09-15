@@ -223,7 +223,7 @@ async function generateHelloKittyUrls(baseUrl: string): Promise<any[]> {
         .limit(50)
 
       if (!error && drawings) {
-        drawings.forEach(drawing => {
+        drawings.forEach((drawing: any) => {
           urls.push({
             url: `${baseUrl}/hello-kitty-drawings/${drawing.id}`,
             lastModified: drawing.updated_at || drawing.created_at,
