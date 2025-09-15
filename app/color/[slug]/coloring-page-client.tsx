@@ -63,10 +63,14 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
   })
   
   const canvasRef = React.useRef<{
-    undo: () => void
-    reset: () => void
-    download: (filename: string) => void
-    print: () => void
+    undo: () => void; 
+    reset: () => void; 
+    download: (filename: string) => void; 
+    print: () => void;
+    saveProgress: (key?: string) => boolean;
+    loadProgress: (key?: string) => boolean;
+    hasProgress: (key?: string) => boolean;
+    clearProgress: (key?: string) => void;
   }>(null)
 
   const [activeColor, setActiveColor] = React.useState(colorPalette[0])

@@ -12,17 +12,17 @@ import "./globals.css"
 const nunito = Nunito({ subsets: ["latin"], weight: ["400", "700", "800"] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://coloringpagesprintable.net'),
-  title: "Coloring Pages Printable | Free Download & Print Instantly",
+  metadataBase: new URL('https://coloringpagesprintable.net'),
+  title: "Coloreveal - Free Printable Coloring Pages for Adults & Kids",
   description:
-    "Download free printable coloring pages instantly! 500+ original designs ready to print. Perfect for kids, adults, teachers & parents. Your ultimate source for high-quality coloring sheets.",
+    "Welcome to Coloreveal! Discover 1000s of free printable coloring pages & experience our interactive online coloring tool. New designs added weekly for all ages!",
   keywords:
-    "coloring pages printable, printable coloring pages, free coloring pages, coloring sheets, free printable coloring sheets, coloring pages for kids, coloring pages for adults, educational coloring pages, original coloring designs",
-  generator: 'coloringpagesprintable.net',
-  applicationName: 'Coloring Pages Printable',
+    "Coloreveal, free coloring pages, printable coloring pages, online coloring tool, coloring sheets, fairy coloring pages, adults coloring, kids coloring, interactive coloring",
+  generator: 'Coloreveal',
+  applicationName: 'Coloreveal',
   appleWebApp: {
     capable: true,
-    title: 'Coloring Pages Printable',
+    title: 'Coloreveal',
     statusBarStyle: 'default'
   },
   manifest: '/manifest.json',
@@ -55,11 +55,11 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "Coloring Pages Printable",
-  alternateName: "Free AI Generated Coloring Sheets",
+  name: "Coloreveal",
+  alternateName: "Free Printable Coloring Pages & Interactive Online Coloring Tool",
   url: "https://coloringpagesprintable.net",
-  description: "Free printable coloring pages for kids and adults. AI-generated unique designs for instant download and creative fun",
-  keywords: "coloring pages printable, printable coloring pages, ai coloring pages, free coloring sheets",
+  description: "Coloreveal - Discover 1000s of free printable coloring pages & experience our interactive online coloring tool. New designs added weekly for all ages!",
+  keywords: "Coloreveal, free coloring pages, printable coloring pages, online coloring tool, interactive coloring, adults, kids",
   potentialAction: {
     "@type": "SearchAction",
     target: "https://coloringpagesprintable.net/library?q={search_term_string}",
@@ -67,8 +67,8 @@ const jsonLd = {
   },
   mainEntity: {
     "@type": "CreativeWork",
-    name: "AI Coloring Pages Printable Collection",
-    description: "Comprehensive collection of AI-generated original printable coloring sheets"
+    name: "Color Spark Creative Collection",
+    description: "Curated themes and AI-generated printable coloring pages designed to spark creativity"
   }
 }
 
@@ -97,8 +97,11 @@ export default function RootLayout({
                 <Navigation />
                 <main className="flex-1">{children}</main>
                 <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-muted">
-                  <p className="text-xs text-muted-foreground">&copy; 2025 Coloring Pages Printable. All rights reserved.</p>
+                  <p className="text-xs text-muted-foreground">&copy; 2025 Color Spark. All rights reserved.</p>
                   <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+                    <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/unsubscribe">
+                      Unsubscribe
+                    </Link>
                     <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/terms">
                       Terms of Service
                     </Link>

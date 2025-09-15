@@ -24,7 +24,8 @@ import {
   Palette,
   ImageIcon,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Heart
 } from "lucide-react"
 import { ThemeToggleButton } from "@/components/theme-toggle-button"
 import { LogoCompact } from "@/components/logo"
@@ -40,8 +41,8 @@ interface MobileNavItem {
 
 const navItems: MobileNavItem[] = [
   { href: "/", label: "Home", shortLabel: "Home", icon: Home },
-  { href: "/ai-coloring", label: "AI Coloring", shortLabel: "AI", icon: Palette },
   { href: "/library", label: "Art Gallery", shortLabel: "Gallery", icon: ImageIcon },
+  { href: "/fairy", label: "✨ Fairy Themes", shortLabel: "Fairy", icon: Heart },
   { href: "/create", label: "AI Studio", shortLabel: "Create", icon: Sparkles },
   { href: "/blog", label: "Coloring Tips", shortLabel: "Tips", icon: BookOpen },
 ]

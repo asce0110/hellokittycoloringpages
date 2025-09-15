@@ -1,7 +1,7 @@
 {
-  "name": "Coloring Pages Printable",
-  "short_name": "Coloring Pages",
-  "description": "Free printable coloring pages for kids and adults",
+  "name": "Coloreveal - Free Printable Coloring Pages",
+  "short_name": "Coloreveal",
+  "description": "Discover 1000s of free printable coloring pages & experience our interactive online coloring tool. New designs added weekly for all ages!",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

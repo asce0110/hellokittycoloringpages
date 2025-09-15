@@ -34,7 +34,7 @@ export function Logo({
       </div>
       {showText && (
         <span className={`ml-2 ${textSizeClasses[size]} font-extrabold text-foreground`}>
-          Coloring Pages Printable
+          Coloreveal
         </span>
       )}
     </Link>
@@ -50,7 +50,7 @@ export function LogoCompact() {
         <div className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-white rounded-full"></div>
       </div>
       <span className="ml-2 text-sm font-bold text-foreground">
-        Coloring Pages
+        Coloreveal
       </span>
     </Link>
   )

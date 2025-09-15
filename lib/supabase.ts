@@ -403,6 +403,43 @@ export type Database = {
           updated_at?: string
         }
       }
+      newsletter_subscriptions: {
+        Row: {
+          id: string
+          email: string
+          is_active: boolean
+          source: string
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+          updated_at: string
+          unsubscribed_at: string | null
+          resubscribed_at: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          is_active?: boolean
+          source?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+          unsubscribed_at?: string | null
+          resubscribed_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          is_active?: boolean
+          source?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          updated_at?: string
+          unsubscribed_at?: string | null
+          resubscribed_at?: string | null
+        }
+      }
     }
   }
 }

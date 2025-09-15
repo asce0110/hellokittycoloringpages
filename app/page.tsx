@@ -7,12 +7,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BowIcon } from "@/components/icons/bow-icon"
-import { Library, Sparkles, HelpCircle } from "lucide-react"
+import { Library, Sparkles, HelpCircle, Download, Heart, Wand2 } from "lucide-react"
 import MovingImageBanner from "@/components/moving-image-banner"
 import { PopularColoringGrid } from "@/components/popular-coloring-grid"
 import { MobileHomeHero, MobileHomeFeatures, MobileQuickStats } from "@/components/mobile-home-layout"
+import { SimpleNewsletter } from "@/components/simple-newsletter"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useState, useEffect } from "react"
+import * as React from "react"
 import { getTimeRangeQueryParams } from "@/lib/time-filters"
 
 // Fresh Images 数据类型
@@ -204,21 +206,21 @@ export default function HomePage() {
               <h1 className="text-white drop-shadow-lg">
                 {/* 移动端简化标题 */}
                 <span className="block sm:hidden text-2xl font-extrabold">
-                  Free Coloring Pages
+                  Coloreveal
                 </span>
                 {/* 桌面端完整标题 */}
                 <span className="hidden sm:block text-3xl font-extrabold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                  Coloring Pages Printable | Free Download & Print Instantly
+                  Coloreveal - Free Coloring Pages Printable
                 </span>
               </h1>
               <p className="mx-auto text-white/90 drop-shadow-md">
                 {/* 移动端简化描述 */}
                 <span className="block sm:hidden text-sm max-w-[280px]">
-                  500+ free printable coloring pages for all ages!
+                  Spark creativity with free printable coloring pages for all ages!
                 </span>
                 {/* 桌面端完整描述 */}
-                <span className="hidden sm:block max-w-[700px] md:text-xl">
-                  Download coloring pages printable instantly! 500+ original printable coloring sheets ready to download. Perfect for kids, adults, teachers & parents. Explore our comprehensive library of coloring pages printable for every skill level now!
+                <span className="hidden sm:block max-w-[700px] mx-auto md:text-xl">
+                  Welcome to Coloreveal, your creative destination for free printable coloring pages! Discover magical fairy themes, AI-generated designs, and curated collections perfect for kids, adults, teachers & parents. Spark imagination and create beautiful moments together.
                 </span>
               </p>
             </div>
@@ -231,6 +233,16 @@ export default function HomePage() {
               >
                 <Link href="/library">
                   🎨 <span className="hidden sm:inline">Art Gallery</span><span className="sm:hidden">Gallery</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-pink-200 text-pink-100 bg-pink-500/20 hover:bg-pink-500/30 backdrop-blur-sm w-full sm:w-auto px-6 sm:px-8 transition-all duration-300 hover:scale-105 active:scale-95"
+              >
+                <Link href="/fairy">
+                  <span className="hidden sm:inline">✨ Fairy Magic</span><span className="sm:hidden">🧚‍♀️ Fairy</span>
                 </Link>
               </Button>
               <Button
@@ -251,7 +263,152 @@ export default function HomePage() {
       {/* 移动端优化的快速统计 */}
       <MobileQuickStats />
 
-      {/* Fresh Images Section - 只在有真实数据库数据时显示 */}
+      {/* 2. Featured Categories - Core Strategic Section */}
+      <section className="w-full py-12 md:py-16 bg-white dark:bg-gray-950">
+        <div className="container px-4 md:px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+              Explore Featured Categories
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+              Discover hundreds of high-quality coloring pages organized by theme
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+            {/* Animals */}
+            <Link href="/library?category=animals" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-green-300 dark:hover:border-green-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900/20 dark:to-blue-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-green-200 group-hover:to-blue-200 dark:group-hover:from-green-800/30 dark:group-hover:to-blue-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🐾</div>
+                    <div className="absolute inset-0 bg-green-500/10 group-hover:bg-green-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-green-50 dark:group-hover:bg-green-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-500">Animals</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Fairy Tales */}
+            <Link href="/fairy" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-pink-300 dark:hover:border-pink-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/20 dark:to-purple-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-pink-200 group-hover:to-purple-200 dark:group-hover:from-pink-800/30 dark:group-hover:to-purple-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🧚‍♀️</div>
+                    <div className="absolute inset-0 bg-pink-500/10 group-hover:bg-pink-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-pink-50 dark:group-hover:bg-pink-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-pink-700 dark:group-hover:text-pink-400 transition-colors duration-500">Fairies</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Mandalas */}
+            <Link href="/library?category=mandalas" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-purple-300 dark:hover:border-purple-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-purple-200 group-hover:to-indigo-200 dark:group-hover:from-purple-800/30 dark:group-hover:to-indigo-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🕉️</div>
+                    <div className="absolute inset-0 bg-purple-500/10 group-hover:bg-purple-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-purple-50 dark:group-hover:bg-purple-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors duration-500">Mandalas</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* For Kids */}
+            <Link href="/library?difficulty=easy" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-yellow-300 dark:hover:border-yellow-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-yellow-200 group-hover:to-orange-200 dark:group-hover:from-yellow-800/30 dark:group-hover:to-orange-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🎨</div>
+                    <div className="absolute inset-0 bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-yellow-700 dark:group-hover:text-yellow-400 transition-colors duration-500">For Kids</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Holidays */}
+            <Link href="/library?category=holidays" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-red-300 dark:hover:border-red-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-red-100 to-green-100 dark:from-red-900/20 dark:to-green-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-red-200 group-hover:to-green-200 dark:group-hover:from-red-800/30 dark:group-hover:to-green-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🎄</div>
+                    <div className="absolute inset-0 bg-red-500/10 group-hover:bg-red-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-red-50 dark:group-hover:bg-red-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors duration-500">Holidays</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* For Adults */}
+            <Link href="/library?difficulty=complex" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-gray-400 dark:hover:border-gray-500">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-gray-100 to-slate-100 dark:from-gray-900/20 dark:to-slate-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-gray-200 group-hover:to-slate-200 dark:group-hover:from-gray-800/30 dark:group-hover:to-slate-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🎭</div>
+                    <div className="absolute inset-0 bg-gray-500/10 group-hover:bg-gray-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-gray-50 dark:group-hover:bg-gray-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-gray-700 dark:group-hover:text-gray-400 transition-colors duration-500">Adults</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Nature */}
+            <Link href="/library?category=nature" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-emerald-300 dark:hover:border-emerald-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-emerald-200 group-hover:to-teal-200 dark:group-hover:from-emerald-800/30 dark:group-hover:to-teal-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🌿</div>
+                    <div className="absolute inset-0 bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors duration-500">Nature</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Fantasy */}
+            <Link href="/library?category=fantasy" className="group">
+              <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 active:scale-95 border-2 hover:border-violet-300 dark:hover:border-violet-600">
+                <CardContent className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/20 dark:to-fuchsia-900/20 flex items-center justify-center relative overflow-hidden group-hover:from-violet-200 group-hover:to-fuchsia-200 dark:group-hover:from-violet-800/30 dark:group-hover:to-fuchsia-800/30 transition-all duration-500">
+                    <div className="text-3xl md:text-4xl group-hover:scale-125 transition-transform duration-500 group-active:scale-110">🦄</div>
+                    <div className="absolute inset-0 bg-violet-500/10 group-hover:bg-violet-500/20 transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  </div>
+                  <div className="p-2 text-center group-hover:bg-violet-50 dark:group-hover:bg-violet-900/10 transition-all duration-500">
+                    <h3 className="font-bold text-xs md:text-sm group-hover:text-violet-700 dark:group-hover:text-violet-400 transition-colors duration-500">Fantasy</h3>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+          
+          <div className="text-center mt-8">
+            <Button asChild className="bg-primary hover:bg-primary/90">
+              <Link href="/library">
+                <Library className="mr-2 h-4 w-4" />
+                Browse All Collections
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Latest Additions - Fresh Images Section */}
       {(loading || showFreshImages) && (
         <section className="w-full py-12 md:py-24 lg:py-32 bg-white dark:bg-card relative -mt-8">
           <div className="container px-4 md:px-6">
@@ -260,7 +417,7 @@ export default function HomePage() {
                 {loading ? 'Loading...' : timeRange?.label || 'Featured Pages'}
               </div>
               <h2 className="text-3xl font-extrabold tracking-tighter sm:text-5xl text-gray-800 dark:text-gray-200">
-                Fresh Printable Coloring Pages Collection
+                Latest Additions
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
                 {loading 
@@ -357,7 +514,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Popular Creative Content Section */}
+      {/* 4. Popular Downloads - Popular Creative Content Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-purple-50 via-teal-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="container px-4 md:px-6">
           <PopularColoringGrid 
@@ -372,15 +529,79 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 5. Seasonal/Holiday Feature - Winter Coloring Collection */}
+      <section className="w-full py-16 md:py-24 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 relative overflow-hidden">
+        {/* Seasonal decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 text-blue-200 opacity-60 animate-pulse text-4xl">❄️</div>
+          <div className="absolute top-32 right-16 text-indigo-200 opacity-40 animate-bounce text-3xl">⭐</div>
+          <div className="absolute bottom-20 left-1/4 text-purple-200 opacity-50 animate-ping text-2xl">✨</div>
+          <div className="absolute bottom-32 right-1/3 text-blue-300 opacity-30 animate-pulse text-5xl">❄️</div>
+        </div>
+        
+        <div className="container px-4 md:px-6 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-6">
+              <Badge variant="outline" className="bg-white/90 text-blue-700 border-blue-200 font-semibold text-sm px-4 py-2">
+                🗓️ Seasonal Collection
+              </Badge>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-gray-100 mb-6">
+              Winter Wonderland Coloring Pages
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Embrace the magic of winter with our seasonal collection! From cozy snowscenes to festive celebrations, 
+              discover enchanting designs perfect for the winter season.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8">
+                <Link href="/library?category=winter">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Explore Winter Collection
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="border-blue-200 text-blue-700 hover:bg-blue-50 px-8">
+                <Link href="/library?category=holidays">
+                  View All Holiday Themes →
+                </Link>
+              </Button>
+            </div>
+            
+            {/* Featured seasonal images preview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 max-w-3xl mx-auto">
+              {[
+                { emoji: '❄️', title: 'Snowflakes', category: 'winter' },
+                { emoji: '⛄', title: 'Snowman Fun', category: 'winter' }, 
+                { emoji: '🎄', title: 'Winter Trees', category: 'winter' },
+                { emoji: '🏔️', title: 'Snow Scenes', category: 'winter' }
+              ].map((item, index) => (
+                <Link key={index} href={`/library?category=${item.category}`} className="group">
+                  <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-4 text-center">
+                      <div className="text-4xl mb-2 group-hover:scale-110 transition-transform duration-300">
+                        {item.emoji}
+                      </div>
+                      <h4 className="font-semibold text-sm group-hover:text-blue-600 transition-colors">
+                        {item.title}
+                      </h4>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Browse Original Art by Difficulty Level - moved here */}
       <section className="w-full py-16 bg-gradient-to-br from-pink-100 via-purple-50 via-blue-50 via-green-50 via-yellow-50 to-orange-50 dark:from-pink-900/20 dark:via-purple-900/20 dark:via-blue-900/20 dark:via-green-900/20 dark:via-yellow-900/20 dark:to-orange-900/20">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Browse Original Art by Difficulty Level
+              Discover Art That Sparks Your Creativity
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Find the perfect original coloring pages and AI-generated designs for your skill level. Choose from simple patterns for beginners to intricate masterpieces for advanced artists.
+              Coloreveal offers carefully curated coloring pages for every skill level. From magical fairy kingdoms to simple designs for beginners, find the perfect creative challenge for you.
             </p>
           </div>
 
@@ -454,34 +675,113 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 6. Simple "How It Works" */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center mb-12">
             <h2 className="text-3xl font-extrabold tracking-tighter sm:text-5xl">
-              How It Works: Two Paths to Creativity
+              How It Works
             </h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-              Choose your adventure! Explore our curated collection or become the creator.
+            <p className="max-w-[700px] text-muted-foreground md:text-xl/relaxed">
+              Getting started with Coloreveal is simple and fun!
             </p>
           </div>
-          <div className="mx-auto grid gap-8 md:grid-cols-2">
-            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-card rounded-2xl shadow-md">
-              <Library className="h-12 w-12 mb-4 text-primary" />
-              <h3 className="text-2xl font-bold mb-2">1. Explore the Official Library</h3>
-              <p className="text-muted-foreground">
-                Browse thousands of high-resolution, ready-to-print coloring pages. Our library is meticulously
-                organized by themes, characters, and difficulty. Find your favorite, click, and instantly download or
-                print. Perfect for quick, reliable fun.
+          <div className="mx-auto grid gap-8 md:grid-cols-3 max-w-5xl">
+            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-card rounded-2xl shadow-md">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Library className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">1. Browse & Select</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Explore our hundreds of free designs organized by categories, themes, and difficulty levels. Find the perfect page for your mood!
               </p>
             </div>
-            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-card rounded-2xl shadow-md">
-              <Sparkles className="h-12 w-12 mb-4 text-secondary" />
-              <h3 className="text-2xl font-bold mb-2">2. Create with AI</h3>
-              <p className="text-muted-foreground">
-                Unleash your imagination! Describe any scene, character, or theme in our AI creator tool. "A cute
-                cat as an astronaut on Mars," or "a magical forest with woodland creatures." Our AI will generate a unique,
-                personalized coloring page just for you.
+            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-card rounded-2xl shadow-md">
+              <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
+                <Download className="h-8 w-8 text-secondary" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">2. Print Instantly</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Download high-quality PDF files that print beautifully at home or at your local copy shop. No watermarks, no hassle!
               </p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-card rounded-2xl shadow-md">
+              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                <Heart className="h-8 w-8 text-accent" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">3. Start Coloring</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Grab your favorite coloring tools and enjoy hours of creative relaxation. Share your masterpieces with family and friends!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Email Signup - Newsletter Subscription */}
+      <section className="w-full py-16 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+        <div className="container px-4 md:px-6">
+          <SimpleNewsletter />
+        </div>
+      </section>
+
+      {/* 8. About Us/Brand Story */}
+      <section className="w-full py-16 md:py-24 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-pink-900/10 dark:via-purple-900/10 dark:to-blue-900/10">
+        <div className="container px-4 md:px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-8">
+              <BowIcon className="h-20 w-20 mx-auto text-primary mb-4" />
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+                Our Story
+              </h2>
+            </div>
+            
+            <div className="prose prose-lg mx-auto text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p className="text-xl mb-6">
+                Welcome to <strong className="text-primary">Coloreveal</strong> – where creativity meets technology to bring joy to families worldwide.
+              </p>
+              
+              <p className="mb-6">
+                Founded by two passionate mothers and artists, Coloreveal was born from a simple belief: 
+                <em>every child deserves access to beautiful, high-quality coloring pages that spark their imagination.</em>
+              </p>
+              
+              <p className="mb-8">
+                What started as a small collection of hand-drawn designs has grown into a comprehensive platform 
+                featuring both traditional artistry and cutting-edge AI-generated content. We're proud to serve 
+                families, teachers, and creative minds across the globe with our ever-expanding library of 
+                printable coloring pages.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8 mt-12">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="h-8 w-8 text-pink-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Made with Love</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Every design is carefully curated to bring joy and spark creativity in colorists of all ages.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Always Free</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  We believe creativity should be accessible to everyone. Our core collection will always be free.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Wand2 className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Innovation Driven</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Combining traditional art with AI technology to create endless possibilities for creativity.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -491,15 +791,16 @@ export default function HomePage() {
         <div className="container px-4 md:px-6 text-center">
           <BowIcon className="h-16 w-16 mx-auto text-primary opacity-80" />
           <h2 className="text-3xl font-extrabold tracking-tighter sm:text-4xl mb-4 text-gray-800 dark:text-gray-200 mt-2">
-            Your Ultimate Creative Coloring Destination
+            Where Creativity Meets Imagination
           </h2>
           <p className="max-w-3xl mx-auto text-muted-foreground md:text-xl">
-            Welcome to your ultimate printable coloring pages destination! Explore our extensive collection of free coloring pages printable for every age and skill level, from simple designs for kids to intricate patterns for adults.
-            Create custom coloring pages with our AI generator and enjoy hours of creative fun with unlimited artistic possibilities.
+            At Coloreveal, we believe every moment is an opportunity to create something beautiful. Explore our curated collection of free printable coloring pages, from enchanting fairy tales to AI-generated masterpieces. 
+            Discover themed collections designed to spark joy and creativity for the whole family.
           </p>
         </div>
       </section>
 
+      {/* 9. FAQ Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-white dark:bg-card">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center mb-12">

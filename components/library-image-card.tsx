@@ -11,6 +11,7 @@ import { generateSmartSeoUrl } from "@/lib/seo-url-generator"
 import { useFavorites } from "@/hooks/use-favorites"
 import { useAuth } from "@/hooks/use-auth"
 import { showToast } from "@/lib/toast"
+import { extractFavoriteId, areIdsMatching } from "@/lib/id-utils"
 import { Heart, Download, Palette, LogIn } from "lucide-react"
 
 interface LibraryImageCardProps {
@@ -27,63 +28,179 @@ export function LibraryImageCard({
   className = "" 
 }: LibraryImageCardProps) {
   const router = useRouter()
-  const { isFavorite, toggleFavorite, refreshFavorites } = useFavorites()
+  const { isFavorite, toggleFavorite, refreshFavorites, favorites } = useFavorites()
   const { isAuthenticated } = useAuth()
   const [isNavigating, setIsNavigating] = React.useState(false)
   const [isDownloading, setIsDownloading] = React.useState(false)
   const [isTogglingFavorite, setIsTogglingFavorite] = React.useState(false)
   const [localFavorited, setLocalFavorited] = React.useState<boolean>(false)
+  const [forceUpdate, setForceUpdate] = React.useState(0)
 
   // 检查是否已收藏 - 使用本地状态确保实时更新
   const favorited = localFavorited
 
-  // 🎯 监听全局收藏状态变化 - 实现跨页面同步（支持多种ID格式）
+  // 🎯 使用统一的ID提取逻辑
+  const favoriteIdResult = React.useMemo(() => {
+    return extractFavoriteId(image)
+  }, [image])
+
+  // 🎯 监听全局收藏状态变化 - 使用新的ID匹配逻辑和强制刷新
   React.useEffect(() => {
     const handleFavoritesUpdate = (event: CustomEvent) => {
-      const { libraryImageId, isFavorited: newFavoriteState } = event.detail
-      const { safeId } = prepareSafeImageId(image.id)
+      const { libraryImageId, isFavorited: newFavoriteState, timestamp } = event.detail
       
-      // 检查原始ID和安全ID是否匹配
-      if (libraryImageId === image.id || libraryImageId === safeId) {
+      // 使用新的ID匹配逻辑
+      if (areIdsMatching(libraryImageId, favoriteIdResult.normalizedId) ||
+          areIdsMatching(libraryImageId, image.id)) {
         console.log(`🔄 Library card received favorite status update:`, {
           eventId: libraryImageId,
+          cardNormalizedId: favoriteIdResult.normalizedId,
           cardOriginalId: image.id,
-          cardSafeId: safeId,
           imageTitle: image.title,
           previousState: localFavorited,
-          newState: newFavoriteState
+          newState: newFavoriteState,
+          timestamp
         })
         setLocalFavorited(newFavoriteState)
+        // 强制重新渲染
+        setForceUpdate(prev => prev + 1)
       }
+    }
+
+    const handleForceRefresh = () => {
+      console.log(`🔄 Library card force refresh:`, {
+        cardNormalizedId: favoriteIdResult.normalizedId,
+        cardOriginalId: image.id,
+        imageTitle: image.title
+      })
+      // 重新检查收藏状态
+      const currentFavorited = isFavorite(favoriteIdResult.normalizedId) || 
+                             isFavorite(image.id)
+      setLocalFavorited(currentFavorited)
+      setForceUpdate(prev => prev + 1)
+    }
+
+    const handleFavoritesCleared = () => {
+      console.log(`🧹 Library card favorites cleared:`, {
+        cardNormalizedId: favoriteIdResult.normalizedId,
+        cardOriginalId: image.id,
+        imageTitle: image.title
+      })
+      setLocalFavorited(false)
+      setForceUpdate(prev => prev + 1)
+    }
+
+    const handleFavoritesRefreshed = (event: CustomEvent) => {
+      console.log(`🔄 Library card favorites refreshed:`, {
+        cardNormalizedId: favoriteIdResult.normalizedId,
+        cardOriginalId: image.id,
+        imageTitle: image.title,
+        newCount: event.detail.count
+      })
+      // 重新检查收藏状态
+      const currentFavorited = isFavorite(favoriteIdResult.normalizedId) || 
+                             isFavorite(image.id)
+      setLocalFavorited(currentFavorited)
+      setForceUpdate(prev => prev + 1)
     }
 
     // 添加全局事件监听器
     window.addEventListener('favoritesUpdated', handleFavoritesUpdate as EventListener)
+    window.addEventListener('favoritesForceRefresh', handleForceRefresh as EventListener)
+    window.addEventListener('favoritesCleared', handleFavoritesCleared as EventListener)
+    window.addEventListener('favoritesRefreshed', handleFavoritesRefreshed as EventListener)
 
     return () => {
       window.removeEventListener('favoritesUpdated', handleFavoritesUpdate as EventListener)
+      window.removeEventListener('favoritesForceRefresh', handleForceRefresh as EventListener)
+      window.removeEventListener('favoritesCleared', handleFavoritesCleared as EventListener)
+      window.removeEventListener('favoritesRefreshed', handleFavoritesRefreshed as EventListener)
     }
-  }, [image.id, localFavorited])
+  }, [favoriteIdResult.normalizedId, image.id, isFavorite])
 
-  // 🎯 同步初始收藏状态和Provider状态变化（支持多种ID格式）
+  // 🎯 同步初始收藏状态和Provider状态变化 - 使用统一的ID逻辑
   React.useEffect(() => {
-    const { safeId } = prepareSafeImageId(image.id)
-    
-    // 先检查原始ID，再检查安全ID
-    const currentFavorited = isFavorite(image.id) || isFavorite(safeId)
+    // 使用标准化的ID检查收藏状态
+    const currentFavorited = isFavorite(favoriteIdResult.normalizedId) || 
+                           isFavorite(image.id)
     
     if (currentFavorited !== localFavorited) {
       console.log(`🔄 Library card syncing favorite status:`, {
         originalId: image.id,
-        safeId: safeId,
+        normalizedId: favoriteIdResult.normalizedId,
+        format: favoriteIdResult.format,
         imageTitle: image.title,
         providerState: currentFavorited,
         localState: localFavorited,
-        syncDirection: 'provider -> local'
+        syncDirection: 'provider -> local',
+        favoritesLength: favorites.length
       })
       setLocalFavorited(currentFavorited)
+      // 强制重新渲染以确保UI更新
+      setForceUpdate(prev => prev + 1)
     }
-  }, [isFavorite, image.id, localFavorited])
+  }, [isFavorite, favoriteIdResult.normalizedId, image.id, favorites, localFavorited, forceUpdate])
+  
+  // 🎯 强制同步初始状态（确保组件挂载时状态正确）
+  React.useEffect(() => {
+    const initialFavorited = isFavorite(favoriteIdResult.normalizedId) || 
+                           isFavorite(image.id)
+    setLocalFavorited(initialFavorited)
+    
+    console.log(`🎯 Library card initial favorite status:`, {
+      originalId: image.id,
+      normalizedId: favoriteIdResult.normalizedId,
+      format: favoriteIdResult.format,
+      imageTitle: image.title,
+      initialFavorited,
+      favoritesCount: favorites.length,
+      matchingFavorites: favorites.filter(fav => 
+        (fav.libraryImageId && (fav.libraryImageId === favoriteIdResult.normalizedId || fav.libraryImageId === image.id)) ||
+        (favoriteIdResult.normalizedId && fav.libraryImageId && areIdsMatching(favoriteIdResult.normalizedId, fav.libraryImageId))
+      )
+    })
+  }, [])
+  
+  // 🔄 备用刷新机制：当其他方式都失败时，强制同步状态
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // 页面重新可见时，强制同步状态
+        const currentFavorited = isFavorite(favoriteIdResult.normalizedId) || 
+                               isFavorite(image.id)
+        if (currentFavorited !== localFavorited) {
+          setLocalFavorited(currentFavorited)
+          console.log(`🔄 备用同步机制触发:`, {
+            imageTitle: image.title,
+            newState: currentFavorited
+          })
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [isFavorite, favoriteIdResult.normalizedId, image.id, localFavorited])
+  
+  // 🔄 第二个备用同步机制：定时检查（增强版）
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const currentFavorited = isFavorite(favoriteIdResult.normalizedId) || 
+                             isFavorite(image.id)
+      if (currentFavorited !== localFavorited) {
+        setLocalFavorited(currentFavorited)
+        setForceUpdate(prev => prev + 1) // 强制重新渲染
+        console.log(`🕰️ 定时同步机制触发:`, {
+          imageTitle: image.title,
+          previousState: localFavorited,
+          newState: currentFavorited,
+          forceUpdate: forceUpdate + 1
+        })
+      }
+    }, 1000) // 减少到每1秒检查一次
+
+    return () => clearInterval(interval)
+  }, [isFavorite, favoriteIdResult.normalizedId, image.id, localFavorited, forceUpdate])
   
   // 处理点击着色按钮 - 使用与库页面相同的逻辑
   const handleColorOnline = React.useCallback(async () => {
@@ -146,89 +263,48 @@ export function LibraryImageCard({
     }
   }, [image, router])
 
-  // 🎯 UUID格式验证工具函数
-  const isValidUuid = (id: string): boolean => {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-  }
-  
-  // 🎯 安全的ID准备 - 确保ID格式符合收藏API要求
-  const prepareSafeImageId = (imageId: string): { safeId: string; isValidFormat: boolean; warning?: string } => {
-    // 检查是否为有效UUID
-    if (isValidUuid(imageId)) {
-      return { safeId: imageId, isValidFormat: true }
-    }
-    
-    // 检查是否为demo格式的ID
-    if (imageId.startsWith('demo-')) {
-      return { 
-        safeId: imageId, 
-        isValidFormat: false, 
-        warning: 'Demo mode - favorites saved locally only' 
-      }
-    }
-    
-    // 如果是纯数字字符串，转换为demo格式
-    if (/^\d+$/.test(imageId)) {
-      return { 
-        safeId: `demo-${imageId}`, 
-        isValidFormat: false, 
-        warning: 'Auto-converted to Demo mode - favorites saved locally only' 
-      }
-    }
-    
-    // 其他格式，保持不变但标记为无效格式
-    return { 
-      safeId: imageId, 
-      isValidFormat: false, 
-      warning: 'ID format does not meet UUID standard - favorites may be unstable' 
-    }
-  }
 
-  // 处理收藏切换
+  // 处理收藏切换 - 使用统一的ID处理逻辑
   const handleFavoriteToggle = React.useCallback(async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
     if (isTogglingFavorite) return
+    if (!favoriteIdResult.normalizedId) {
+      console.error('❌ 无法提取有效的收藏ID:', favoriteIdResult)
+      showToast.error("收藏失败", "无法识别图片ID")
+      return
+    }
 
     const previousState = favorited
     setIsTogglingFavorite(true)
     
-    // 🎯 准备安全的ID格式
-    const { safeId, isValidFormat, warning } = prepareSafeImageId(image.id)
-    
     console.log(`📚 Library card favorite toggle started:`, {
       originalId: image.id,
-      safeId: safeId,
-      validFormat: isValidFormat,
-      warning: warning,
+      normalizedId: favoriteIdResult.normalizedId,
+      format: favoriteIdResult.format,
       imageTitle: image.title,
       currentState: previousState,
       targetState: !previousState
     })
     
-    if (warning) {
-      console.warn(`⚠️ ID format warning: ${warning}`)
-    }
-    
     try {
-      // 使用安全的ID调用收藏API
-      await toggleFavorite(safeId)
+      // 使用标准化的ID调用收藏API
+      await toggleFavorite(favoriteIdResult.normalizedId)
       
       console.log(`✅ Library card favorite toggle successful:`, {
         originalId: image.id,
-        safeId: safeId,
+        normalizedId: favoriteIdResult.normalizedId,
         imageTitle: image.title,
         previousState,
         newState: !previousState
       })
       
-      // 🎯 改进：根据实际情况显示更准确的消息
+      // 🎯 根据ID类型显示更准确的消息
       if (previousState) {
         showToast.success("Removed from favorites", "Successfully removed from your collection")
       } else {
-        // 成功添加收藏，但区分不同模式
-        const message = isValidFormat 
+        const message = favoriteIdResult.format === 'uuid' 
           ? "Successfully added to your collection" 
           : "Added to local favorites (offline mode)"
         showToast.success("Added to favorites", message)
@@ -236,35 +312,26 @@ export function LibraryImageCard({
     } catch (error: any) {
       console.error(`❌ Library card favorite toggle failed:`, {
         originalId: image.id,
-        safeId: safeId,
-        validFormat: isValidFormat,
+        normalizedId: favoriteIdResult.normalizedId,
+        format: favoriteIdResult.format,
         imageTitle: image.title,
         previousState,
-        error: error.message,
-        stack: error.stack
+        error: error.message
       })
       
       if (error.message === 'LOGIN_REQUIRED') {
-        // 用户未登录，显示友好的引导提示
         showToast.loginRequired.favorite(() => {
           router.push('/login')
         })
       } else {
-        // 其他错误的处理
         const errorTitle = previousState ? "Remove Failed" : "Add Failed"
-        let errorMessage = error.message || "Failed to update favorites, please try again"
-        
-        // If it's a UUID format error, provide more friendly error message
-        if (error.message && error.message.includes('UUID format')) {
-          errorMessage = `ID format issue - please refresh the page and try again`
-        }
-        
+        const errorMessage = error.message || "Failed to update favorites, please try again"
         showToast.error(errorTitle, errorMessage)
       }
     } finally {
       setIsTogglingFavorite(false)
     }
-  }, [favorited, toggleFavorite, image.id, isTogglingFavorite])
+  }, [favorited, toggleFavorite, favoriteIdResult, isTogglingFavorite, image.title, router])
 
   // 处理下载
   const handleDownload = React.useCallback(async (e: React.MouseEvent) => {
@@ -275,8 +342,8 @@ export function LibraryImageCard({
 
     setIsDownloading(true)
     try {
-      // 🎯 为下载也使用安全ID准备
-      const { safeId } = prepareSafeImageId(image.id)
+      // 🎯 使用标准化的ID
+      const downloadId = favoriteIdResult.normalizedId || image.id
       
       const response = await fetch('/api/download', {
         method: 'POST',
@@ -284,7 +351,7 @@ export function LibraryImageCard({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          libraryImageId: safeId,
+          libraryImageId: downloadId,
           type: 'standard'
         }),
       })
@@ -312,7 +379,7 @@ export function LibraryImageCard({
     } finally {
       setIsDownloading(false)
     }
-  }, [image.id, image.title, isDownloading])
+  }, [favoriteIdResult, image.id, image.title, isDownloading])
   
   // 难度颜色映射
   const getDifficultyColor = (difficulty: string) => {
@@ -409,12 +476,12 @@ export function LibraryImageCard({
                       ? 'bg-pink-500 text-white hover:bg-pink-600 border-pink-500 transform scale-105' 
                       : 'bg-white/95 text-gray-800 hover:bg-white hover:text-pink-500 hover:scale-105'
                   }`}
+                  key={`favorite-button-${forceUpdate}`} // 强制重新渲染
                   onClick={handleFavoriteToggle}
                   disabled={isTogglingFavorite}
                   title={(() => {
-                    const { isValidFormat, warning } = prepareSafeImageId(image.id)
                     const baseTitle = favorited ? "Remove from favorites" : "Add to favorites"
-                    return isValidFormat ? baseTitle : `${baseTitle} (${warning?.split(' - ')[1] || 'local only'})`
+                    return favoriteIdResult.normalizedId ? baseTitle : `${baseTitle} (ID format issue)`
                   })()}
                 >
                   <Heart 
@@ -488,10 +555,10 @@ export function LibraryImageCard({
                     ? 'text-pink-500 hover:text-pink-600 hover:bg-pink-50' 
                     : 'text-muted-foreground hover:text-pink-500 hover:bg-pink-50'
                 } ${isTogglingFavorite ? 'opacity-50' : ''}`}
+                key={`quick-favorite-button-${forceUpdate}`} // 强制重新渲染
                 title={(() => {
-                  const { isValidFormat, warning } = prepareSafeImageId(image.id)
                   const baseTitle = favorited ? "Remove from favorites" : "Add to favorites"
-                  return isValidFormat ? baseTitle : `${baseTitle} (${warning?.split(' - ')[1] || 'local only'})`
+                  return favoriteIdResult.normalizedId ? baseTitle : `${baseTitle} (ID format issue)`
                 })()}
               >
                 <Heart className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`} />

@@ -110,6 +110,124 @@ npm run lint            # ESLint (configured to ignore build errors)
 - Multi-difficulty content organization (easy/medium/complex)
 - Print optimization for physical coloring pages
 
+## Key Library Utilities
+
+### Core Business Logic (`lib/`)
+- `supabase.ts` - Database client configuration
+- `database.ts` - Database operations and queries
+- `types.ts` - TypeScript type definitions
+- `utils.ts` - General utility functions
+
+### SEO System (`lib/seo-*`)
+- `seo-url-generator.ts` - Dynamic SEO URL creation
+- `seo-url-reconstructor.ts` - URL parsing and reconstruction
+- `seo-slug-parser.ts` - SEO-friendly slug handling
+- `seo-image-manager.ts` - Image metadata for SEO
+
+### Image Processing (`lib/*compression*`, `lib/print-utils.ts`)
+- `image-compression-safe.ts` - Browser-based image compression
+- `simple-compression.ts/js` - Fallback compression utilities
+- `print-utils.ts` - Print optimization functions
+
+### AI & Content (`lib/ai-*`, `lib/coloring-*`)
+- `ai-prompts-data.ts` - AI generation templates
+- `ai-recommendation-engine.ts` - Content recommendation logic
+- `coloring-data.ts` - Static coloring page data
+- `creative-taxonomy.ts` - Content categorization system
+
+### Performance & Caching (`lib/*preload*`, `lib/cache-*`)
+- `startup-preloader.ts` - Application startup optimization
+- `cache-prewarming.ts` - Content preloading strategies
+- `simple-preloader.ts` - Resource preloading utilities
+
+## Configuration Details
+
+### Next.js Configuration
+- **Cloudflare Pages optimized**: `trailingSlash: true`, `images.unoptimized: true`
+- **Webpack fallbacks**: Disabled Node.js modules (fs, net, tls, crypto) for client-side
+- **Package optimization**: Lucide React icons optimized for bundle size
+
+### Tailwind CSS
+- **Custom color palette**: "kitty" theme colors integrated
+- **shadcn/ui integration**: Complete Radix UI component library
+- **Mobile-first approach**: Responsive design patterns established
+
+### MDX Support
+- **Blog system**: `/content/blog/` directory with frontmatter support
+- **Component integration**: React components usable in MDX content
+- **Syntax highlighting**: Code blocks with rehype-highlight
+- `app/[slug]/` - Dynamic SEO-friendly routes
+- `app/admin/` - Admin dashboard with analytics
+- `app/api/` - Backend API endpoints
+- `app/library/` - Main coloring pages gallery
+- `app/create/` - AI generation interface
+
+### Key Systems
+
+#### AI Content Generation
+- Dual AI provider support (OpenAI DALL-E + Stability AI)
+- Template-based prompt system with variable substitution
+- User limit management (5 free, 50 pro daily)
+- Generated content stored in Supabase with S3 file storage
+
+#### SEO Architecture  
+- SEO URL generation and reconstruction system
+- Structured JSON-LD schema markup
+- Mobile-first responsive design with dedicated mobile components
+- Content targeting "coloring pages printable" and related keywords
+
+#### User Management
+- Supabase Auth integration
+- Role-based permissions (user/pro/admin)
+- Usage tracking and subscription management
+- Favorites and generation history
+
+### Database Schema (Supabase)
+- `users` - User accounts and subscription status
+- `library_images` - Curated coloring page collection
+- `generation_history` - AI-generated user content
+- `user_favorites` - User bookmarking system
+- `analytics_stats` - Usage analytics
+- `prompt_templates` - AI generation templates
+
+## Component Organization
+
+- `components/ui/` - shadcn/ui components
+- `components/mobile-*` - Mobile-specific layouts
+- `components/blog/` - Blog/MDX components
+- `hooks/` - Custom React hooks
+- `lib/` - Utility functions and configurations
+
+## Special Considerations
+
+### SEO Focus
+- All content should target "coloring pages printable" keywords
+- URLs should be SEO-friendly with proper slug generation
+- Meta descriptions should emphasize "free", "printable", "AI-generated"
+- Keyword density: "coloring pages printable" (1.0-1.5%)
+
+### Image Processing
+- High-resolution print-ready formats required
+- Browser-based image compression with fallbacks
+- S3 integration for file storage and CDN delivery
+
+### Mobile Optimization
+- Dedicated mobile components and layouts
+- Touch-friendly interfaces for generation and browsing
+- Responsive image handling
+
+### Performance
+- Startup preloading system implemented
+- Image optimization and compression
+- CDN integration for static assets
+
+## Business Logic
+
+- Freemium model with daily generation limits
+- User analytics and admin dashboard
+- Multi-difficulty content organization (easy/medium/complex)
+- Print optimization for physical coloring pages
+
 ## SEO关键词策略 (基于真实Google Ads数据)
 
 ### 主要目标关键词

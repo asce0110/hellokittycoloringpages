@@ -42,10 +42,14 @@ export function MobileColoringInterface({
 }: MobileColoringInterfaceProps) {
   const isMobile = useIsMobile()
   const canvasRef = useRef<{
-    undo: () => void
-    reset: () => void
-    download: (filename: string) => void
-    print: () => void
+    undo: () => void; 
+    reset: () => void; 
+    download: (filename: string) => void; 
+    print: () => void;
+    saveProgress: (key?: string) => boolean;
+    loadProgress: (key?: string) => boolean;
+    hasProgress: (key?: string) => boolean;
+    clearProgress: (key?: string) => void;
   }>(null)
 
   // State management
@@ -150,20 +154,6 @@ export function MobileColoringInterface({
               style={{ backgroundColor: activeColor }}
               onClick={() => setActiveFloatingPanel(activeFloatingPanel === 'colors' ? null : 'colors')}
             />
-            
-            {/* Top 3 Quick Colors */}
-            {colorPalette.slice(0, 3).map((color, index) => (
-              <button
-                key={index}
-                className={cn(
-                  "w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform",
-                  activeColor === color && "ring-2 ring-blue-400 scale-110"
-                )}
-                style={{ backgroundColor: color }}
-                onClick={() => setActiveColor(color)}
-                aria-label={`Select color ${color}`}
-              />
-            ))}
             
             {/* More Colors Button */}
             <Button

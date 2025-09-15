@@ -38,15 +38,15 @@ export function Navigation() {
           <span className="hidden sm:inline">Home</span>
           <span className="sm:hidden">Home</span>
         </Link>
-        <Link className="text-xs sm:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" href="/ai-coloring">
-          <span className="hidden lg:inline">AI Coloring</span>
-          <span className="hidden sm:inline lg:hidden">AI</span>
-          <span className="sm:hidden">AI</span>
-        </Link>
         <Link className="text-xs sm:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" href="/library">
           <span className="hidden lg:inline">Art Gallery</span>
           <span className="hidden sm:inline lg:hidden">Gallery</span>
           <span className="sm:hidden">Art</span>
+        </Link>
+        <Link className="text-xs sm:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap text-pink-600 hover:text-pink-700" href="/fairy">
+          <span className="hidden lg:inline">✨ Fairy</span>
+          <span className="hidden sm:inline lg:hidden">Fairy</span>
+          <span className="sm:hidden">🧚‍♀️</span>
         </Link>
         <Link className="text-xs sm:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" href="/create">
           <span className="hidden lg:inline">AI Studio</span>

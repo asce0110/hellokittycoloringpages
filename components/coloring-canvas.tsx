@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useEffect, useState } from "react"
+import React, { useRef, useEffect, useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { showToast, showPrintCompatibilityWarning } from "@/lib/toast"
 
@@ -18,13 +18,31 @@ interface ColoringCanvasProps {
 }
 
 export const ColoringCanvas = React.forwardRef<
-  { undo: () => void; reset: () => void; download: (filename: string) => void; print: () => void },
+  { 
+    undo: () => void; 
+    reset: () => void; 
+    download: (filename: string) => void; 
+    print: () => void;
+    saveProgress: (key?: string) => boolean;
+    loadProgress: (key?: string) => boolean;
+    hasProgress: (key?: string) => boolean;
+    clearProgress: (key?: string) => void;
+  },
   ColoringCanvasProps
 >(({ imageUrl, strokeColor = "#000000", activeColor, activeTool, brushSize, tonerMode = "darken", tonerIntensity = 0.3, onHistoryChange }, ref) => {
   const imageCanvasRef = useRef<HTMLCanvasElement>(null)
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null)
   const [history, setHistory] = useState<ImageData[]>([])
   const isDrawing = useRef(false)
+  
+  // 缩放相关状态
+  const [scale, setScale] = useState(1)
+  const [translateX, setTranslateX] = useState(0)
+  const [translateY, setTranslateY] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  
+  // Canvas分辨率缩放因子
+  const resolutionScale = useRef(2.5)
   
   // Smart Fill 拖拽相关状态
   const isDragFilling = useRef(false)
@@ -36,6 +54,65 @@ export const ColoringCanvas = React.forwardRef<
 
   // Toner 工具相关状态
   const isTonerDrawing = useRef(false)
+
+  // 处理鼠标滚轮缩放
+  const handleWheel = useCallback((e: WheelEvent) => {
+    const container = containerRef.current
+    if (!container) return
+    
+    const rect = container.getBoundingClientRect()
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    
+    // 鼠标相对于容器的位置
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    
+    // 计算缩放中心点相对于当前变换的位置
+    const beforeZoomPointX = (mouseX - translateX) / scale
+    const beforeZoomPointY = (mouseY - translateY) / scale
+    
+    // 计算新的缩放值
+    const zoomFactor = e.deltaY < 0 ? 1.2 : 0.8
+    const newScale = Math.max(0.5, Math.min(3, scale * zoomFactor))
+    
+    // 如果向下滚动且已经是最小缩放，重置到1.0
+    if (e.deltaY > 0 && scale <= 1.0) {
+      setScale(1)
+      setTranslateX(0)
+      setTranslateY(0)
+      return
+    }
+    
+    // 计算新的变换位置，保持鼠标位置不变
+    const afterZoomPointX = beforeZoomPointX * newScale
+    const afterZoomPointY = beforeZoomPointY * newScale
+    
+    const newTranslateX = mouseX - afterZoomPointX
+    const newTranslateY = mouseY - afterZoomPointY
+    
+    setScale(newScale)
+    setTranslateX(newTranslateX)
+    setTranslateY(newTranslateY)
+  }, [scale, translateX, translateY])
+
+  // 阻止页面滚动的原生事件监听
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      handleWheel(e)
+    }
+
+    container.addEventListener('wheel', handleNativeWheel, { passive: false })
+    
+    return () => {
+      container.removeEventListener('wheel', handleNativeWheel)
+    }
+  }, [handleWheel])
 
   // 🎯 修复版本的图片加载逻辑
   useEffect(() => {
@@ -55,41 +132,50 @@ export const ColoringCanvas = React.forwardRef<
     const initializeCanvas = (img: HTMLImageElement) => {
       console.log('✅ Image loaded successfully:', imageUrl)
       
-      // 🎯 保持图片比例的尺寸计算
-      const maxWidth = 500
-      const maxHeight = 600
+      // 🎯 分离显示尺寸和canvas内部分辨率以提升打印质量
       const aspectRatio = img.width / img.height
       
-      let canvasWidth, canvasHeight
+      // 显示尺寸（用户看到的界面尺寸）
+      const maxDisplayWidth = 500
+      const maxDisplayHeight = 600
+      let displayWidth, displayHeight
+      
       if (aspectRatio > 1) {
-        // 横向图片
-        canvasWidth = Math.min(maxWidth, img.width)
-        canvasHeight = canvasWidth / aspectRatio
+        displayWidth = Math.min(maxDisplayWidth, img.width)
+        displayHeight = displayWidth / aspectRatio
       } else {
-        // 纵向图片
-        canvasHeight = Math.min(maxHeight, img.height)
-        canvasWidth = canvasHeight * aspectRatio
+        displayHeight = Math.min(maxDisplayHeight, img.height)
+        displayWidth = displayHeight * aspectRatio
       }
       
-      // 确保尺寸为整数
-      canvasWidth = Math.round(canvasWidth)
-      canvasHeight = Math.round(canvasHeight)
-
+      // 实际canvas分辨率（用于高质量绘制和打印）
+      const resolutionScale = 2.5 // 2.5倍分辨率提升打印质量
+      const canvasWidth = Math.round(displayWidth * resolutionScale)
+      const canvasHeight = Math.round(displayHeight * resolutionScale)
+      
+      // 设置canvas内部分辨率
       imageCanvas.width = canvasWidth
       imageCanvas.height = canvasHeight
       drawingCanvas.width = canvasWidth
       drawingCanvas.height = canvasHeight
       
-      imageCanvas.style.width = canvasWidth + 'px'
-      imageCanvas.style.height = canvasHeight + 'px'
-      drawingCanvas.style.width = canvasWidth + 'px'
-      drawingCanvas.style.height = canvasHeight + 'px'
+      // 设置canvas显示尺寸
+      imageCanvas.style.width = Math.round(displayWidth) + 'px'
+      imageCanvas.style.height = Math.round(displayHeight) + 'px'
+      drawingCanvas.style.width = Math.round(displayWidth) + 'px'
+      drawingCanvas.style.height = Math.round(displayHeight) + 'px'
+      
+      // 启用高质量渲染
+      imageCtx.imageSmoothingEnabled = true
+      imageCtx.imageSmoothingQuality = 'high'
+      drawingCtx.imageSmoothingEnabled = true
+      drawingCtx.imageSmoothingQuality = 'high'
       
       // 白色背景
       imageCtx.fillStyle = 'white'
       imageCtx.fillRect(0, 0, canvasWidth, canvasHeight)
       
-      // 绘制图片保持比例
+      // 绘制图片保持比例，使用高分辨率
       imageCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
       
       // 初始化绘图历史
@@ -211,10 +297,9 @@ export const ColoringCanvas = React.forwardRef<
       : [0, 0, 0]
   }
 
-  // 改进的智能填充 - 使用扫描线算法解决条纹问题
+  // 🤖 AI智能填充算法 - 解决复杂形状不闭合问题
   const fillArea = (x: number, y: number, saveHistory: boolean = true) => {
-    // 🚨 明显的调试信息：Smart Fill被调用
-    console.log(`🚨 Smart Fill 被触发! brushSize: ${brushSize}, 位置: (${x.toFixed(1)}, ${y.toFixed(1)})`)
+    console.log(`🤖 AI Smart Fill 执行! brushSize: ${brushSize}, 位置: (${x.toFixed(1)}, ${y.toFixed(1)})`)
     
     const drawingCanvas = drawingCanvasRef.current
     const imageCanvas = imageCanvasRef.current
@@ -239,43 +324,232 @@ export const ColoringCanvas = React.forwardRef<
       if (targetX < 0 || targetX >= width || targetY < 0 || targetY >= height) {
         return
       }
+
+      // 🤖 简化的AI语义区域分析 - 轻量级智能识别
+      const analyzeSemanticRegion = (centerX: number, centerY: number) => {
+        try {
+          const analysisRadius = Math.min(80, Math.max(25, brushSize * 2 * resolutionScale.current)) // 按分辨率缩放分析范围
+          let linePixels: Array<{x: number, y: number, intensity: number}> = []
+          let regionPixels: Array<{x: number, y: number}> = []
+          
+          // 1. 简化的区域信息收集 - 降采样避免过度计算
+          const step = 2 // 隔2个像素采样一次
+          for (let dy = -analysisRadius; dy <= analysisRadius; dy += step) {
+            for (let dx = -analysisRadius; dx <= analysisRadius; dx += step) {
+              const px = centerX + dx
+              const py = centerY + dy
+              
+              if (px < 0 || px >= width || py < 0 || py >= height) continue
+              
+              const distance = Math.sqrt(dx * dx + dy * dy)
+              if (distance > analysisRadius) continue
+              
+              const pixelIndex = (py * width + px) * 4
+              const r = imagePixels[pixelIndex] || 0
+              const g = imagePixels[pixelIndex + 1] || 0
+              const b = imagePixels[pixelIndex + 2] || 0
+              const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
+              
+              if (brightness < 120) {
+                linePixels.push({x: px, y: py, intensity: 255 - brightness})
+              } else {
+                regionPixels.push({x: px, y: py})
+              }
+              
+              // 限制收集数量，避免内存过度使用
+              if (linePixels.length > 200) break
+            }
+            if (linePixels.length > 200) break
+          }
+        
+        // 2. 简化的形状分析 - 基于线条密度和分布
+        const analyzeShapePattern = () => {
+          if (linePixels.length < 5) return { type: 'simple', confidence: 1.0 }
+          
+          // 简化的分析：只基于线条数量和分布范围
+          const lineCount = linePixels.length
+          
+          // 计算线条分布的范围
+          let minX = width, maxX = 0, minY = height, maxY = 0
+          for (const pixel of linePixels) {
+            minX = Math.min(minX, pixel.x)
+            maxX = Math.max(maxX, pixel.x)
+            minY = Math.min(minY, pixel.y)
+            maxY = Math.max(maxY, pixel.y)
+          }
+          
+          const rangeX = maxX - minX
+          const rangeY = maxY - minY
+          const aspectRatio = rangeX > 0 ? rangeY / rangeX : 1
+          
+          // 简化的形状识别
+          if (lineCount > 50 && (aspectRatio < 0.5 || aspectRatio > 2.0)) {
+            return { type: 'complex', confidence: 0.8 } // 复杂不规则形状
+          } else if (lineCount > 30) {
+            return { type: 'curved', confidence: 0.7 } // 中等复杂度
+          } else {
+            return { type: 'simple', confidence: 0.9 } // 简单形状
+          }
+        }
+        
+          const shapePattern = analyzeShapePattern()
+          
+          // 3. 计算形状的密度和分布
+          const area = Math.PI * analysisRadius * analysisRadius
+          const density = area > 0 ? linePixels.length / area : 0
+          const coverage = area > 0 ? regionPixels.length / area : 0
+          
+          console.log(`🧠 AI分析结果:`, {
+            center: `(${centerX}, ${centerY})`,
+            shapeType: shapePattern.type,
+            confidence: shapePattern.confidence,
+            linePixels: linePixels.length,
+            density: density.toFixed(3),
+            coverage: coverage.toFixed(3)
+          })
+          
+          return {
+            type: shapePattern.type,
+            confidence: shapePattern.confidence,
+            density,
+            coverage,
+            linePixels,
+            regionPixels,
+            analysisRadius
+          }
+        } catch (error) {
+          console.error('🚨 AI分析错误:', error)
+          // 返回安全的默认值
+          return {
+            type: 'simple',
+            confidence: 0.5,
+            density: 0,
+            coverage: 1,
+            linePixels: [],
+            regionPixels: [],
+            analysisRadius: 30
+          }
+        }
+      }
+
+      // 🛡️ 简化的虚拟边界算法 - 防止填充泄漏
+      const createVirtualBoundary = (regionAnalysis: any, startX: number, startY: number) => {
+        try {
+          const { type, confidence, linePixels, analysisRadius } = regionAnalysis
+          
+          // 只对复杂形状创建边界，简化判断逻辑
+          if (confidence < 0.6 || type === 'simple' || linePixels.length < 20) {
+            return null // 不需要虚拟边界
+          }
+          
+          console.log(`🛡️ 创建虚拟边界: ${type} (置信度: ${confidence.toFixed(2)})`)
+          
+          // 简化边界创建 - 只使用圆形边界，性能更好
+          const createBoundaryMask = () => {
+            const mask = new Array(width * height).fill(false)
+            
+            // 统一使用圆形边界，简化逻辑
+            const centerX = startX
+            const centerY = startY
+            
+            // 基于线条分布计算合适的半径
+            let maxDistance = 0
+            for (const pixel of linePixels) {
+              const distance = Math.sqrt(
+                (pixel.x - centerX) ** 2 + (pixel.y - centerY) ** 2
+              )
+              maxDistance = Math.max(maxDistance, distance)
+            }
+            
+            // 设置安全半径，限制最大范围
+            const radius = Math.min(analysisRadius, maxDistance * 1.2 + 20)
+            
+            // 创建圆形边界
+            for (let y = Math.max(0, centerY - radius); y <= Math.min(height - 1, centerY + radius); y++) {
+              for (let x = Math.max(0, centerX - radius); x <= Math.min(width - 1, centerX + radius); x++) {
+                const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2)
+                if (distance <= radius) {
+                  mask[y * width + x] = true
+                }
+              }
+            }
+            
+            console.log(`🔮 圆形边界: 中心(${centerX}, ${centerY}), 半径(${radius.toFixed(1)})`)
+            return mask
+          }
+          
+          return createBoundaryMask()
+        } catch (error) {
+          console.error('🚨 虚拟边界创建错误:', error)
+          return null // 出错时不使用边界
+        }
+      }
       
-      // 🎯 超严格线条检测 - 专门针对复杂图像
+      // 🔧 增强的线条检测算法 - 多层检测避免条纹
       const isLinePixel = (px: number, py: number): boolean => {
         if (px < 0 || px >= width || py < 0 || py >= height) return true
         
         const pixelIndex = (py * width + px) * 4
         
-        // 检查原图线条 - 使用更智能的阈值检测
+        // 1. 原图线条检测 - 使用更精确的方法
         const r = imagePixels[pixelIndex]
         const g = imagePixels[pixelIndex + 1] 
         const b = imagePixels[pixelIndex + 2]
         const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
         
-        // 检查用户绘制的线条
+        // 2. 用户绘制内容检测
         const drawingR = drawingPixels[pixelIndex]
         const drawingG = drawingPixels[pixelIndex + 1]
         const drawingB = drawingPixels[pixelIndex + 2]
         const drawingA = drawingPixels[pixelIndex + 3]
-        const hasDrawing = drawingA > 50 // 降低阈值，更敏感检测用户绘制内容
+        const hasDrawing = drawingA > 25
         
-        // 🎨 简化但有效的线条检测 - 基于Brush Size调整敏感度
+        // 3. 动态阈值 - 根据画笔大小智能调整
         const brushSensitivity = Math.max(1, Math.min(100, brushSize))
         
-        // 动态亮度阈值：小值=严格，大值=宽松
-        const brightnessThreshold = 50 + (brushSensitivity - 1) * 1.5 // 50到199的范围
-        const isOriginalLine = brightness < brightnessThreshold
+        // 🎯 关键改进：多级阈值检测，避免遗漏细线
+        const primaryThreshold = 60 + (brushSensitivity - 1) * 1.2 // 主要阈值
+        const secondaryThreshold = 120 + (brushSensitivity - 1) * 0.8 // 次要阈值
+        
+        // 4. 边缘检测 - 检查周围像素的亮度变化
+        let isEdge = false
+        if (px > 0 && px < width - 1 && py > 0 && py < height - 1) {
+          const centerBrightness = brightness
+          let brightnessDiff = 0
+          const neighbors = [
+            [-1, 0], [1, 0], [0, -1], [0, 1] // 上下左右
+          ]
+          
+          for (const [dx, dy] of neighbors) {
+            const nx = px + dx
+            const ny = py + dy
+            const nIndex = (ny * width + nx) * 4
+            const nR = imagePixels[nIndex]
+            const nG = imagePixels[nIndex + 1] 
+            const nB = imagePixels[nIndex + 2]
+            const nBrightness = (nR * 0.299 + nG * 0.587 + nB * 0.114)
+            brightnessDiff += Math.abs(centerBrightness - nBrightness)
+          }
+          
+          // 如果亮度差异大，可能是边缘
+          isEdge = brightnessDiff > 100
+        }
+        
+        // 5. 综合判断
+        const isPrimaryLine = brightness < primaryThreshold
+        const isSecondaryLine = brightness < secondaryThreshold && isEdge
+        const isOriginalLine = isPrimaryLine || isSecondaryLine
         
         if (hasDrawing) {
           const drawingBrightness = (drawingR * 0.299 + drawingG * 0.587 + drawingB * 0.114)
-          const isUserLine = drawingBrightness < 120
+          const isUserLine = drawingBrightness < 100
           return isOriginalLine || isUserLine
         }
         
         return isOriginalLine
       }
       
-      // 颜色匹配函数 - 允许轻微的颜色差异（处理抗锯齿）
+      // 🎯 改进的颜色匹配 - 更好地处理抗锯齿和渐变
       const isMatchingColor = (px: number, py: number, targetR: number, targetG: number, targetB: number): boolean => {
         const pixelIndex = (py * width + px) * 4
         const currentR = drawingPixels[pixelIndex] || 0
@@ -283,24 +557,30 @@ export const ColoringCanvas = React.forwardRef<
         const currentB = drawingPixels[pixelIndex + 2] || 0
         const currentA = drawingPixels[pixelIndex + 3] || 0
         
-        // 对于透明像素，视为匹配空白区域
-        if (currentA < 10) {
+        // 透明像素处理
+        if (currentA < 15) {
           return targetR === 0 && targetG === 0 && targetB === 0
         }
         
-        // 🎨 基于Brush Size的动态颜色容差
-        // 小画笔 = 严格匹配，大画笔 = 宽松匹配
+        // 🔧 智能颜色容差 - 考虑RGB的感知差异
         const brushSensitivity = Math.max(1, Math.min(100, brushSize))
-        const tolerance = 1 + (brushSensitivity - 1) * 0.08 // 1到9的范围
-        return Math.abs(currentR - targetR) <= tolerance && 
-               Math.abs(currentG - targetG) <= tolerance && 
-               Math.abs(currentB - targetB) <= tolerance
+        const baseTolerance = 2 + (brushSensitivity - 1) * 0.06
+        
+        // 对不同颜色通道使用不同的容差（人眼对绿色最敏感）
+        const rTolerance = baseTolerance * 1.1
+        const gTolerance = baseTolerance * 0.9
+        const bTolerance = baseTolerance * 1.0
+        
+        return Math.abs(currentR - targetR) <= rTolerance && 
+               Math.abs(currentG - targetG) <= gTolerance && 
+               Math.abs(currentB - targetB) <= bTolerance
       }
       
       const targetPixelIndex = (targetY * width + targetX) * 4
       
       // 检查点击的是否是线条
       if (isLinePixel(targetX, targetY)) {
+        console.log('🚫 点击位置是线条，跳过填充')
         return
       }
 
@@ -310,122 +590,134 @@ export const ColoringCanvas = React.forwardRef<
       const targetB = drawingPixels[targetPixelIndex + 2] || 0
       
       // 如果已经是目标颜色，不需要填充
-      if (targetR === fr && targetG === fg && targetB === fb) return
+      if (targetR === fr && targetG === fg && targetB === fb) {
+        console.log('🚫 区域已经是目标颜色，跳过填充')
+        return
+      }
 
-      // 使用扫描线填充算法 - 更可靠地处理大区域
-      const fillScanline = () => {
-        const visited = new Array(width * height).fill(false)
-        const stack: Array<{x: number, y: number}> = [{x: targetX, y: targetY}]
-        let filledPixels = 0
-        // 🎨 基于Brush Size的动态填充范围控制
-        const brushSensitivity = Math.max(1, Math.min(100, brushSize))
-        const maxPixels = Math.floor(10000 + (brushSensitivity - 1) * 8000) // 10k到800k的范围
+      // 🤖 执行AI语义分析（加入错误处理）
+      let regionAnalysis, virtualBoundary = null
+      try {
+        console.log('🧠 开始AI语义区域分析...')
+        regionAnalysis = analyzeSemanticRegion(targetX, targetY)
         
-        while (stack.length > 0 && filledPixels < maxPixels) {
-          const {x: seedX, y: seedY} = stack.pop()!
+        // 🛡️ 创建虚拟边界（如果需要）
+        virtualBoundary = createVirtualBoundary(regionAnalysis, targetX, targetY)
+      } catch (error) {
+        console.error('🚨 AI分析失败，使用传统填充:', error)
+        regionAnalysis = null
+        virtualBoundary = null
+      }
+      
+      // 🚀 AI增强的智能填充算法 - 支持虚拟边界约束
+      const fillQueue = () => {
+        const visited = new Set<string>() // 使用Set提高查找性能
+        const queue: Array<{x: number, y: number}> = [{x: targetX, y: targetY}]
+        let filledPixels = 0
+        
+        // 动态最大填充数量
+        const brushSensitivity = Math.max(1, Math.min(100, brushSize))
+        const maxPixels = Math.floor(15000 + (brushSensitivity - 1) * 10000)
+        
+        console.log(`🎯 开始填充，最大像素数: ${maxPixels}`)
+        
+        while (queue.length > 0 && filledPixels < maxPixels) {
+          const current = queue.shift()!
+          const {x: px, y: py} = current
+          const key = `${px},${py}`
           
-          if (seedX < 0 || seedX >= width || seedY < 0 || seedY >= height) continue
-          if (visited[seedY * width + seedX]) continue
-          if (isLinePixel(seedX, seedY)) continue
-          if (!isMatchingColor(seedX, seedY, targetR, targetG, targetB)) continue
+          // 边界和访问检查
+          if (px < 0 || px >= width || py < 0 || py >= height) continue
+          if (visited.has(key)) continue
+          if (isLinePixel(px, py)) continue
+          if (!isMatchingColor(px, py, targetR, targetG, targetB)) continue
           
-          // 寻找扫描线的左右边界
-          let leftX = seedX
-          let rightX = seedX
-          
-          // 向左扫描
-          while (leftX >= 0 && 
-                 !visited[seedY * width + leftX] &&
-                 !isLinePixel(leftX, seedY) && 
-                 isMatchingColor(leftX, seedY, targetR, targetG, targetB)) {
-            leftX--
+          // 🛡️ AI虚拟边界检查 - 防止跨越形状边界
+          if (virtualBoundary && !virtualBoundary[py * width + px]) {
+            console.log(`🚫 虚拟边界阻止: (${px}, ${py})`)
+            continue
           }
-          leftX++ // 回退到有效位置
           
-          // 向右扫描
-          while (rightX < width && 
-                 !visited[seedY * width + rightX] &&
-                 !isLinePixel(rightX, seedY) && 
-                 isMatchingColor(rightX, seedY, targetR, targetG, targetB)) {
-            rightX++
-          }
-          rightX-- // 回退到有效位置
+          // 标记为已访问
+          visited.add(key)
           
-          // 填充这条扫描线
-          for (let fillX = leftX; fillX <= rightX; fillX++) {
-            const fillIndex = (seedY * width + fillX) * 4
-            if (visited[seedY * width + fillX]) continue
+          // 填充像素
+          const pixelIndex = (py * width + px) * 4
+          drawingPixels[pixelIndex] = fr
+          drawingPixels[pixelIndex + 1] = fg
+          drawingPixels[pixelIndex + 2] = fb
+          drawingPixels[pixelIndex + 3] = 255
+          filledPixels++
+          
+          // 📍 4方向扩散 (上下左右)
+          const directions = [
+            [0, -1], // 上
+            [0, 1],  // 下
+            [-1, 0], // 左
+            [1, 0]   // 右
+          ]
+          
+          for (const [dx, dy] of directions) {
+            const nx = px + dx
+            const ny = py + dy
+            const neighborKey = `${nx},${ny}`
             
-            visited[seedY * width + fillX] = true
-            drawingPixels[fillIndex] = fr
-            drawingPixels[fillIndex + 1] = fg
-            drawingPixels[fillIndex + 2] = fb
-            drawingPixels[fillIndex + 3] = 255
-            filledPixels++
-          }
-          
-          // 检查上下两行，寻找新的种子点
-          for (let dy of [-1, 1]) {
-            const checkY = seedY + dy
-            if (checkY < 0 || checkY >= height) continue
-            
-            let inSpan = false
-            for (let checkX = leftX; checkX <= rightX; checkX++) {
-              const shouldFill = !visited[checkY * width + checkX] &&
-                                !isLinePixel(checkX, checkY) && 
-                                isMatchingColor(checkX, checkY, targetR, targetG, targetB)
-              
-              if (shouldFill && !inSpan) {
-                stack.push({x: checkX, y: checkY})
-                inSpan = true
-              } else if (!shouldFill && inSpan) {
-                inSpan = false
-              }
+            if (!visited.has(neighborKey) && 
+                nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              queue.push({x: nx, y: ny})
             }
           }
         }
         
+        console.log(`✅ 填充完成，填充像素数: ${filledPixels}`)
         return filledPixels
       }
       
-      const filledPixels = fillScanline()
+      const filledPixels = fillQueue()
       
-      // 如果填充了像素，进行后处理以消除小的间隙
+      // 🔧 增强的后处理 - 多次间隙填充确保完整性
       if (filledPixels > 0) {
-        // 间隙填充 - 处理1-2像素的小洞
-        for (let pass = 0; pass < 2; pass++) {
+        console.log('🔧 开始后处理，消除间隙...')
+        
+        for (let pass = 0; pass < 3; pass++) { // 增加到3次
           let gapsFilled = 0
+          
           for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
               const pixelIndex = (y * width + x) * 4
               
-              // 跳过已填充的像素和明显的线条
-              if (drawingPixels[pixelIndex + 3] > 10) continue
+              // 跳过已填充的像素和线条
+              if (drawingPixels[pixelIndex + 3] > 15) continue
               if (isLinePixel(x, y)) continue
               
-              // 检查周围是否被我们的颜色包围
-              let surroundingFilled = 0
+              // 🛡️ 虚拟边界检查（后处理时也需要遵守）
+              if (virtualBoundary && !virtualBoundary[y * width + x]) continue
+              
+              // 🎯 改进的邻居检查 - 8方向 + 权重
+              let fillScore = 0
               const neighbors = [
-                [-1, -1], [0, -1], [1, -1],
-                [-1,  0],          [1,  0],
-                [-1,  1], [0,  1], [1,  1]
+                [-1, -1, 0.7], [0, -1, 1.0], [1, -1, 0.7], // 上排
+                [-1,  0, 1.0],                [1,  0, 1.0], // 中排
+                [-1,  1, 0.7], [0,  1, 1.0], [1,  1, 0.7]  // 下排
               ]
               
-              for (const [dx, dy] of neighbors) {
+              for (const [dx, dy, weight] of neighbors) {
                 const nx = x + dx
                 const ny = y + dy
                 if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                   const neighborIndex = (ny * width + nx) * 4
                   if (drawingPixels[neighborIndex] === fr && 
                       drawingPixels[neighborIndex + 1] === fg && 
-                      drawingPixels[neighborIndex + 2] === fb) {
-                    surroundingFilled++
+                      drawingPixels[neighborIndex + 2] === fb &&
+                      drawingPixels[neighborIndex + 3] > 200) {
+                    fillScore += weight
                   }
                 }
               }
               
-              // 如果大部分邻居都是我们的颜色，填充这个间隙
-              if (surroundingFilled >= 5) {
+              // 更智能的填充决策
+              const fillThreshold = pass === 0 ? 4.0 : (pass === 1 ? 3.0 : 2.5)
+              if (fillScore >= fillThreshold) {
                 drawingPixels[pixelIndex] = fr
                 drawingPixels[pixelIndex + 1] = fg
                 drawingPixels[pixelIndex + 2] = fb
@@ -435,6 +727,7 @@ export const ColoringCanvas = React.forwardRef<
             }
           }
           
+          console.log(`🔧 第${pass + 1}次后处理，填充间隙: ${gapsFilled}个`)
           if (gapsFilled === 0) break // 没有更多间隙需要填充
         }
       }
@@ -446,16 +739,17 @@ export const ColoringCanvas = React.forwardRef<
         saveToHistory(drawingData)
       }
       
+      console.log('✅ Smart Fill 执行完成')
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      console.log('Fill area error:', errorMessage)
+      console.error('❌ Fill area error:', errorMessage)
     }
   }
 
-  // 拖拽填充函数 - 与主填充函数保持一致的线条检测
+  // 🤖 AI增强的拖拽填充函数 - 支持智能边界检测
   const performDragFill = (x: number, y: number) => {
-    // 🚨 明显的调试信息：拖拽填充被调用
-    console.log(`🚨 拖拽填充 被触发! brushSize: ${brushSize}, 位置: (${x.toFixed(1)}, ${y.toFixed(1)})`)
+    console.log(`🤖 AI拖拽填充执行! brushSize: ${brushSize}, 位置: (${x.toFixed(1)}, ${y.toFixed(1)})`)
     
     const drawingCanvas = drawingCanvasRef.current
     const imageCanvas = imageCanvasRef.current
@@ -479,37 +773,68 @@ export const ColoringCanvas = React.forwardRef<
       return false
     }
     
-    // 🎯 与主填充函数一致的简化线条检测
+    // 🔧 与主填充函数完全一致的线条检测
     const isLinePixel = (px: number, py: number): boolean => {
       if (px < 0 || px >= width || py < 0 || py >= height) return true
+      
       const pixelIndex = (py * width + px) * 4
       
+      // 1. 原图线条检测
       const r = imagePixels[pixelIndex]
       const g = imagePixels[pixelIndex + 1] 
       const b = imagePixels[pixelIndex + 2]
       const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
       
+      // 2. 用户绘制内容检测
       const drawingR = drawingPixels[pixelIndex]
       const drawingG = drawingPixels[pixelIndex + 1]
       const drawingB = drawingPixels[pixelIndex + 2]
       const drawingA = drawingPixels[pixelIndex + 3]
-      const hasDrawing = drawingA > 50
+      const hasDrawing = drawingA > 25
       
-      // 与主填充函数相同的逻辑
+      // 3. 动态阈值
       const brushSensitivity = Math.max(1, Math.min(100, brushSize))
-      const brightnessThreshold = 50 + (brushSensitivity - 1) * 1.5
-      const isOriginalLine = brightness < brightnessThreshold
+      const primaryThreshold = 60 + (brushSensitivity - 1) * 1.2
+      const secondaryThreshold = 120 + (brushSensitivity - 1) * 0.8
+      
+      // 4. 边缘检测
+      let isEdge = false
+      if (px > 0 && px < width - 1 && py > 0 && py < height - 1) {
+        const centerBrightness = brightness
+        let brightnessDiff = 0
+        const neighbors = [
+          [-1, 0], [1, 0], [0, -1], [0, 1]
+        ]
+        
+        for (const [dx, dy] of neighbors) {
+          const nx = px + dx
+          const ny = py + dy
+          const nIndex = (ny * width + nx) * 4
+          const nR = imagePixels[nIndex]
+          const nG = imagePixels[nIndex + 1] 
+          const nB = imagePixels[nIndex + 2]
+          const nBrightness = (nR * 0.299 + nG * 0.587 + nB * 0.114)
+          brightnessDiff += Math.abs(centerBrightness - nBrightness)
+        }
+        
+        isEdge = brightnessDiff > 100
+      }
+      
+      // 5. 综合判断
+      const isPrimaryLine = brightness < primaryThreshold
+      const isSecondaryLine = brightness < secondaryThreshold && isEdge
+      const isOriginalLine = isPrimaryLine || isSecondaryLine
       
       if (hasDrawing) {
         const drawingBrightness = (drawingR * 0.299 + drawingG * 0.587 + drawingB * 0.114)
-        const isUserLine = drawingBrightness < 120
+        const isUserLine = drawingBrightness < 100
         return isOriginalLine || isUserLine
       }
       
       return isOriginalLine
     }
     
-    // 颜色匹配函数（与主填充函数一致）
+    // 🎯 与主填充函数完全一致的颜色匹配
     const isMatchingColor = (px: number, py: number, targetR: number, targetG: number, targetB: number): boolean => {
       const pixelIndex = (py * width + px) * 4
       const currentR = drawingPixels[pixelIndex] || 0
@@ -517,18 +842,22 @@ export const ColoringCanvas = React.forwardRef<
       const currentB = drawingPixels[pixelIndex + 2] || 0
       const currentA = drawingPixels[pixelIndex + 3] || 0
       
-      // 对于透明像素，视为匹配空白区域
-      if (currentA < 10) {
+      // 透明像素处理
+      if (currentA < 15) {
         return targetR === 0 && targetG === 0 && targetB === 0
       }
       
-      // 允许轻微的颜色差异
-      // 基于Brush Size的动态颜色容差（与主填充函数一致）
+      // 智能颜色容差
       const brushSensitivity = Math.max(1, Math.min(100, brushSize))
-      const tolerance = 1 + (brushSensitivity - 1) * 0.08
-      return Math.abs(currentR - targetR) <= tolerance && 
-             Math.abs(currentG - targetG) <= tolerance && 
-             Math.abs(currentB - targetB) <= tolerance
+      const baseTolerance = 2 + (brushSensitivity - 1) * 0.06
+      
+      const rTolerance = baseTolerance * 1.1
+      const gTolerance = baseTolerance * 0.9
+      const bTolerance = baseTolerance * 1.0
+      
+      return Math.abs(currentR - targetR) <= rTolerance && 
+             Math.abs(currentG - targetG) <= gTolerance && 
+             Math.abs(currentB - targetB) <= bTolerance
     }
     
     // 跳过线条像素
@@ -543,39 +872,104 @@ export const ColoringCanvas = React.forwardRef<
     // 如果已经是目标颜色，跳过
     if (targetR === fr && targetG === fg && targetB === fb) return false
     
-    // 优化的小范围填充 - 适合拖拽操作
-    const fillRadius = 12 // 增加填充半径以获得更好的拖拽效果
-    let filledPixels = 0
+    // 初始填充半径
+    const fillRadius = 15
     
-    // 以目标点为中心，填充周围区域
-    for (let dy = -fillRadius; dy <= fillRadius; dy++) {
-      for (let dx = -fillRadius; dx <= fillRadius; dx++) {
-        const px = targetX + dx
-        const py = targetY + dy
+    // 🤖 轻量级AI边界检测 - 适合拖拽时的快速检测
+    const quickBoundaryCheck = (px: number, py: number): boolean => {
+      const checkRadius = 20 // 小范围快速检测
+      let lineCount = 0
+      let totalChecked = 0
+      
+      // 快速采样周围区域
+      for (let dy = -checkRadius; dy <= checkRadius; dy += 5) {
+        for (let dx = -checkRadius; dx <= checkRadius; dx += 5) {
+          const checkX = px + dx
+          const checkY = py + dy
+          
+          if (checkX < 0 || checkX >= width || checkY < 0 || checkY >= height) continue
+          
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          if (distance > checkRadius) continue
+          
+          const pixelIndex = (checkY * width + checkX) * 4
+          const r = imagePixels[pixelIndex]
+          const g = imagePixels[pixelIndex + 1] 
+          const b = imagePixels[pixelIndex + 2]
+          const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
+          
+          totalChecked++
+          if (brightness < 100) lineCount++
+        }
+      }
+      
+      // 如果周围线条密度太高，可能需要边界约束
+      const lineDensity = lineCount / Math.max(1, totalChecked)
+      return lineDensity > 0.3 // 30%以上是线条则需要约束
+    }
+    
+    const needsBoundary = quickBoundaryCheck(targetX, targetY)
+    let boundaryRadius = fillRadius
+    
+    if (needsBoundary) {
+      boundaryRadius = Math.min(boundaryRadius, 25) // 限制更小的范围
+      console.log(`🛡️ 拖拽检测到复杂形状，限制填充半径: ${boundaryRadius}`)
+    }
+    
+    // 🚀 改进的拖拽填充 - 小范围队列式填充
+    const baseFillRadius = 15 // 适中的填充半径
+    const finalRadius = Math.min(boundaryRadius, baseFillRadius)
+    const visited = new Set<string>()
+    const queue: Array<{x: number, y: number}> = [{x: targetX, y: targetY}]
+    let filledPixels = 0
+    const maxPixels = 500 // 拖拽时限制填充数量，避免卡顿
+    
+    while (queue.length > 0 && filledPixels < maxPixels) {
+      const current = queue.shift()!
+      const {x: px, y: py} = current
+      const key = `${px},${py}`
+      
+      // 距离检查 - 限制在半径内
+      const distance = Math.sqrt((px - targetX) ** 2 + (py - targetY) ** 2)
+      if (distance > finalRadius) continue
+      
+      // 边界和访问检查
+      if (px < 0 || px >= width || py < 0 || py >= height) continue
+      if (visited.has(key)) continue
+      if (isLinePixel(px, py)) continue
+      if (!isMatchingColor(px, py, targetR, targetG, targetB)) continue
+      
+      // 标记为已访问
+      visited.add(key)
+      
+      // 填充像素
+      const pixelIndex = (py * width + px) * 4
+      drawingPixels[pixelIndex] = fr
+      drawingPixels[pixelIndex + 1] = fg
+      drawingPixels[pixelIndex + 2] = fb
+      drawingPixels[pixelIndex + 3] = 255
+      filledPixels++
+      
+      // 4方向扩散
+      const directions = [
+        [0, -1], [0, 1], [-1, 0], [1, 0]
+      ]
+      
+      for (const [dx, dy] of directions) {
+        const nx = px + dx
+        const ny = py + dy
+        const neighborKey = `${nx},${ny}`
         
-        // 检查是否在圆形范围内
-        if (dx * dx + dy * dy > fillRadius * fillRadius) continue
-        
-        // 边界检查
-        if (px < 0 || px >= width || py < 0 || py >= height) continue
-        
-        // 跳过线条
-        if (isLinePixel(px, py)) continue
-        
-        // 使用改进的颜色匹配
-        if (isMatchingColor(px, py, targetR, targetG, targetB)) {
-          const pixelIndex = (py * width + px) * 4
-          drawingPixels[pixelIndex] = fr
-          drawingPixels[pixelIndex + 1] = fg
-          drawingPixels[pixelIndex + 2] = fb
-          drawingPixels[pixelIndex + 3] = 255
-          filledPixels++
+        if (!visited.has(neighborKey) && 
+            nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          queue.push({x: nx, y: ny})
         }
       }
     }
     
     if (filledPixels > 0) {
       drawingCtx.putImageData(drawingData, 0, 0)
+      console.log(`✅ 拖拽填充完成，填充像素数: ${filledPixels}`)
     }
     
     return filledPixels > 0
@@ -587,14 +981,14 @@ export const ColoringCanvas = React.forwardRef<
     
     isDrawing.current = true
     drawingCtx.strokeStyle = activeColor
-    drawingCtx.lineWidth = brushSize
+    drawingCtx.lineWidth = brushSize * resolutionScale.current // 按分辨率缩放画笔大小
     drawingCtx.lineCap = "round"
     drawingCtx.lineJoin = "round"
     
     // 立即绘制一个点（用于单击时显示）
     drawingCtx.fillStyle = activeColor
     drawingCtx.beginPath()
-    drawingCtx.arc(x, y, brushSize / 2, 0, 2 * Math.PI)
+    drawingCtx.arc(x, y, (brushSize * resolutionScale.current) / 2, 0, 2 * Math.PI) // 按分辨率缩放
     drawingCtx.fill()
     
     // 开始路径用于拖拽绘制
@@ -639,7 +1033,7 @@ export const ColoringCanvas = React.forwardRef<
     console.log(`🎨 着色工具 - 目标颜色: rgb(${targetR}, ${targetG}, ${targetB}), 模式: ${mode === 'lighten' ? '浅色调' : '深色调'}, 强度: ${intensity}, 画笔大小: ${brushSize}`)
     
     // 计算受影响的像素范围
-    const radius = Math.max(1, Math.floor(brushSize / 2))
+    const radius = Math.max(1, Math.floor((brushSize * resolutionScale.current) / 2))
     const centerX = Math.round(x)
     const centerY = Math.round(y)
     
@@ -756,9 +1150,11 @@ export const ColoringCanvas = React.forwardRef<
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
   ): { x: number; y: number } | null => {
     const canvas = drawingCanvasRef.current
-    if (!canvas) return null
+    const container = containerRef.current
+    if (!canvas || !container) return null
 
-    const rect = canvas.getBoundingClientRect()
+    // 直接使用canvas的边界信息
+    const canvasRect = canvas.getBoundingClientRect()
     let clientX, clientY
 
     if ("touches" in e.nativeEvent) {
@@ -770,13 +1166,17 @@ export const ColoringCanvas = React.forwardRef<
       clientY = e.nativeEvent.clientY
     }
 
-    // 计算精确的画布坐标，考虑缩放比例
-    const scaleX = canvas.width / rect.width
-    const scaleY = canvas.height / rect.height
+    // 简化的坐标转换：直接使用canvas的实际显示尺寸
+    const canvasX = clientX - canvasRect.left
+    const canvasY = clientY - canvasRect.top
+    
+    // 转换为canvas内部像素坐标
+    const scaleX = canvas.width / canvasRect.width
+    const scaleY = canvas.height / canvasRect.height
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
+      x: canvasX * scaleX,
+      y: canvasY * scaleY,
     }
   }
 
@@ -1167,8 +1567,8 @@ export const ColoringCanvas = React.forwardRef<
         // 创建用于打印的高质量临时画布
         const tempCanvas = document.createElement('canvas')
         
-        // 使用更高分辨率以确保打印质量和水印清晰度
-        const scaleFactor = 3 // 增加到3倍以获得更好的水印清晰度
+        // 轻微提升分辨率，因为基础canvas已经是高分辨率
+        const scaleFactor = 1.5 // 从3倍减少到1.5倍，避免过度放大
         tempCanvas.width = drawingCanvas.width * scaleFactor
         tempCanvas.height = drawingCanvas.height * scaleFactor
         
@@ -1276,11 +1676,192 @@ export const ColoringCanvas = React.forwardRef<
     })
   }
 
+  // 🎯 进度保存和恢复功能
+  const saveProgress = (key?: string): boolean => {
+    try {
+      const drawingCanvas = drawingCanvasRef.current
+      if (!drawingCanvas) {
+        console.error('❌ 无法保存进度：canvas未初始化')
+        return false
+      }
+
+      const ctx = drawingCanvas.getContext('2d')
+      if (!ctx) {
+        console.error('❌ 无法保存进度：无法获取canvas上下文')
+        return false
+      }
+
+      // 生成保存键
+      const saveKey = key || `coloring-progress-${imageUrl}`
+      
+      // 使用canvas.toDataURL方法，自动压缩数据
+      const dataURL = drawingCanvas.toDataURL('image/png', 0.8) // 80%质量压缩
+      
+      // 创建进度数据对象
+      const progressData = {
+        dataURL: dataURL,
+        timestamp: new Date().toISOString(),
+        imageUrl: imageUrl,
+        dimensions: {
+          width: drawingCanvas.width,
+          height: drawingCanvas.height
+        }
+      }
+
+      // 检查数据大小
+      const dataString = JSON.stringify(progressData)
+      const sizeInMB = (dataString.length * 2) / (1024 * 1024) // UTF-16编码，每字符2字节
+      
+      console.log(`📊 保存数据大小: ${sizeInMB.toFixed(2)} MB`)
+      
+      // localStorage通常限制5-10MB，我们设置4MB为安全限制
+      if (sizeInMB > 4) {
+        console.error('❌ 保存失败：数据过大 (', sizeInMB.toFixed(2), 'MB > 4MB)')
+        throw new Error(`数据过大 (${sizeInMB.toFixed(1)}MB)，请尝试在着色较少时保存`)
+      }
+
+      // 保存到localStorage
+      localStorage.setItem(saveKey, dataString)
+      console.log('✅ 进度已保存:', saveKey, `(${sizeInMB.toFixed(2)}MB)`)
+      return true
+      
+    } catch (error) {
+      console.error('❌ 保存进度失败:', error)
+      
+      // 检查是否是存储空间问题
+      if (error instanceof Error) {
+        if (error.message.includes('QuotaExceededError') || error.message.includes('quota')) {
+          console.error('❌ 存储空间不足，请清理浏览器缓存或删除其他保存的进度')
+        }
+      }
+      
+      return false
+    }
+  }
+
+  const loadProgress = (key?: string): boolean => {
+    try {
+      const drawingCanvas = drawingCanvasRef.current
+      if (!drawingCanvas) {
+        console.error('❌ 无法加载进度：canvas未初始化')
+        return false
+      }
+
+      const ctx = drawingCanvas.getContext('2d')
+      if (!ctx) {
+        console.error('❌ 无法加载进度：无法获取canvas上下文')
+        return false
+      }
+
+      const saveKey = key || `coloring-progress-${imageUrl}`
+      const savedData = localStorage.getItem(saveKey)
+      
+      if (!savedData) {
+        console.log('ℹ️ 没有找到保存的进度:', saveKey)
+        return false
+      }
+
+      const progressData = JSON.parse(savedData)
+      
+      // 支持新格式（dataURL）和旧格式（ImageData）
+      if (progressData.dataURL) {
+        // 新格式：使用dataURL，同步处理
+        try {
+          const img = new Image()
+          img.onload = () => {
+            try {
+              // 清空canvas
+              ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height)
+              
+              // 绘制图像
+              ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height)
+              
+              // 保存到历史记录
+              const imageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)
+              saveToHistory(imageData)
+              
+              console.log('✅ 进度已加载 (新格式):', saveKey, new Date(progressData.timestamp))
+            } catch (error) {
+              console.error('❌ 加载图像失败:', error)
+            }
+          }
+          img.onerror = () => {
+            console.error('❌ 图像数据损坏')
+          }
+          img.src = progressData.dataURL
+          console.log('🔄 正在加载进度图像...')
+          return true // 立即返回true，异步加载
+        } catch (error) {
+          console.error('❌ 创建图像失败:', error)
+          return false
+        }
+      } else if (progressData.data) {
+        // 旧格式：使用ImageData
+        if (!progressData.width || !progressData.height) {
+          console.error('❌ 保存的进度数据不完整')
+          return false
+        }
+
+        // 检查canvas尺寸是否匹配
+        if (progressData.width !== drawingCanvas.width || progressData.height !== drawingCanvas.height) {
+          console.warn('⚠️ 保存的进度尺寸与当前canvas不匹配')
+        }
+
+        // 创建ImageData并恢复到canvas
+        const imageData = new ImageData(
+          new Uint8ClampedArray(progressData.data),
+          progressData.width,
+          progressData.height
+        )
+        
+        ctx.putImageData(imageData, 0, 0)
+        
+        // 保存到历史记录以支持撤销
+        saveToHistory(imageData)
+        
+        console.log('✅ 进度已加载 (旧格式):', saveKey, new Date(progressData.timestamp))
+        return true
+      } else {
+        console.error('❌ 无法识别的数据格式')
+        return false
+      }
+      
+    } catch (error) {
+      console.error('❌ 加载进度失败:', error)
+      return false
+    }
+  }
+
+  const hasProgress = (key?: string): boolean => {
+    try {
+      const saveKey = key || `coloring-progress-${imageUrl}`
+      const savedData = localStorage.getItem(saveKey)
+      return !!savedData
+    } catch (error) {
+      console.error('❌ 检查进度失败:', error)
+      return false
+    }
+  }
+
+  const clearProgress = (key?: string): void => {
+    try {
+      const saveKey = key || `coloring-progress-${imageUrl}`
+      localStorage.removeItem(saveKey)
+      console.log('🗑️ 进度已清除:', saveKey)
+    } catch (error) {
+      console.error('❌ 清除进度失败:', error)
+    }
+  }
+
   React.useImperativeHandle(ref, () => ({
     undo: handleUndo,
     reset: handleReset,
     download: handleDownload,
     print: handlePrint,
+    saveProgress,
+    loadProgress,
+    hasProgress,
+    clearProgress,
     // 新增的实用方法
     getCurrentState: () => {
       const imageCanvas = imageCanvasRef.current
@@ -1296,17 +1877,35 @@ export const ColoringCanvas = React.forwardRef<
   }))
 
   return (
-    <div className="flex items-center justify-center w-full touch-none">
-      <div className="relative">
+    <div 
+      ref={containerRef}
+      className="flex items-center justify-center w-full touch-none overflow-hidden"
+      style={{ 
+        overscrollBehavior: 'none',
+        touchAction: 'none'
+      }}
+    >
+      <div 
+        className="relative"
+        style={{
+          transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
+          transformOrigin: '0 0',
+          transition: 'transform 0.1s ease-out'
+        }}
+      >
         <canvas ref={imageCanvasRef} className="absolute top-0 left-0 pointer-events-none" />
         <canvas
           ref={drawingCanvasRef}
           className={cn("relative z-10", {
             "cursor-crosshair": activeTool === "dropper",
-            "cursor-grab": activeTool === "brush",
             "cursor-cell": activeTool === "toner", // 表示深浅调节工具
           })}
-          style={{ touchAction: 'none' }}
+          style={{
+            cursor: activeTool === "brush" 
+              ? `url("data:image/svg+xml;charset=UTF-8,%3csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M3 21l1.5-1.5L9 15l-4-4-4.5 4.5L3 21zm0 0l4-4M8 13l2.5-2.5a4 4 0 015.5 0L18 12.5l1 1-8.5 8.5a2 2 0 01-3 0L8 13z' stroke='%23333' stroke-width='1.5' fill='none'/%3e%3ccircle cx='18' cy='6' r='2' fill='%23ff6b6b'/%3e%3c/svg%3e") 2 22, auto`
+              : undefined,
+            touchAction: 'none'
+          }}
           onMouseDown={handleInteractionStart}
           onTouchStart={handleInteractionStart}
           onMouseMove={handleInteractionMove}

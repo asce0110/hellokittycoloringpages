@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Slider } from "@/components/ui/slider"
-import { Droplets, Paintbrush, Download, Printer, Undo, RotateCcw, Palette, Pipette, X, Share2, Heart, CircleDot, Sun, Moon } from "lucide-react"
+import { Droplets, Paintbrush, Download, Printer, Undo, RotateCcw, Palette, Pipette, X, Share2, Heart, CircleDot, Sun, Moon, Save, FolderOpen, Trash2 } from "lucide-react"
 import { ColoringCanvas } from "@/components/coloring-canvas"
 import { ReferenceImagePanel } from "@/components/reference-image-panel"
 import { ColoringPageSEOLayout } from "@/components/coloring-page-seo-layout"
@@ -16,6 +16,9 @@ import { MobileColoringPageClient } from "@/components/mobile-coloring-page-clie
 import { useSEOOptimization } from "@/hooks/use-seo-optimization"
 import { useViewTracking } from "@/hooks/use-view-tracking"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useAuth } from "@/hooks/use-auth"
+import { useFavorites } from "@/hooks/use-favorites"
+import { extractColoringPageFavoriteId, debugIdInfo } from "@/lib/id-utils"
 import { cn } from "@/lib/utils"
 import { ColoringPageData } from "@/lib/coloring-data"
 
@@ -45,6 +48,8 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
   const { trackUserEngagement } = useSEOOptimization(coloringPage)
   const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
   const isMobile = useIsMobile()
+  const { user, isAuthenticated } = useAuth()
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites()
   
   // 🎯 添加浏览量追踪 - 优先使用libraryImageId，其次使用id（如果不是slug）
   const imageIdForTracking = (coloringPage as any).libraryImageId || 
@@ -105,10 +110,14 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
   })
   
   const canvasRef = React.useRef<{
-    undo: () => void
-    reset: () => void
-    download: (filename: string) => void
-    print: () => void
+    undo: () => void; 
+    reset: () => void; 
+    download: (filename: string) => void; 
+    print: () => void;
+    saveProgress: (key?: string) => boolean;
+    loadProgress: (key?: string) => boolean;
+    hasProgress: (key?: string) => boolean;
+    clearProgress: (key?: string) => void;
   }>(null)
 
   const [activeColor, setActiveColor] = React.useState(colorPalette[0])
@@ -120,6 +129,10 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
   const [userColors, setUserColors] = React.useState<string[]>([])
   const [showCustomColorPicker, setShowCustomColorPicker] = React.useState(false)
   const colorPickerRef = React.useRef<HTMLDivElement>(null)
+  
+  // 进度保存相关状态
+  const [hasSavedProgress, setHasSavedProgress] = React.useState(false)
+  const [lastSaveTime, setLastSaveTime] = React.useState<string | null>(null)
   
   // 确保图片URL存在
   if (!coloringPage.imageUrl) {
@@ -186,6 +199,128 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
       console.log('Color picking cancelled')
     }
   }
+
+  // 检查是否有保存的进度
+  React.useEffect(() => {
+    if (canvasRef.current && actualImageUrl) {
+      const hasProgress = canvasRef.current.hasProgress()
+      setHasSavedProgress(hasProgress)
+      
+      // 获取保存时间
+      if (hasProgress) {
+        try {
+          const saveKey = `coloring-progress-${actualImageUrl}`
+          const savedData = localStorage.getItem(saveKey)
+          if (savedData) {
+            const progressData = JSON.parse(savedData)
+            setLastSaveTime(progressData.timestamp)
+          }
+        } catch (error) {
+          console.error('获取保存时间失败:', error)
+        }
+      }
+    }
+  }, [actualImageUrl])
+
+  // 保存进度处理函数
+  const handleSaveProgress = () => {
+    if (canvasRef.current) {
+      try {
+        const success = canvasRef.current.saveProgress()
+        if (success) {
+          setHasSavedProgress(true)
+          setLastSaveTime(new Date().toISOString())
+          alert('✅ 着色进度已保存！下次打开时可以继续着色。')
+          trackUserEngagement('progress_saved', { pageTitle: actualTitle })
+        } else {
+          // 检查控制台错误并提供更具体的错误信息
+          alert('❌ 保存失败！可能原因:\n• 着色内容过多导致文件过大\n• 浏览器存储空间不足\n• 请尝试清理浏览器缓存或在着色较少时保存')
+        }
+      } catch (error) {
+        console.error('保存进度时发生错误:', error)
+        alert('❌ 保存失败！请检查浏览器控制台查看详细错误信息。')
+      }
+    }
+  }
+
+  // 加载进度处理函数
+  const handleLoadProgress = () => {
+    if (canvasRef.current) {
+      if (confirm('确定要加载之前的着色进度吗？当前的着色内容将被替换。')) {
+        const success = canvasRef.current.loadProgress()
+        if (success) {
+          alert('✅ 着色进度已恢复！')
+          trackUserEngagement('progress_loaded', { pageTitle: actualTitle })
+        } else {
+          alert('❌ 加载失败，可能没有保存的进度或数据已损坏。')
+        }
+      }
+    }
+  }
+
+  // 清除进度处理函数
+  const handleClearProgress = () => {
+    if (canvasRef.current && confirm('确定要清除保存的进度吗？此操作不可撤销。')) {
+      canvasRef.current.clearProgress()
+      setHasSavedProgress(false)
+      setLastSaveTime(null)
+      alert('🗑️ 保存的进度已清除。')
+    }
+  }
+
+  // 🎯 使用统一的ID提取逻辑
+  const favoriteIdResult = React.useMemo(() => {
+    return extractColoringPageFavoriteId(coloringPage, imageIdForTracking)
+  }, [coloringPage, imageIdForTracking])
+
+  // 收藏处理函数 - 使用标准化的ID处理
+  const handleFavoriteToggle = React.useCallback(async () => {
+    if (!isAuthenticated) {
+      alert('请先登录才能收藏页面')
+      return
+    }
+    
+    if (!favoriteIdResult.normalizedId) {
+      console.error('❌ 无法提取有效的收藏ID:', favoriteIdResult)
+      alert('收藏失败：无法识别页面ID')
+      return
+    }
+    
+    try {
+      const favoriteId = favoriteIdResult.normalizedId
+      const isFav = isFavorite(favoriteId)
+      
+      // 调试信息
+      debugIdInfo(favoriteId, '着色页面收藏')
+      console.log('🎯 着色页面收藏切换:', {
+        originalId: coloringPage.id,
+        normalizedId: favoriteId,
+        format: favoriteIdResult.format,
+        isFavorited: isFav,
+        action: isFav ? 'remove' : 'add',
+        fallbackIds: favoriteIdResult.fallbackIds
+      })
+      
+      if (isFav) {
+        await removeFromFavorites(favoriteId)
+        console.log('✅ 已从收藏中移除:', favoriteId)
+      } else {
+        await addToFavorites(favoriteId)
+        console.log('✅ 已添加到收藏:', favoriteId)
+      }
+      
+      trackUserEngagement('favorite_toggled', { 
+        pageTitle: actualTitle, 
+        action: isFav ? 'removed' : 'added',
+        favoriteId: favoriteId,
+        originalId: coloringPage.id,
+        format: favoriteIdResult.format
+      })
+    } catch (error) {
+      console.error('收藏操作失败:', error)
+      alert('收藏操作失败，请稍后再试')
+    }
+  }, [isAuthenticated, favoriteIdResult, isFavorite, addToFavorites, removeFromFavorites, trackUserEngagement, actualTitle, coloringPage.id])
 
   const handleRemoveUserColor = (colorToRemove: string) => {
     setUserColors(prev => prev.filter(color => color !== colorToRemove))
@@ -556,6 +691,58 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
               </CardContent>
             </Card>
             
+            {/* Progress Management Card */}
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-gray-900 dark:text-gray-100">Progress Management</CardTitle>
+                <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
+                  Save your coloring progress and continue later
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {/* Progress info */}
+                {hasSavedProgress && lastSaveTime && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                    Last saved: {new Date(lastSaveTime).toLocaleString()}
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" 
+                    onClick={handleSaveProgress}
+                  >
+                    <Save className="mr-1 h-4 w-4" />
+                    Save Progress
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700 dark:hover:bg-orange-800/30"
+                    onClick={handleLoadProgress}
+                    disabled={!hasSavedProgress}
+                  >
+                    <FolderOpen className="mr-1 h-4 w-4" />
+                    Load Progress
+                  </Button>
+                </div>
+                
+                {hasSavedProgress && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    onClick={handleClearProgress}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    Clear Saved Progress
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+            
             <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-gray-100">Export & Share</CardTitle>
@@ -613,13 +800,22 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100 dark:bg-pink-900/20 dark:text-pink-300 dark:border-pink-700 dark:hover:bg-pink-800/30"
-                    onClick={() => {
-                      trackUserEngagement('favorite_clicked', { pageTitle: actualTitle })
-                    }}
+                    className={cn(
+                      "border-2 transition-all",
+                      isAuthenticated && favoriteIdResult.normalizedId && isFavorite(favoriteIdResult.normalizedId)
+                        ? "bg-pink-100 text-pink-800 border-pink-300 hover:bg-pink-200 dark:bg-pink-900 dark:text-pink-200 dark:border-pink-600"
+                        : "bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100 dark:bg-pink-900/20 dark:text-pink-300 dark:border-pink-700 dark:hover:bg-pink-800/30"
+                    )}
+                    onClick={handleFavoriteToggle}
+                    disabled={!isAuthenticated || !favoriteIdResult.normalizedId}
                   >
-                    <Heart className="h-4 w-4 mr-1" />
-                    Save
+                    <Heart className={cn(
+                      "h-4 w-4 mr-1 transition-all",
+                      isAuthenticated && favoriteIdResult.normalizedId && isFavorite(favoriteIdResult.normalizedId) 
+                        ? "fill-pink-600 text-pink-600" 
+                        : ""
+                    )} />
+                    {isAuthenticated && favoriteIdResult.normalizedId && isFavorite(favoriteIdResult.normalizedId) ? 'Favorited' : 'Favorite'}
                   </Button>
                 </div>
               </CardContent>

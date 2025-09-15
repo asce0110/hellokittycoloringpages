@@ -1,8 +1,12 @@
 "use client"
 
+// Disable static generation for this page due to server components issues
+export const dynamic = 'force-dynamic'
+
 import * as React from "react"
 import Image from "next/image"
 import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -27,17 +31,19 @@ type ColoringPage = {
   difficulty?: "easy" | "medium" | "complex" // 🎯 添加difficulty字段
 }
 
-export default function LibraryPage() {
+function LibraryPageContent() {
   const searchParams = useSearchParams()
   
-  // Get filter parameters from URL
-  const filterType = searchParams.get('filter') // 'new', 'category', etc.
-  const filterValue = searchParams.get('value') // specific category value
-  const searchQuery = searchParams.get('search') // search term
-  const period = searchParams.get('period') // 'week', 'month', 'quarter', 'year'
-  const since = searchParams.get('since') // ISO date string
-  const difficulty = searchParams.get('difficulty') // 'easy', 'medium', 'hard'
-  const imageId = searchParams.get('imageId') // specific image ID to display
+  // Get filter parameters from URL with null checks
+  const filterType = searchParams?.get('filter') || null // 'new', 'category', etc.
+  const filterValue = searchParams?.get('value') || null // specific category value
+  const searchQuery = searchParams?.get('search') || null // search term
+  const period = searchParams?.get('period') || null // 'week', 'month', 'quarter', 'year'
+  const since = searchParams?.get('since') || null // ISO date string
+  const difficulty = searchParams?.get('difficulty') || null // 'easy', 'medium', 'hard'
+  const imageId = searchParams?.get('imageId') || null // specific image ID to display
+  const category = searchParams?.get('category') || null // 'fairy', 'princess', etc.
+  const type = searchParams?.get('type') || null // 'castle', 'woodland', etc.
   
   // 🎯 数据显示策略：优先使用真实数据库数据
   const [libraryImages, setLibraryImages] = React.useState<LibraryImage[]>([])
@@ -62,24 +68,24 @@ export default function LibraryPage() {
   const fetchInitialData = async () => {
     try {
       setLoading(true)
-      console.log('🔄 开始获取Library初始数据...')
+      // console.log('🔄 开始获取Library初始数据...')
       const response = await fetch(`/api/library-images/?page=1&limit=${ITEMS_PER_PAGE}`)
-      console.log('🔍 API响应状态:', response.status, response.ok)
+      // console.log('🔍 API响应状态:', response.status, response.ok)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('🔍 API响应数据:', { hasData: !!data, hasDataArray: !!data.data, dataLength: data.data?.length, pagination: data.pagination })
+        // console.log('🔍 API响应数据:', { hasData: !!data, hasDataArray: !!data.data, dataLength: data.data?.length, pagination: data.pagination })
         const dbImages = data.data || []
         const total = data.pagination?.total || data.total || 0
         
         if (dbImages.length > 0) {
-          console.log(`✅ 从数据库加载 ${dbImages.length} 张图片（总共${total}张）`)
+          // console.log(`✅ 从数据库加载 ${dbImages.length} 张图片（总共${total}张）`)
           setLibraryImages(dbImages)
           setTotalImages(total)
           setUseOnlyDbData(true)
           setHasMorePages(dbImages.length < total)
         } else {
-          console.log('⚠️ 数据库无图片，使用demo数据')
+          // console.log('⚠️ 数据库无图片，使用demo数据')
           // 为demo数据实现分页
           const paginatedDemoData = demoLibraryImages.slice(0, ITEMS_PER_PAGE)
           setLibraryImages(paginatedDemoData)
@@ -88,7 +94,7 @@ export default function LibraryPage() {
           setHasMorePages(paginatedDemoData.length < demoLibraryImages.length)
         }
       } else {
-        console.log('⚠️ API请求失败，使用demo数据，状态:', response.status)
+        // console.log('⚠️ API请求失败，使用demo数据，状态:', response.status)
         const paginatedDemoData = demoLibraryImages.slice(0, ITEMS_PER_PAGE)
         setLibraryImages(paginatedDemoData)
         setTotalImages(demoLibraryImages.length)
@@ -96,7 +102,7 @@ export default function LibraryPage() {
         setHasMorePages(paginatedDemoData.length < demoLibraryImages.length)
       }
     } catch (error) {
-      console.log('⚠️ 数据库不可用，使用demo数据')
+      // console.log('⚠️ 数据库不可用，使用demo数据')
       const paginatedDemoData = demoLibraryImages.slice(0, ITEMS_PER_PAGE)
       setLibraryImages(paginatedDemoData)
       setTotalImages(demoLibraryImages.length)
@@ -114,7 +120,7 @@ export default function LibraryPage() {
     try {
       setLoadingMore(true)
       const nextPage = currentPage + 1
-      console.log(`🔄 加载第${nextPage}页数据...`)
+      // console.log(`🔄 加载第${nextPage}页数据...`)
       
       if (useOnlyDbData) {
         // 从数据库加载更多
@@ -126,7 +132,7 @@ export default function LibraryPage() {
           const currentTotal = data.pagination?.total || totalImages
           
           if (newImages.length > 0) {
-            console.log(`✅ 加载了${newImages.length}张新图片`)
+            // console.log(`✅ 加载了${newImages.length}张新图片`)
             setLibraryImages(prev => [...prev, ...newImages])
             setCurrentPage(nextPage)
             
@@ -137,11 +143,11 @@ export default function LibraryPage() {
             // 更新总数（以防数据库中的数据发生变化）
             setTotalImages(currentTotal)
           } else {
-            console.log('📄 没有更多图片了')
+            // console.log('📄 没有更多图片了')
             setHasMorePages(false)
           }
         } else {
-          console.log('⚠️ 加载更多数据失败:', response.status)
+          // console.log('⚠️ 加载更多数据失败:', response.status)
           setHasMorePages(false)
         }
       } else {
@@ -151,7 +157,7 @@ export default function LibraryPage() {
         const newImages = demoLibraryImages.slice(startIndex, endIndex)
         
         if (newImages.length > 0) {
-          console.log(`✅ 从demo数据加载了${newImages.length}张新图片`)
+          // console.log(`✅ 从demo数据加载了${newImages.length}张新图片`)
           setLibraryImages(prev => [...prev, ...newImages])
           setCurrentPage(nextPage)
           
@@ -159,12 +165,12 @@ export default function LibraryPage() {
           const totalLoaded = libraryImages.length + newImages.length
           setHasMorePages(totalLoaded < demoLibraryImages.length)
         } else {
-          console.log('📄 demo数据已全部加载完成')
+          // console.log('📄 demo数据已全部加载完成')
           setHasMorePages(false)
         }
       }
     } catch (error) {
-      console.error('⚠️ 加载更多数据时出错:', error)
+      // console.error('⚠️ 加载更多数据时出错:', error)
       setHasMorePages(false)
     } finally {
       setLoadingMore(false)
@@ -173,7 +179,10 @@ export default function LibraryPage() {
 
   // 从数据库获取图片数据
   React.useEffect(() => {
-    fetchInitialData()
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      fetchInitialData()
+    }
   }, [])
 
   // Transform database data to ColoringPage format for backward compatibility with existing filter logic
@@ -196,15 +205,15 @@ export default function LibraryPage() {
       return coloringPage
     })
     
-    console.log('📋 Library页面数据转换完成:', {
-      总数量: result.length,
-      使用数据库数据: useOnlyDbData,
-      示例ID映射: result.length > 0 ? { 
-        显示ID: result[0].id, 
-        原始UUID: result[0].originalId,
-        UUID格式检查: result[0].originalId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(result[0].originalId) : false
-      } : null
-    })
+    // console.log('📋 Library页面数据转换完成:', {
+    //   总数量: result.length,
+    //   使用数据库数据: useOnlyDbData,
+    //   示例ID映射: result.length > 0 ? { 
+    //     显示ID: result[0].id, 
+    //     原始UUID: result[0].originalId,
+    //     UUID格式检查: result[0].originalId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(result[0].originalId) : false
+    //   } : null
+    // })
     
     return result
   }, [libraryImages, useOnlyDbData])
@@ -240,7 +249,7 @@ export default function LibraryPage() {
         }
       }
       
-      console.log(`🔍 应用时间过滤: ${period || 'week'}, 起始日期: ${filterDate.toISOString()}`)
+      // console.log(`🔍 应用时间过滤: ${period || 'week'}, 起始日期: ${filterDate.toISOString()}`)
       filtered = filtered.filter(page => page.dateAdded >= filterDate)
     }
     
@@ -287,26 +296,103 @@ export default function LibraryPage() {
       // Map 'hard' to 'complex' for consistency with database values
       const mappedDifficulty = difficulty === 'hard' ? 'complex' : difficulty
       filtered = filtered.filter(page => page.difficulty === mappedDifficulty)
-      console.log(`🔍 应用难度过滤: ${difficulty} (映射为: ${mappedDifficulty})`)
+      // console.log(`🔍 应用难度过滤: ${difficulty} (映射为: ${mappedDifficulty})`)
     }
     
     // 7. Apply imageId filter (show only specific image)
     if (imageId) {
       filtered = filtered.filter(page => page.originalId === imageId)
-      console.log(`🔍 应用图片ID过滤: ${imageId}`)
+      // console.log(`🔍 应用图片ID过滤: ${imageId}`)
     }
     
-    console.log(`🔍 过滤结果: ${filtered.length}/${coloringPages.length} 张图片`, {
-      selectedCategories: selectedCategories.length,
-      selectedTags: selectedTags.length,
-      searchQuery: activeSearchQuery,
-      difficulty: difficulty,
-      imageId: imageId
-    })
+    // 8. Apply category filter (from URL parameter)
+    if (category) {
+      // console.log(`🔍 开始应用主题分类过滤: ${category}`)
+      // console.log(`🔍 过滤前图片数量: ${filtered.length}`)
+      // console.log(`🔍 示例图片数据:`, filtered.slice(0, 2).map(p => ({ title: p.title, category: p.category, tags: p.tags })))
+      
+      filtered = filtered.filter(page =>
+        page.category.toLowerCase() === category.toLowerCase() ||
+        page.tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
+      )
+      // console.log(`🔍 应用主题分类过滤后: ${category}, 剩余${filtered.length}张图片`)
+    }
+    
+    // 9. Apply type filter (from URL parameter - for sub-categories like fairy types)
+    if (type) {
+      // console.log(`🔍 开始应用子类型过滤: ${type}`)
+      // console.log(`🔍 过滤前图片数量: ${filtered.length}`)
+      
+      // 🎯 为fairy类型使用与fairy页面相同的分类逻辑
+      if (category === 'fairy') {
+        // 🎯 与fairy页面完全一致的动态分类系统
+        const extractFairyType = (tags: string[], title?: string, description?: string): string => {
+          const allText = [tags.join(' '), title || '', description || ''].join(' ').toLowerCase()
+          
+          // 🎯 从标签中提取关键分类词
+          const keywordMap = {
+            'castle': ['castle', 'throne', 'palace'],
+            'royal': ['crown', 'royal'],
+            'butterfly': ['butterfly', 'wing'],
+            'garden': ['garden', 'flower', 'plant', 'rose', 'bloom'],
+            'woodland': ['forest', 'woodland', 'tree', 'nature'],
+            'dancing': ['dancing', 'dance', 'ballet'],
+            'sea': ['sea', 'ocean', 'water', 'mermaid'],
+            'ice': ['ice', 'snow', 'winter', 'frozen'],
+            'fire': ['fire', 'flame', 'phoenix'],
+            'moon': ['moon', 'night', 'star'],
+            'sun': ['sun', 'light', 'golden']
+          }
+          
+          // 逐一检查关键词组
+          for (const [category, keywords] of Object.entries(keywordMap)) {
+            for (const keyword of keywords) {
+              if (allText.includes(keyword)) {
+                return category
+              }
+            }
+          }
+          
+          // 如果没找到匹配，返回通用分类
+          return 'fairy'
+        }
+        
+        filtered = filtered.filter(page => {
+          const fairyType = extractFairyType(page.tags, page.title, page.description)
+          const matches = fairyType === type.toLowerCase()
+          // console.log(`🧚 图片 "${page.title}" 的fairy类型: ${fairyType}, 匹配${type}: ${matches}`, {
+          //   tags: page.tags,
+          //   title: page.title,
+          //   description: page.description?.substring(0, 50) + '...',
+          //   extractedType: fairyType
+          // })
+          return matches
+        })
+      } else {
+        // 其他类型使用原有逻辑
+        filtered = filtered.filter(page =>
+          page.tags.some(tag => tag.toLowerCase().includes(type.toLowerCase())) ||
+          page.title.toLowerCase().includes(type.toLowerCase()) ||
+          page.description.toLowerCase().includes(type.toLowerCase())
+        )
+      }
+      
+      // console.log(`🔍 应用子类型过滤后: ${type}, 剩余${filtered.length}张图片`)
+    }
+    
+    // console.log(`🔍 过滤结果: ${filtered.length}/${coloringPages.length} 张图片`, {
+    //   selectedCategories: selectedCategories.length,
+    //   selectedTags: selectedTags.length,
+    //   searchQuery: activeSearchQuery,
+    //   difficulty: difficulty,
+    //   imageId: imageId,
+    //   category: category,
+    //   type: type
+    // })
     
     // Sort by date (newest first)
     return filtered.sort((a, b) => b.dateAdded.getTime() - a.dateAdded.getTime())
-  }, [coloringPages, filterType, filterValue, searchQuery, selectedCategories, selectedTags, searchInput, period, since, difficulty, imageId])
+  }, [coloringPages, filterType, filterValue, searchQuery, selectedCategories, selectedTags, searchInput, period, since, difficulty, imageId, category, type])
 
   // Convert ColoringPage back to LibraryImage format for LibraryImageCard component
   const convertToLibraryImage = (page: ColoringPage): LibraryImage => {
@@ -743,5 +829,26 @@ export default function LibraryPage() {
       </div>
 
     </>
+  )
+}
+
+// Loading component for Suspense fallback
+function LibraryPageLoading() {
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading beautiful coloring pages...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main export with Suspense wrapper
+export default function LibraryPage() {
+  return (
+    <Suspense fallback={<LibraryPageLoading />}>
+      <LibraryPageContent />
+    </Suspense>
   )
 }

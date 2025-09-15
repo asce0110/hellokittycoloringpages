@@ -51,9 +51,9 @@ export function MobileHomeHero({ className = "" }: MobileHomeHeroProps) {
               asChild 
               className="min-w-[120px]"
             >
-              <Link href="/ai-coloring">
+              <Link href="/fairy">
                 <Sparkles className="mr-2 h-4 w-4" />
-                {isMobile ? "AI Create" : "AI Generator"}
+                {isMobile ? "Fairy Pages" : "Fairy Collection"}
               </Link>
             </Button>
           </MobileButtonGroup>
@@ -136,14 +136,14 @@ export function MobileHomeFeatures({ className = "" }: MobileHomeFeaturesProps) 
       mobileButtonText: "Explore"
     },
     {
-      title: "AI-Powered Coloring Generator",
-      mobileTitle: "AI Generator",
-      description: "Create unique, personalized coloring pages instantly using our advanced AI technology. Just describe what you want!",
-      mobileDescription: "Create unique pages with AI instantly",
-      href: "/ai-coloring",
+      title: "Magical Fairy Coloring Collection",
+      mobileTitle: "Fairy Collection",
+      description: "Discover enchanting fairy coloring pages featuring woodland fairies, fairy princesses, tooth fairies, and magical fairy adventures!",
+      mobileDescription: "Magical fairy pages for all ages",
+      href: "/fairy",
       icon: Sparkles,
-      buttonText: "Try AI Generator",
-      mobileButtonText: "Try AI"
+      buttonText: "Explore Fairy Pages",
+      mobileButtonText: "Fairy Pages"
     },
     {
       title: "Professional AI Studio Tools",

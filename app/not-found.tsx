@@ -11,7 +11,7 @@ const jsonLd = {
   "@type": "WebPage",
   "name": "Page Not Found - Coloring Pages Printable",
   "description": "This page was not found. Explore our library of printable coloring pages or browse our collection.",
-  "url": typeof window !== 'undefined' ? window.location.href : '',
+  "url": "https://coloringpagesprintable.net/404",
   "mainEntity": {
     "@type": "Thing",
     "name": "404 Error",

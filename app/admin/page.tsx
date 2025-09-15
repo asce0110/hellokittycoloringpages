@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { UserEditModal } from "@/components/user-edit-modal"
 import { ImageUploadModal } from "@/components/image-upload-modal"
 import { PricingEditModal } from "@/components/pricing-edit-modal"
@@ -27,7 +27,9 @@ import {
   Settings,
   BarChart3,
   Palette,
-  RefreshCw
+  RefreshCw,
+  Search,
+  X
 } from "lucide-react"
 import { DashboardStats, LibraryImage, BannerImage, User, PricingPlan, PromptTemplate } from "@/lib/types"
 import { ProtectedRoute } from "@/components/protected-route"
@@ -46,6 +48,7 @@ import { HeroPreviewModal } from "@/components/hero-preview-modal"
 import { getColorReferenceSync, hasColorReferenceSync } from "@/lib/reference-images"
 import { BannerDefaultImage } from "@/components/default-image"
 import { useEffect } from "react"
+import { NewsletterAdminPanel } from "@/components/newsletter-admin-panel"
 
 
 export default function AdminPage() {
@@ -76,7 +79,14 @@ export default function AdminPage() {
   const [showTemplateEditModal, setShowTemplateEditModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null)
   const [bannerFilter, setBannerFilter] = useState<'all' | 'hero' | 'banner'>('all')
+  const [bannerSearchQuery, setBannerSearchQuery] = useState('')
+  const [bannerTypeFilter, setBannerTypeFilter] = useState<'all' | 'line' | 'colored' | 'unpaired'>('all')
+  const [bannerCurrentPage, setBannerCurrentPage] = useState(1)
+  const [bannerPageSize, setBannerPageSize] = useState(12)
   const [showHeroPreview, setShowHeroPreview] = useState(false)
+  const [isPairingMode, setIsPairingMode] = useState(false)
+  const [selectedForPairing, setSelectedForPairing] = useState<BannerImage | null>(null)
+  const [pairingStep, setPairingStep] = useState<'select-line' | 'select-colored'>('select-line')
   
   // 拖拽配对状态
   const [draggedImage, setDraggedImage] = useState<BannerImage | null>(null)
@@ -1098,6 +1108,151 @@ export default function AdminPage() {
     return 'unknown'
   }
 
+  // 过滤和分页逻辑
+  const filteredBannerImages = React.useMemo(() => {
+    if (!bannerImages) return []
+    
+    return bannerImages.filter((image) => {
+      // 位置筛选
+      if (bannerFilter === 'hero' && !image.showOnHero) return false
+      if (bannerFilter === 'banner' && (image.showOnHero || (!image.showOnHomepage && !image.showOnLibrary))) return false
+      
+      // 搜索筛选
+      if (bannerSearchQuery) {
+        const query = bannerSearchQuery.toLowerCase()
+        const matchesTitle = image.title.toLowerCase().includes(query)
+        const matchesDescription = image.description?.toLowerCase().includes(query)
+        const matchesUrl = image.imageUrl?.toLowerCase().includes(query)
+        const matchesLinkUrl = image.linkUrl?.toLowerCase().includes(query)
+        
+        if (!matchesTitle && !matchesDescription && !matchesUrl && !matchesLinkUrl) {
+          return false
+        }
+      }
+      
+      // 图片类型筛选
+      const imageType = getImageType(image)
+      if (bannerTypeFilter === 'line' && imageType !== 'line') return false
+      if (bannerTypeFilter === 'colored' && imageType !== 'colored') return false
+      if (bannerTypeFilter === 'unpaired') {
+        // 未配对：线条图没有配对的彩色图，或者彩色图没有被任何线条图配对
+        const isLineImage = imageType === 'line'
+        const isColoredImage = imageType === 'colored'
+        const hasLinePaired = isLineImage && imagePairs[image.id]
+        const isColoredPaired = isColoredImage && Object.values(imagePairs).includes(image.id)
+        
+        if (!((isLineImage && !hasLinePaired) || (isColoredImage && !isColoredPaired))) {
+          return false
+        }
+      }
+      
+      // 隐藏已配对的彩色图（除非开启了显示隐藏图片模式或在配对模式下）
+      if (imageType === 'colored' && !showHiddenImages && !isPairingMode) {
+        const isUsedInPair = Object.values(imagePairs).includes(image.id)
+        if (isUsedInPair) return false
+      }
+      
+      // 配对模式下的特殊过滤逻辑
+      if (isPairingMode) {
+        // 第一步：只显示未配对的线条图
+        if (pairingStep === 'select-line') {
+          return imageType === 'line' && !imagePairs[image.id]
+        }
+        // 第二步：显示未配对的彩色图 + 已选中的线条图
+        else if (pairingStep === 'select-colored') {
+          return (imageType === 'colored' && !Object.values(imagePairs).includes(image.id)) || 
+                 (selectedForPairing && image.id === selectedForPairing.id)
+        }
+      }
+      
+      return true
+    })
+  }, [bannerImages, bannerFilter, bannerSearchQuery, bannerTypeFilter, imagePairs, showHiddenImages, isPairingMode, pairingStep, selectedForPairing])
+  
+  // 分页计算
+  const totalBannerPages = Math.ceil(filteredBannerImages.length / bannerPageSize)
+  const paginatedBannerImages = React.useMemo(() => {
+    const startIndex = (bannerCurrentPage - 1) * bannerPageSize
+    const endIndex = startIndex + bannerPageSize
+    return filteredBannerImages.slice(startIndex, endIndex)
+  }, [filteredBannerImages, bannerCurrentPage, bannerPageSize])
+  
+  // 重置页码当筛选条件改变时
+  React.useEffect(() => {
+    setBannerCurrentPage(1)
+  }, [bannerFilter, bannerSearchQuery, bannerTypeFilter, bannerPageSize])
+
+  // 配对模式处理函数
+  const handlePairingModeClick = async (image: BannerImage) => {
+    if (!isPairingMode) return
+    
+    const imageType = getImageType(image)
+    
+    if (pairingStep === 'select-line') {
+      // 第一步：选择线条图
+      if (imageType === 'line') {
+        setSelectedForPairing(image)
+        setPairingStep('select-colored')
+      } else {
+        alert('请选择一张线条图作为主图。线条图通常包含"line", "coloring", "outline"等关键词。')
+      }
+    } else if (pairingStep === 'select-colored') {
+      // 第二步：选择彩色图
+      if (imageType === 'colored' && selectedForPairing) {
+        // 执行配对 - 使用现有的savePairingToDatabase函数
+        await savePairingToDatabase(selectedForPairing, image)
+        
+        // 更新本地状态
+        setImagePairs(prev => ({
+          ...prev,
+          [selectedForPairing.id]: image.id
+        }))
+        
+        setImageTypes(prev => ({
+          ...prev,
+          [selectedForPairing.id]: 'line',
+          [image.id]: 'colored'
+        }))
+        // 重置配对模式
+        setSelectedForPairing(null)
+        setPairingStep('select-line')
+        alert(`✅ 配对成功！"${selectedForPairing.title}" 已与 "${image.title}" 配对。`)
+      } else if (imageType === 'line') {
+        alert('请选择一张彩色图作为参考图。彩色图通常包含"color", "painted", "filled"等关键词。')
+      } else {
+        alert('请选择一张彩色图进行配对。')
+      }
+    }
+  }
+  
+  // 智能配对推荐
+  const getSuggestedPairs = (lineImage: BannerImage): BannerImage[] => {
+    if (!bannerImages) return []
+    
+    return bannerImages
+      .filter(img => {
+        // 必须是彩色图
+        if (getImageType(img) !== 'colored') return false
+        // 不能已经被配对
+        if (Object.values(imagePairs).includes(img.id)) return false
+        
+        // 简单的标题相似度匹配
+        const lineTitle = lineImage.title.toLowerCase()
+        const coloredTitle = img.title.toLowerCase()
+        
+        // 提取关键词进行匹配
+        const lineKeywords = lineTitle.split(/\s+/).filter(word => word.length > 2)
+        const coloredKeywords = coloredTitle.split(/\s+/).filter(word => word.length > 2)
+        
+        const commonKeywords = lineKeywords.filter(keyword => 
+          coloredKeywords.some(ck => ck.includes(keyword) || keyword.includes(ck))
+        )
+        
+        return commonKeywords.length > 0
+      })
+      .slice(0, 3) // 最多推荐3张
+  }
+
   // 系统设置功能
   const handleSaveSettings = async () => {
     try {
@@ -1122,12 +1277,13 @@ export default function AdminPage() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="library">Library</TabsTrigger>
             <TabsTrigger value="banners">Banners</TabsTrigger>
             <TabsTrigger value="templates">AI Templates</TabsTrigger>
+            <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -1396,23 +1552,50 @@ export default function AdminPage() {
                     <CardTitle>Banner & Hero Images Management</CardTitle>
                     <CardDescription>Manage banner images for homepage, library, and hero section</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Button 
                       variant="outline" 
                       onClick={() => setShowBannerUploadModal(true)}
+                      disabled={isPairingMode}
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       普通Banner
                     </Button>
-                    <Button onClick={() => setShowHeroUploadModal(true)}>
+                    <Button 
+                      onClick={() => setShowHeroUploadModal(true)}
+                      disabled={isPairingMode}
+                    >
                       <Upload className="mr-2 h-4 w-4" />
                       Hero图片
                     </Button>
+                    
+                    {/* 配对模式按钮 */}
+                    <Button 
+                      variant={isPairingMode ? 'default' : 'outline'}
+                      onClick={() => {
+                        if (isPairingMode) {
+                          // 退出配对模式
+                          setIsPairingMode(false)
+                          setSelectedForPairing(null)
+                          setPairingStep('select-line')
+                        } else {
+                          // 进入配对模式
+                          setIsPairingMode(true)
+                          setBannerTypeFilter('unpaired') // 自动显示未配对图片
+                        }
+                      }}
+                      className={isPairingMode ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : ''}
+                    >
+                      <Palette className="mr-2 h-4 w-4" />
+                      {isPairingMode ? '退出配对模式' : '配对模式'}
+                    </Button>
+                    
                     {bannerImages && bannerImages.filter(img => img.showOnHero).length > 0 && (
                       <>
                         <Button 
                           variant="secondary" 
                           onClick={() => setShowHeroPreview(true)}
+                          disabled={isPairingMode}
                         >
                           <Eye className="mr-2 h-4 w-4" />
                           预览效果
@@ -1423,6 +1606,7 @@ export default function AdminPage() {
                             window.open('/', '_blank')
                           }}
                           title="在新页面查看首页实际效果"
+                          disabled={isPairingMode}
                         >
                           <RefreshCw className="mr-2 h-4 w-4" />
                           查看首页
@@ -1474,7 +1658,168 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
 
                 {/* 统计信息和筛选 */}
                 {!bannersLoading && bannerImages && (
-                  <div className="space-y-4 mb-6">
+                  <div className="space-y-6 mb-6">
+                    {/* 配对模式提示和指导 */}
+                {isPairingMode && (
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+                    <div className="flex items-start gap-3">
+                      <div className="text-blue-600 mt-0.5">
+                        {pairingStep === 'select-line' ? '🎯' : '🎨'}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-blue-800 font-medium mb-2">
+                          配对模式 - 第{pairingStep === 'select-line' ? '1' : '2'}步
+                        </h4>
+                        {pairingStep === 'select-line' ? (
+                          <>
+                            <p className="text-blue-700 text-sm mb-3">
+                              请点击选择一张<strong>线条图</strong>作为主图。线条图通常用于着色页面。
+                            </p>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">提示</span>
+                              <span className="text-blue-600">点击图片左上角的🎯图标来选择</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-blue-700 text-sm mb-3">
+                              已选择线条图：<strong>{selectedForPairing?.title}</strong><br/>
+                              现在请点击选择对应的<strong>彩色图</strong>作为参考图。
+                            </p>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">提示</span>
+                              <span className="text-purple-600">点击图片左上角的🎨图标来配对，或点击❌图标重新选择</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      
+                      {selectedForPairing && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-blue-300">
+                            <img 
+                              src={selectedForPairing.imageUrl} 
+                              alt={selectedForPairing.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedForPairing(null)
+                              setPairingStep('select-line')
+                            }}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* 搜索和筛选区域 */}
+                    <div className={`p-4 rounded-lg space-y-4 ${isPairingMode ? 'bg-blue-50/50 border border-blue-200' : 'bg-muted/30'}`}>
+                      {/* 搜索框 */}
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <div className="flex-1 min-w-[200px] max-w-md">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="搜索图片标题、描述或URL..."
+                              value={bannerSearchQuery}
+                              onChange={(e) => setBannerSearchQuery(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* 图片类型筛选 */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">图片类型:</span>
+                          <Button
+                            variant={bannerTypeFilter === 'all' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setBannerTypeFilter('all')}
+                          >
+                            全部
+                          </Button>
+                          <Button
+                            variant={bannerTypeFilter === 'line' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setBannerTypeFilter('line')}
+                          >
+                            📝 线条图
+                          </Button>
+                          <Button
+                            variant={bannerTypeFilter === 'colored' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setBannerTypeFilter('colored')}
+                          >
+                            🎨 彩色图
+                          </Button>
+                          <Button
+                            variant={bannerTypeFilter === 'unpaired' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setBannerTypeFilter('unpaired')}
+                          >
+                            ⚠️ 未配对
+                          </Button>
+                        </div>
+                        
+                        {/* 清除搜索 */}
+                        {bannerSearchQuery && !isPairingMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setBannerSearchQuery('')}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            清除搜索
+                          </Button>
+                        )}
+                        
+                        {/* 配对模式下的快速操作 */}
+                        {isPairingMode && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedForPairing(null)
+                                setPairingStep('select-line')
+                              }}
+                              disabled={!selectedForPairing}
+                              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                            >
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              重新选择
+                            </Button>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // 显示所有图片以便查看配对结果
+                                setBannerTypeFilter('all')
+                                setIsPairingMode(false)
+                                setSelectedForPairing(null)
+                                setPairingStep('select-line')
+                              }}
+                              className="text-green-600 border-green-300 hover:bg-green-50"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              查看所有
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* 统计信息 */}
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div className="bg-muted/50 p-3 rounded-lg text-center">
                         <div className="text-2xl font-bold text-primary">
@@ -1508,53 +1853,113 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
                       </div>
                     </div>
 
-                    {/* 快速筛选和使用说明 */}
+                    {/* 快速筛选和分页控制 */}
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm flex-wrap">
-                        <span className="text-muted-foreground">快速筛选:</span>
-                        <Button
-                          variant={bannerFilter === 'hero' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setBannerFilter('hero')}
-                        >
-                          仅显示Hero图片
-                        </Button>
-                        <Button
-                          variant={bannerFilter === 'banner' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setBannerFilter('banner')}
-                        >
-                          仅显示Banner
-                        </Button>
-                        <Button
-                          variant={bannerFilter === 'all' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setBannerFilter('all')}
-                        >
-                          显示全部
-                        </Button>
-                        
-                        {/* 显示/隐藏已配对图片的切换按钮 */}
-                        {Object.keys(imagePairs).length > 0 && (
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="flex items-center gap-2 text-sm flex-wrap">
+                          <span className="text-muted-foreground">位置筛选:</span>
                           <Button
-                            variant={showHiddenImages ? 'default' : 'outline'}
+                            variant={bannerFilter === 'hero' ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setShowHiddenImages(!showHiddenImages)}
-                            className="ml-2"
+                            onClick={() => setBannerFilter('hero')}
                           >
-                            {showHiddenImages ? (
-                              <>
-                                <EyeOff className="h-3 w-3 mr-1" />
-                                隐藏已配对图片
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-3 w-3 mr-1" />
-                                显示已配对图片
-                              </>
-                            )}
+                            🏠 Hero图片
                           </Button>
-                        )}
+                          <Button
+                            variant={bannerFilter === 'banner' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setBannerFilter('banner')}
+                          >
+                            🎯 Banner
+                          </Button>
+                          <Button
+                            variant={bannerFilter === 'all' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setBannerFilter('all')}
+                          >
+                            📋 显示全部
+                          </Button>
+                          
+                          {/* 显示/隐藏已配对图片的切换按钮 */}
+                          {Object.keys(imagePairs).length > 0 && (
+                            <Button
+                              variant={showHiddenImages ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setShowHiddenImages(!showHiddenImages)}
+                              className="ml-2"
+                            >
+                              {showHiddenImages ? (
+                                <>
+                                  <EyeOff className="h-3 w-3 mr-1" />
+                                  隐藏已配对
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  显示已配对
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {/* 分页控制和每页数量 */}
+                        <div className="flex items-center gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">每页显示:</span>
+                            <select 
+                              value={bannerPageSize} 
+                              onChange={(e) => {
+                                setBannerPageSize(Number(e.target.value))
+                                setBannerCurrentPage(1)
+                              }}
+                              className="bg-background border border-input rounded px-2 py-1"
+                            >
+                              <option value={12}>12</option>
+                              <option value={24}>24</option>
+                              <option value={48}>48</option>
+                              <option value={100}>100</option>
+                            </select>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setBannerCurrentPage(1)}
+                              disabled={bannerCurrentPage === 1}
+                            >
+                              首页
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setBannerCurrentPage(prev => Math.max(1, prev - 1))}
+                              disabled={bannerCurrentPage === 1}
+                            >
+                              上页
+                            </Button>
+                            <span className="px-2 text-muted-foreground">
+                              第 {bannerCurrentPage} / {totalBannerPages} 页
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setBannerCurrentPage(prev => Math.min(totalBannerPages, prev + 1))}
+                              disabled={bannerCurrentPage === totalBannerPages}
+                            >
+                              下页
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setBannerCurrentPage(totalBannerPages)}
+                              disabled={bannerCurrentPage === totalBannerPages}
+                            >
+                              末页
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                       
                       {/* 拖拽配对说明 */}
@@ -1571,39 +1976,40 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
                   </div>
                 )}
 
+                {/* 搜索结果统计 */}
+                {!bannersLoading && filteredBannerImages && (
+                  <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
+                    <div>
+                      显示第 {(bannerCurrentPage - 1) * bannerPageSize + 1} - 
+                      {Math.min(bannerCurrentPage * bannerPageSize, filteredBannerImages.length)} 项，
+                      共 {filteredBannerImages.length} 项
+                      {bannerSearchQuery && (
+                        <span className="ml-2 text-primary">
+                          （搜索: "{bannerSearchQuery}"）
+                        </span>
+                      )}
+                    </div>
+                    {filteredBannerImages.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>没有找到匹配的图片</p>
+                        <p className="text-xs mt-1">尝试修改搜索条件或筛选器</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {/* 🎨 改进的网格布局 - 保持原来的卡片大小但优化配对显示 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {bannersLoading ? (
-                    Array.from({ length: 8 }).map((_, i) => (
+                    Array.from({ length: bannerPageSize }).map((_, i) => (
                       <div key={i} className="animate-pulse">
                         <div className="bg-muted rounded-xl h-48 mb-3"></div>
                         <div className="bg-muted rounded h-4 w-3/4 mb-2"></div>
                         <div className="bg-muted rounded h-3 w-1/2"></div>
                       </div>
                     ))
-                  ) : bannerImages?.filter((image) => {
-                    // 基础筛选
-                    let shouldShow = true
-                    if (bannerFilter === 'hero') {
-                      shouldShow = image.showOnHero
-                    } else if (bannerFilter === 'banner') {
-                      shouldShow = !image.showOnHero && (image.showOnHomepage || image.showOnLibrary)
-                    }
-                    
-                    if (!shouldShow) return false
-                    
-                    // 隐藏已配对的彩色图（除非开启了显示隐藏图片模式）
-                    const imageType = getImageType(image)
-                    if (imageType === 'colored' && !showHiddenImages) {
-                      // 检查这个彩色图是否已经被某个线条图配对了
-                      const isUsedInPair = Object.values(imagePairs).includes(image.id)
-                      if (isUsedInPair) {
-                        return false // 隐藏已配对的彩色图
-                      }
-                    }
-                    
-                    return true
-                  }).map((image) => {
+                  ) : paginatedBannerImages?.map((image) => {
                     const imageType = getImageType(image)
                     const isLineImage = imageType === 'line'
                     const pairedImageId = isLineImage ? imagePairs[image.id] : null
@@ -1611,24 +2017,44 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
                     
                     // 检查是否为已配对的彩色图（用于特殊显示）
                     const isHiddenPairedImage = imageType === 'colored' && Object.values(imagePairs).includes(image.id) && showHiddenImages
+                    
+                    // 配对模式下的智能推荐
+                    const suggestedPairs = isPairingMode && selectedForPairing && selectedForPairing.id !== image.id 
+                      ? getSuggestedPairs(selectedForPairing) : []
+                    const isRecommended = suggestedPairs.some(suggested => suggested.id === image.id)
 
                     return (
                       <Card 
                         key={image.id} 
-                        draggable
-                        onDragStart={() => handleDragStart(image)}
-                        onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(image)}
-                        className={`overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-move ${
+                        draggable={!isPairingMode}
+                        onDragStart={() => !isPairingMode && handleDragStart(image)}
+                        onDragOver={!isPairingMode ? handleDragOver : undefined}
+                        onDrop={() => !isPairingMode && handleDrop(image)}
+                        onClick={() => isPairingMode && handlePairingModeClick(image)}
+                        className={`overflow-hidden transition-all duration-300 ${
+                          isPairingMode 
+                            ? 'hover:shadow-xl hover:scale-105 cursor-pointer' 
+                            : 'hover:shadow-lg hover:scale-[1.02] cursor-move'
+                        } ${
                           draggedImage?.id === image.id ? 'opacity-50 scale-95' : ''
                         } ${
-                          isHiddenPairedImage 
-                            ? 'ring-2 ring-orange-200 dark:ring-orange-800 shadow-orange-100 dark:shadow-orange-900/20 opacity-70'
-                            : image.showOnHero 
-                            ? 'ring-2 ring-purple-200 dark:ring-purple-800 shadow-purple-100 dark:shadow-purple-900/20' 
-                            : pairedImage
-                            ? 'ring-1 ring-green-200 dark:ring-green-800'
-                            : 'hover:ring-2 hover:ring-primary/20'
+                          // 配对模式下的特殊样式
+                          isPairingMode && selectedForPairing?.id === image.id
+                            ? 'ring-4 ring-blue-400 shadow-2xl shadow-blue-200 transform scale-105'
+                            : isPairingMode && pairingStep === 'select-line' && imageType === 'line'
+                            ? 'ring-2 ring-blue-300 hover:ring-blue-400 shadow-blue-100'
+                            : isPairingMode && pairingStep === 'select-colored' && imageType === 'colored' && !Object.values(imagePairs).includes(image.id)
+                            ? isRecommended
+                              ? 'ring-3 ring-yellow-400 shadow-xl shadow-yellow-200 bg-yellow-50 hover:shadow-yellow-300'
+                              : 'ring-2 ring-purple-300 hover:ring-purple-400 shadow-purple-100'
+                            : // 非配对模式下的样式
+                            !isPairingMode && isHiddenPairedImage 
+                              ? 'ring-2 ring-orange-200 dark:ring-orange-800 shadow-orange-100 dark:shadow-orange-900/20 opacity-70'
+                              : !isPairingMode && image.showOnHero 
+                              ? 'ring-2 ring-purple-200 dark:ring-purple-800 shadow-purple-100 dark:shadow-purple-900/20' 
+                              : !isPairingMode && pairedImage
+                              ? 'ring-1 ring-green-200 dark:ring-green-800'
+                              : 'hover:ring-2 hover:ring-primary/20'
                         }`}
                       >
                         <div className="relative group">
@@ -1643,24 +2069,50 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
                           {/* 图片类型标识 - 可点击切换 */}
                           <div className="absolute top-2 left-2 flex flex-col gap-1">
                             <Badge 
-                              className={`text-xs font-medium shadow-sm cursor-pointer hover:opacity-80 ${
+                              className={`text-xs font-medium shadow-sm hover:opacity-80 transition-all ${
+                                isPairingMode
+                                  ? 'cursor-pointer hover:scale-110 hover:shadow-lg'
+                                  : 'cursor-pointer'
+                              } ${
                                 imageType === 'line' 
-                                  ? 'bg-blue-500 text-white' 
+                                  ? isPairingMode && pairingStep === 'select-line'
+                                    ? 'bg-blue-500 text-white ring-2 ring-blue-300 animate-pulse' 
+                                    : 'bg-blue-500 text-white'
                                   : imageType === 'colored'
-                                  ? 'bg-green-500 text-white'
+                                  ? isPairingMode && pairingStep === 'select-colored'
+                                    ? 'bg-green-500 text-white ring-2 ring-purple-300 animate-pulse'
+                                    : 'bg-green-500 text-white'
                                   : 'bg-gray-500 text-white'
                               }`}
                               onClick={(e) => {
                                 e.stopPropagation()
-                                // 循环切换类型：unknown -> line -> colored -> unknown
-                                const nextType = imageType === 'unknown' ? 'line' : 
-                                               imageType === 'line' ? 'colored' : 'unknown'
-                                setImageType(image.id, nextType)
+                                if (isPairingMode) {
+                                  handlePairingModeClick(image)
+                                } else {
+                                  // 循环切换类型：unknown -> line -> colored -> unknown
+                                  const nextType = imageType === 'unknown' ? 'line' : 
+                                                 imageType === 'line' ? 'colored' : 'unknown'
+                                  setImageType(image.id, nextType)
+                                }
                               }}
-                              title="点击切换图片类型"
+                              title={isPairingMode 
+                                ? pairingStep === 'select-line' && imageType === 'line'
+                                  ? '🎯 点击选择这张线条图'
+                                  : pairingStep === 'select-colored' && imageType === 'colored'
+                                  ? '🎨 点击配对这张彩色图'
+                                  : '请选择正确的图片类型'
+                                : '点击切换图片类型'
+                              }
                             >
-                              {imageType === 'line' ? '📝 线条图' : 
-                               imageType === 'colored' ? '🎨 彩色图' : '❓ 未分类'}
+                              {isPairingMode ? (
+                                pairingStep === 'select-line' && imageType === 'line' ? '🎯 选择' :
+                                pairingStep === 'select-colored' && imageType === 'colored' ? '🎨 配对' :
+                                imageType === 'line' ? '📝 线条图' : 
+                                imageType === 'colored' ? '🎨 彩色图' : '❓ 未分类'
+                              ) : (
+                                imageType === 'line' ? '📝 线条图' : 
+                                imageType === 'colored' ? '🎨 彩色图' : '❓ 未分类'
+                              )}
                             </Badge>
                             
                             {/* Hero标识 */}
@@ -1674,6 +2126,13 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
                             {isHiddenPairedImage && (
                               <Badge className="bg-orange-500 text-white text-xs font-medium shadow-sm">
                                 🔗 已配对彩色图
+                              </Badge>
+                            )}
+                            
+                            {/* 智能推荐标识 */}
+                            {isPairingMode && isRecommended && (
+                              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold shadow-lg animate-pulse">
+                                ⭐ 智能推荐
                               </Badge>
                             )}
                           </div>
@@ -1857,6 +2316,11 @@ CREATE INDEX IF NOT EXISTS idx_banner_images_paired_image_id ON banner_images(pa
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Newsletter Tab */}
+          <TabsContent value="newsletter" className="space-y-6">
+            <NewsletterAdminPanel />
           </TabsContent>
 
           {/* Settings Tab */}

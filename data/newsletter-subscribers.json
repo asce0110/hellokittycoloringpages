@@ -1,0 +1,26 @@
+[
+  {
+    "id": "fallback-1757936524149-9pr6s1ad4",
+    "email": "asce3801@gmail.com",
+    "is_active": true,
+    "source": "homepage-fallback",
+    "ip_address": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    "created_at": "2025-09-15T11:42:04.149Z",
+    "updated_at": "2025-09-15T11:42:04.149Z",
+    "unsubscribed_at": null,
+    "resubscribed_at": null
+  },
+  {
+    "id": "fallback-1757936575719-57lfy4xpn",
+    "email": "asce380111@gmail.com",
+    "is_active": true,
+    "source": "homepage-fallback",
+    "ip_address": "::1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    "created_at": "2025-09-15T11:42:55.719Z",
+    "updated_at": "2025-09-15T11:42:55.719Z",
+    "unsubscribed_at": null,
+    "resubscribed_at": null
+  }
+]

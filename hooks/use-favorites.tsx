@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { useAuth } from "./use-auth"
+import { normalizeImageId, areIdsMatching } from "@/lib/id-utils"
 
 interface FavoriteItem {
   id: string
@@ -200,21 +201,40 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 刷新收藏列表
+  // 刷新收藏列表（增强版）
   const refreshFavorites = async () => {
     if (!isAuthenticated) {
       setFavorites([])
+      // 发布清空收藏事件
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('favoritesCleared', {
+          detail: { timestamp: Date.now() }
+        })
+        window.dispatchEvent(event)
+      }
       return
     }
 
     setIsLoading(true)
     try {
       const freshFavorites = await fetchFavorites()
+      console.log('🔄 刷新收藏列表成功:', { count: freshFavorites.length })
       setFavorites(freshFavorites)
       saveFavoritesToCache(freshFavorites)
       
       if (freshFavorites.length > 0) {
         setIsOnline(true)
+      }
+      
+      // 发布收藏列表刷新完成事件
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('favoritesRefreshed', {
+          detail: { 
+            count: freshFavorites.length,
+            timestamp: Date.now()
+          }
+        })
+        window.dispatchEvent(event)
       }
     } catch (error) {
       console.error('❌ 刷新收藏列表失败:', error)
@@ -223,12 +243,88 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 检查是否收藏
+  // 检查是否收藏 - 使用智能ID匹配（增强版）
   const isFavorite = (libraryImageId?: string, generationId?: string): boolean => {
-    return favorites.some(fav => 
-      (libraryImageId && fav.libraryImageId === libraryImageId) ||
-      (generationId && fav.generationId === generationId)
-    )
+    if (!libraryImageId && !generationId) {
+      console.log('🔍 isFavorite: 没有提供有效的ID')
+      return false
+    }
+
+    // 检查输入ID的有效性
+    const inputId = libraryImageId || generationId
+    if (!inputId || typeof inputId !== 'string' || inputId.trim() === '') {
+      console.log('🔍 isFavorite: 输入ID无效', { libraryImageId, generationId })
+      return false
+    }
+
+    console.log(`🔍 isFavorite 检查收藏状态 (增强版):`, {
+      输入libraryImageId: libraryImageId,
+      输入generationId: generationId,
+      收藏总数: favorites.length,
+      收藏列表前3条: favorites.slice(0, 3).map(fav => ({
+        id: fav.id,
+        libraryImageId: fav.libraryImageId,
+        generationId: fav.generationId
+      }))
+    })
+
+    const result = favorites.some(fav => {
+      // 使用智能ID匹配逻辑
+      if (libraryImageId && fav.libraryImageId) {
+        const match = areIdsMatching(libraryImageId, fav.libraryImageId)
+        if (match) {
+          console.log(`✅ isFavorite 库图片ID匹配成功:`, {
+            输入ID: libraryImageId,
+            收藏ID: fav.libraryImageId,
+            收藏记录ID: fav.id
+          })
+        }
+        return match
+      }
+      if (generationId && fav.generationId) {
+        const match = areIdsMatching(generationId, fav.generationId)
+        if (match) {
+          console.log(`✅ isFavorite 生成ID匹配成功:`, {
+            输入ID: generationId,
+            收藏ID: fav.generationId,
+            收藏记录ID: fav.id
+          })
+        }
+        return match
+      }
+      return false
+    })
+    
+    // 在找不到匹配时记录详细调试信息
+    if (!result && (libraryImageId || generationId)) {
+      console.log(`❌ isFavorite 未找到匹配:`, {
+        输入libraryImageId: libraryImageId,
+        输入generationId: generationId,
+        当前收藏数量: favorites.length,
+        收藏列表完整: favorites.map(f => ({
+          id: f.id,
+          libraryImageId: f.libraryImageId,
+          generationId: f.generationId,
+          userId: f.userId,
+          createdAt: f.createdAt
+        }))
+      })
+      
+      // 尝试手动匹配调试
+      if (libraryImageId) {
+        console.log('🔍 手动匹配调试 (libraryImageId):')
+        favorites.forEach((fav, index) => {
+          if (fav.libraryImageId) {
+            const manualMatch = areIdsMatching(libraryImageId, fav.libraryImageId)
+            console.log(`  [${index}] ${fav.libraryImageId} vs ${libraryImageId} = ${manualMatch}`)
+          }
+        })
+      }
+    } else if (result) {
+      console.log(`✅ isFavorite 找到匹配！结果: ${result}`)
+    }
+    
+    return result
   }
 
   // 添加收藏
@@ -318,18 +414,28 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         saveFavoritesToCache(updatedFavorites)
         setIsOnline(true)
         
-        // 🎯 发布收藏状态更新事件
+        // 🎯 立即发布事件并强制状态同步
         if (typeof window !== 'undefined') {
           const event = new CustomEvent('favoritesUpdated', {
             detail: {
               libraryImageId: finalLibraryImageId,
               generationId: finalGenerationId,
               isFavorited: true,
-              operation: 'add'
+              operation: 'add',
+              timestamp: Date.now()
             }
           })
           window.dispatchEvent(event)
           console.log('📡 发布收藏添加事件:', event.detail)
+          
+          // 额外发布强制刷新事件
+          setTimeout(() => {
+            const refreshEvent = new CustomEvent('favoritesForceRefresh', {
+              detail: { timestamp: Date.now() }
+            })
+            window.dispatchEvent(refreshEvent)
+            console.log('📡 发布强制刷新事件')
+          }, 100)
         }
         
         return true
@@ -350,7 +456,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         saveFavoritesToCache(updatedFavorites)
         setIsOnline(false)
         
-        // 🎯 发布收藏状态更新事件 (fallback模式)
+        // 🎯 立即发布事件并强制状态同步
         if (typeof window !== 'undefined') {
           const event = new CustomEvent('favoritesUpdated', {
             detail: {
@@ -358,11 +464,21 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
               generationId: finalGenerationId,
               isFavorited: true,
               operation: 'add',
-              mode: 'fallback'
+              mode: 'fallback',
+              timestamp: Date.now()
             }
           })
           window.dispatchEvent(event)
           console.log('📡 发布收藏添加事件 (fallback):', event.detail)
+          
+          // 额外发布强制刷新事件
+          setTimeout(() => {
+            const refreshEvent = new CustomEvent('favoritesForceRefresh', {
+              detail: { timestamp: Date.now() }
+            })
+            window.dispatchEvent(refreshEvent)
+            console.log('📡 发布强制刷新事件 (fallback)')
+          }, 100)
         }
         
         return true // fallback模式也是成功
@@ -398,7 +514,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       saveFavoritesToCache(updatedFavorites)
       setIsOnline(false)
       
-      // 🎯 发布收藏状态更新事件 (网络错误但本地成功)
+      // 🎯 立即发布事件并强制状态同步
       if (typeof window !== 'undefined') {
         const event = new CustomEvent('favoritesUpdated', {
           detail: {
@@ -406,11 +522,21 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             generationId: finalGenerationId,
             isFavorited: true,
             operation: 'add',
-            mode: 'offline'
+            mode: 'offline',
+            timestamp: Date.now()
           }
         })
         window.dispatchEvent(event)
         console.log('📡 发布收藏添加事件 (offline):', event.detail)
+        
+        // 额外发布强制刷新事件
+        setTimeout(() => {
+          const refreshEvent = new CustomEvent('favoritesForceRefresh', {
+            detail: { timestamp: Date.now() }
+          })
+          window.dispatchEvent(refreshEvent)
+          console.log('📡 发布强制刷新事件 (offline)')
+        }, 100)
       }
       
       console.log('✅ 网络错误但本地缓存成功')
@@ -458,16 +584,29 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         console.error('❌ 移除收藏失败:', data.error)
       }
       
-      // 无论服务器操作是否成功，都从本地状态移除
-      const updatedFavorites = favorites.filter(fav => 
-        !((libraryImageId && fav.libraryImageId === libraryImageId) ||
-          (generationId && fav.generationId === generationId))
-      )
+      // 无论服务器操作是否成功，都从本地状态移除（使用智能匹配）
+      const updatedFavorites = favorites.filter(fav => {
+        // 使用智能ID匹配逻辑来移除收藏
+        const shouldRemove = 
+          (libraryImageId && fav.libraryImageId && areIdsMatching(libraryImageId, fav.libraryImageId)) ||
+          (generationId && fav.generationId && areIdsMatching(generationId, fav.generationId))
+        
+        if (shouldRemove) {
+          console.log(`🗑️ 找到要移除的收藏:`, {
+            输入libraryImageId: libraryImageId,
+            输入generationId: generationId,
+            收藏libraryImageId: fav.libraryImageId,
+            收藏generationId: fav.generationId
+          })
+        }
+        
+        return !shouldRemove
+      })
       
       setFavorites(updatedFavorites)
       saveFavoritesToCache(updatedFavorites)
       
-      // 🎯 发布收藏状态更新事件 (移除成功)
+      // 🎯 立即发布事件并强制状态同步
       if (typeof window !== 'undefined') {
         const event = new CustomEvent('favoritesUpdated', {
           detail: {
@@ -475,28 +614,51 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             generationId,
             isFavorited: false,
             operation: 'remove',
-            mode: data.success ? 'database' : 'fallback'
+            mode: data.success ? 'database' : 'fallback',
+            timestamp: Date.now()
           }
         })
         window.dispatchEvent(event)
         console.log('📡 发布收藏移除事件:', event.detail)
+        
+        // 额外发布强制刷新事件
+        setTimeout(() => {
+          const refreshEvent = new CustomEvent('favoritesForceRefresh', {
+            detail: { timestamp: Date.now() }
+          })
+          window.dispatchEvent(refreshEvent)
+          console.log('📡 发布强制刷新事件')
+        }, 100)
       }
       
       return data.success || data.fallback // 服务器成功或fallback模式都算成功
     } catch (error) {
       console.error('❌ 网络错误，仅从本地缓存移除:', error)
       
-      // 网络错误时仅从本地移除
-      const updatedFavorites = favorites.filter(fav => 
-        !((libraryImageId && fav.libraryImageId === libraryImageId) ||
-          (generationId && fav.generationId === generationId))
-      )
+      // 网络错误时仅从本地移除（使用智能匹配）
+      const updatedFavorites = favorites.filter(fav => {
+        // 使用智能ID匹配逻辑来移除收藏
+        const shouldRemove = 
+          (libraryImageId && fav.libraryImageId && areIdsMatching(libraryImageId, fav.libraryImageId)) ||
+          (generationId && fav.generationId && areIdsMatching(generationId, fav.generationId))
+        
+        if (shouldRemove) {
+          console.log(`🗑️ 找到要移除的收藏 (网络错误):`, {
+            输入libraryImageId: libraryImageId,
+            输入generationId: generationId,
+            收藏libraryImageId: fav.libraryImageId,
+            收藏generationId: fav.generationId
+          })
+        }
+        
+        return !shouldRemove
+      })
       
       setFavorites(updatedFavorites)
       saveFavoritesToCache(updatedFavorites)
       setIsOnline(false)
       
-      // 🎯 发布收藏状态更新事件 (网络错误但本地移除成功)
+      // 🎯 立即发布事件并强制状态同步
       if (typeof window !== 'undefined') {
         const event = new CustomEvent('favoritesUpdated', {
           detail: {
@@ -504,63 +666,34 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             generationId,
             isFavorited: false,
             operation: 'remove',
-            mode: 'offline'
+            mode: 'offline',
+            timestamp: Date.now()
           }
         })
         window.dispatchEvent(event)
         console.log('📡 发布收藏移除事件 (offline):', event.detail)
+        
+        // 额外发布强制刷新事件
+        setTimeout(() => {
+          const refreshEvent = new CustomEvent('favoritesForceRefresh', {
+            detail: { timestamp: Date.now() }
+          })
+          window.dispatchEvent(refreshEvent)
+          console.log('📡 发布强制刷新事件 (offline)')
+        }, 100)
       }
       
       return true // 本地操作成功
     }
   }
 
-  // 🎯 统一的ID格式验证和防护 (与Library页面保持完全一致)
+  // 🎯 使用统一的ID验证工具
   const validateAndPrepareId = (id?: string): { isValid: boolean; safeId?: string; error?: string } => {
-    if (!id || typeof id !== 'string' || id.trim().length === 0) {
-      return { isValid: false, error: 'ID cannot be empty or invalid' }
-    }
-    
-    const cleanId = id.trim()
-    console.log('🔍 validateAndPrepareId 接收ID:', { 
-      原始ID: id, 
-      清理后ID: cleanId,
-      type: typeof cleanId, 
-      length: cleanId.length 
-    })
-    
-    // 1. UUID格式检查（最高优先级）
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    if (uuidPattern.test(cleanId)) {
-      console.log('✅ validateAndPrepareId 检测到有效UUID格式:', cleanId)
-      return { isValid: true, safeId: cleanId }
-    }
-    
-    // 2. Demo格式检查（已经是正确格式）
-    if (cleanId.startsWith('demo-') && cleanId.length > 5) {
-      console.log('✅ validateAndPrepareId 检测到有效demo格式:', cleanId)
-      return { isValid: true, safeId: cleanId }
-    }
-    
-    // 3. 纯数字转换为demo格式
-    if (/^\d+$/.test(cleanId)) {
-      const safeId = `demo-${cleanId}`
-      console.log('🔄 validateAndPrepareId 数字转换为demo格式:', { 原始: cleanId, 转换后: safeId })
-      return { isValid: true, safeId }
-    }
-    
-    // 4. ❌ 完全无效的格式 - 拒绝处理
-    console.error('❌ validateAndPrepareId 检测到无效ID格式:', {
-      id: cleanId,
-      length: cleanId.length,
-      startsWithDemo: cleanId.startsWith('demo-'),
-      isNumeric: /^\d+$/.test(cleanId),
-      isUuid: uuidPattern.test(cleanId)
-    })
-    
-    return { 
-      isValid: false, 
-      error: `Invalid ID format: "${cleanId}" - must be UUID format or demo-number format` 
+    const result = normalizeImageId(id)
+    return {
+      isValid: !!result.normalizedId,
+      safeId: result.normalizedId,
+      error: result.normalizedId ? undefined : 'ID格式无效'
     }
   }
 
@@ -647,6 +780,13 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       refreshFavorites()
     } else {
       setFavorites([])
+      // 发布清空收藏事件
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('favoritesCleared', {
+          detail: { timestamp: Date.now() }
+        })
+        window.dispatchEvent(event)
+      }
     }
   }, [isAuthenticated, user?.id])
 
