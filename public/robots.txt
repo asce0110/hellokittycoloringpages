@@ -1,4 +1,92 @@
+# Robots.txt for Coloring Pages Printable - Optimized for SEO
+# Website: https://coloringpagesprintable.net
+# Purpose: Maximize crawl efficiency and indexing of valuable content
+
+# Allow all crawlers to access public content
 User-agent: *
 Allow: /
 
-Sitemap: https://ai-kitty-creator.pages.dev/sitemap.xml
+# Strategic crawling permissions for high-value content
+Allow: /fairy*
+Allow: /library*
+Allow: /blog*
+Allow: /hello-kitty-drawings*
+Allow: /fairy-princess-coloring-pages*
+Allow: /tooth-fairy-coloring-pages*
+Allow: /create*
+Allow: /community*
+
+# Block low-value or sensitive areas
+Disallow: /admin*
+Disallow: /api*
+Disallow: /settings*
+Disallow: /dashboard*
+Disallow: /login*
+Disallow: /_next*
+Disallow: /data*
+Disallow: /scripts*
+Disallow: /database*
+
+# Block duplicate content and utility pages
+Disallow: /unsubscribe*
+Disallow: /color* # Redirects handled by /[slug]
+
+# Prevent crawling of query parameters that create duplicate content
+Disallow: /*?*
+Disallow: /*&*
+
+# Block common bot trap patterns
+Disallow: /wp-admin/
+Disallow: /wp-content/
+Disallow: /wp-includes/
+Disallow: /cgi-bin/
+
+# Allow specific file types important for SEO
+Allow: *.css
+Allow: *.js
+Allow: *.png
+Allow: *.jpg
+Allow: *.jpeg
+Allow: *.gif
+Allow: *.svg
+Allow: *.webp
+Allow: *.pdf
+
+# Crawl delay optimization (balance server load with SEO needs)
+Crawl-delay: 1
+
+# Sitemap locations for maximum discovery
+Sitemap: https://coloringpagesprintable.net/sitemap.xml
+Sitemap: https://coloringpagesprintable.net/sitemap-pages.xml
+Sitemap: https://coloringpagesprintable.net/sitemap-blog.xml
+Sitemap: https://coloringpagesprintable.net/sitemap-images.xml
+
+# Google-specific optimizations
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+# Bing-specific optimizations  
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Social media crawlers for rich previews
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Block problematic or aggressive crawlers
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
