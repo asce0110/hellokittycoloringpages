@@ -7,103 +7,39 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Crown, Heart, Wand2, Download, Printer, Star, Palette } from "lucide-react"
+import { supabaseAdmin } from '@/lib/supabase'
 
-// Fairy Princess Images Data (从SEO缓存系统获取)
-interface FairyPrincessImage {
-  slug: string
+// Database Library Image interface
+interface LibraryImage {
+  id: string
   title: string
   description: string
-  imageUrl: string
-  category: 'castle' | 'garden' | 'butterfly' | 'flower' | 'crown' | 'magical'
-  difficulty: 'easy' | 'medium' | 'complex'
+  image_url: string
+  thumbnail_url?: string
+  tags: string[]
+  category: string
+  difficulty: string
+  is_active: boolean
+  created_at: string
+  updated_at?: string
 }
 
-// Featured Fairy Princess themed designs
-const fairyPrincessImages: FairyPrincessImage[] = [
-  {
-    slug: "fairy-princess-castle-coloring-pages",
-    title: "Fairy Princess Castle",
-    description: "Magical fairy princess in an enchanted castle setting with towers and magical elements",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "castle",
-    difficulty: "medium"
-  },
-  {
-    slug: "butterfly-fairy-princess-coloring-pages", 
-    title: "Butterfly Fairy Princess",
-    description: "Beautiful fairy princess with delicate butterfly wings and enchanted garden background",
-    imageUrl: "/cute-kitty-coloring-page.png",
-    category: "butterfly",
-    difficulty: "complex"
-  },
-  {
-    slug: "fairy-princess-garden-coloring-pages",
-    title: "Fairy Princess Garden", 
-    description: "Enchanting fairy princess surrounded by magical flowers and woodland creatures",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "garden",
-    difficulty: "easy"
-  },
-  {
-    slug: "crown-fairy-princess-coloring-pages",
-    title: "Crown Fairy Princess",
-    description: "Royal fairy princess wearing a sparkling crown with stars and magical jewels", 
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    category: "crown",
-    difficulty: "medium"
-  },
-  {
-    slug: "flower-fairy-princess-coloring-pages",
-    title: "Flower Fairy Princess",
-    description: "Sweet fairy princess with flower petals as wings in a blooming meadow",
-    imageUrl: "/cute-kitty-coloring-page.png", 
-    category: "flower",
-    difficulty: "easy"
-  },
-  {
-    slug: "magical-wand-fairy-princess-coloring-pages",
-    title: "Magical Wand Fairy Princess",
-    description: "Fairy princess holding a sparkly magic wand with swirling magical energy",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "magical", 
-    difficulty: "medium"
-  },
-  {
-    slug: "dancing-fairy-princess-coloring-pages", 
-    title: "Dancing Fairy Princess",
-    description: "Graceful fairy princess dancing with flowing dress and magical sparkles around her",
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    category: "magical",
-    difficulty: "complex"
-  },
-  {
-    slug: "unicorn-fairy-princess-coloring-pages",
-    title: "Unicorn Fairy Princess", 
-    description: "Magical fairy princess riding a beautiful unicorn through an enchanted forest",
-    imageUrl: "/cute-kitty-coloring-page.png",
-    category: "magical",
-    difficulty: "complex"
-  },
-  {
-    slug: "starlight-fairy-princess-coloring-pages",
-    title: "Starlight Fairy Princess",
-    description: "Fairy princess surrounded by twinkling stars and celestial magical elements",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "magical",
-    difficulty: "medium"
-  },
-  {
-    slug: "rainbow-fairy-princess-coloring-pages", 
-    title: "Rainbow Fairy Princess",
-    description: "Colorful fairy princess with rainbow wings flying through a magical sky",
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    category: "magical",
-    difficulty: "easy"
-  }
-]
+// SEO slug generation helper
+function generateSEOSlug(title: string, id: string): string {
+  const baseSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+    .substring(0, 60)
+  
+  return `${baseSlug}-coloring-pages`.replace(/^-+|-+$/g, '')
+}
 
 export default function FairyPrincessColoringPagesPage() {
   const [loading, setLoading] = React.useState(true)
+  const [fairyImages, setFairyImages] = React.useState<LibraryImage[]>([])
   
   // FAQ Schema for voice search optimization
   const faqSchema = {
@@ -155,13 +91,31 @@ export default function FairyPrincessColoringPagesPage() {
     }
   }
   
-  // 模拟加载状态（实际项目中这里会从API获取数据）
+  // 从数据库获取fairy相关的图片
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 800)
-    
-    return () => clearTimeout(timer)
+    async function fetchFairyImages() {
+      try {
+        if (supabaseAdmin) {
+          const { data, error } = await supabaseAdmin
+            .from('library_images')
+            .select('id, title, description, image_url, thumbnail_url, tags, category, difficulty, is_active, created_at, updated_at')
+            .eq('is_active', true)
+            .eq('category', 'fairy')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (!error && data) {
+            setFairyImages(data)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching fairy images:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFairyImages()
   }, [])
   
   // 获取难度对应的颜色和图标
@@ -292,23 +246,24 @@ export default function FairyPrincessColoringPagesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-              {fairyPrincessImages.map((image, index) => {
-                const difficultyBadge = getDifficultyBadge(image.difficulty)
+              {fairyImages.length > 0 ? fairyImages.map((image, index) => {
+                const slug = generateSEOSlug(image.title, image.id)
+                const difficultyBadge = getDifficultyBadge(image.difficulty as 'easy' | 'medium' | 'complex')
                 const categoryEmoji = getCategoryEmoji(image.category)
                 
                 return (
                   <Link 
-                    key={`fairy-princess-${image.slug}`} 
-                    href={`/${image.slug}`}
+                    key={`fairy-${image.id}`} 
+                    href={`/${slug}`}
                     className="group block"
                   >
                     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
                       <CardContent className="p-0">
-                        {/* 真实的fairy princess图片 */}
+                        {/* 真实的fairy图片 */}
                         <div className="w-full aspect-square relative overflow-hidden bg-gradient-to-br from-pink-50 to-purple-50">
                           <Image
-                            src={image.imageUrl}
-                            alt={`${image.title} - Free printable ${image.category} fairy princess coloring page for kids | Coloreveal`}
+                            src={image.thumbnail_url || image.image_url}
+                            alt={`${image.title} - Free printable fairy coloring page for kids | Coloreveal`}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-110"
                             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
@@ -360,7 +315,19 @@ export default function FairyPrincessColoringPagesPage() {
                     </Card>
                   </Link>
                 )
-              })}
+              }) : (
+                // 没有数据时显示空状态
+                <div className="col-span-full text-center py-12">
+                  <div className="text-6xl mb-4">🧚‍♀️</div>
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Fairy Images Available</h3>
+                  <p className="text-gray-500 mb-4">We're working on adding more magical fairy coloring pages!</p>
+                  <Button asChild variant="outline">
+                    <Link href="/library">
+                      Browse All Coloring Pages
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           
