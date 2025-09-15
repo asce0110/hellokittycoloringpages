@@ -18,7 +18,7 @@ interface SlugPageProps {
 
 // 定义所有静态路由，避免动态路由冲突
 const STATIC_ROUTES = new Set([
-  'admin', 'community', 'create', 'dashboard', 'hello-kitty-drawings', 
+  'admin', 'community', 'create', 'dashboard', 
   'library', 'login', 'print-test', 'settings', 'smart-compression', 'upng-test',
   'api', 'color', // 包含旧的color路径用于重定向
   'debug', 'diagnosis', 'diagnostic', 'privacy', 'terms', 

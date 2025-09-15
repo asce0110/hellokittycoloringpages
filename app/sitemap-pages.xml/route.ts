@@ -44,34 +44,6 @@ export async function GET() {
         description: 'Tooth Fairy Coloring Pages'
       },
       {
-        url: `${baseUrl}/hello-kitty-drawings`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.7,
-        description: 'Hello Kitty Coloring Pages'
-      },
-      {
-        url: `${baseUrl}/hello-kitty-drawings/easy`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.6,
-        description: 'Easy Hello Kitty Coloring Pages'
-      },
-      {
-        url: `${baseUrl}/hello-kitty-drawings/medium`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.6,
-        description: 'Medium Difficulty Hello Kitty Coloring Pages'
-      },
-      {
-        url: `${baseUrl}/hello-kitty-drawings/complex`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.6,
-        description: 'Complex Hello Kitty Coloring Pages'
-      },
-      {
         url: `${baseUrl}/create`,
         lastModified: currentDate,
         changeFrequency: 'monthly',

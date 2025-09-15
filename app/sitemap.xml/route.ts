@@ -40,30 +40,6 @@ export async function GET() {
         priority: 0.8
       },
       {
-        url: `${baseUrl}/hello-kitty-drawings`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.7
-      },
-      {
-        url: `${baseUrl}/hello-kitty-drawings/easy`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.6
-      },
-      {
-        url: `${baseUrl}/hello-kitty-drawings/medium`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.6
-      },
-      {
-        url: `${baseUrl}/hello-kitty-drawings/complex`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly',
-        priority: 0.6
-      },
-      {
         url: `${baseUrl}/create`,
         lastModified: currentDate,
         changeFrequency: 'monthly',
@@ -140,23 +116,13 @@ export async function GET() {
           })
         }
 
-        // Get Hello Kitty drawings
-        const helloKittyImages = await generateHelloKittyUrls(baseUrl)
-        dynamicPages.push(...helloKittyImages)
+        // Hello Kitty drawings section removed
         
       }
     } catch (dbError) {
       console.warn('Database query failed for sitemap, using static content only:', dbError)
       
-      // Fallback: Add some static Hello Kitty pages
-      for (let i = 1; i <= 10; i++) {
-        dynamicPages.push({
-          url: `${baseUrl}/hello-kitty-drawings/${i}`,
-          lastModified: currentDate,
-          changeFrequency: 'monthly',
-          priority: 0.5
-        })
-      }
+      // Fallback: No additional static pages needed
     }
 
     // Combine all pages
@@ -207,45 +173,3 @@ function generateSEOSlug(title: string, id: string): string {
   return `${baseSlug}-coloring-pages`.replace(/^-+|-+$/g, '') // Clean up edges
 }
 
-// Generate Hello Kitty drawing URLs
-async function generateHelloKittyUrls(baseUrl: string): Promise<any[]> {
-  const urls: any[] = []
-  const currentDate = new Date().toISOString()
-  
-  try {
-    if (supabaseAdmin) {
-      // Get actual Hello Kitty drawings from database
-      const { data: drawings, error } = await supabaseAdmin
-        .from('hello_kitty_drawings') // Assuming you have this table
-        .select('id, title, updated_at, created_at')
-        .eq('is_active', true)
-        .order('id')
-        .limit(50)
-
-      if (!error && drawings) {
-        drawings.forEach((drawing: any) => {
-          urls.push({
-            url: `${baseUrl}/hello-kitty-drawings/${drawing.id}`,
-            lastModified: drawing.updated_at || drawing.created_at,
-            changeFrequency: 'monthly',
-            priority: 0.5
-          })
-        })
-      } else {
-        // Fallback to static range
-        for (let i = 1; i <= 20; i++) {
-          urls.push({
-            url: `${baseUrl}/hello-kitty-drawings/${i}`,
-            lastModified: currentDate,
-            changeFrequency: 'monthly',
-            priority: 0.5
-          })
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('Hello Kitty URLs generation failed:', error)
-  }
-  
-  return urls
-}

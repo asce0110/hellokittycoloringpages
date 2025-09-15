@@ -165,7 +165,7 @@ export function convertCurrentUrlToSeo(currentUrl: string): string {
     )
   } catch (error) {
     console.error('❌ URL转换失败:', error)
-    return '/hello-kitty-drawings'
+    return '/library' // Redirect to general library since hello-kitty-drawings removed
   }
 }
 

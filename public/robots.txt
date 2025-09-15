@@ -10,7 +10,6 @@ Allow: /
 Allow: /fairy*
 Allow: /library*
 Allow: /blog*
-Allow: /hello-kitty-drawings*
 Allow: /fairy-princess-coloring-pages*
 Allow: /tooth-fairy-coloring-pages*
 Allow: /create*

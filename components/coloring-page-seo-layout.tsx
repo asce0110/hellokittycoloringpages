@@ -295,7 +295,7 @@ export function ColoringPageSEOLayout({ coloringPage, children }: ColoringPageSE
                   <p className="text-sm text-pink-700 dark:text-pink-400">Explore more adorable Hello Kitty designs</p>
                 </Link>
                 
-                <Link href="/hello-kitty-drawings/easy" className="block p-3 rounded-lg bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-100 dark:border-green-800 hover:border-green-200 dark:hover:border-green-700 hover:shadow-sm transition-all">
+                <Link href="/library?difficulty=easy" className="block p-3 rounded-lg bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-100 dark:border-green-800 hover:border-green-200 dark:hover:border-green-700 hover:shadow-sm transition-all">
                   <h4 className="font-medium text-green-800 dark:text-green-300">Beginner Friendly</h4>
                   <p className="text-sm text-green-700 dark:text-green-400">Simple and easy coloring designs</p>
                 </Link>

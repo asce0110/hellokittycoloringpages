@@ -184,7 +184,7 @@ export function generatePersistentSeoUrl(title: string, imageUrl: string, descri
     }
   }
   
-  return `/hello-kitty-drawings/${uniqueSlug}`
+  return `/library` // Redirect to general library since hello-kitty-drawings removed
 }
 
 /**
