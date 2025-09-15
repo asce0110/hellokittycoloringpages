@@ -130,7 +130,7 @@ export async function GET() {
           .limit(100)
 
         if (!blogError && blogPosts) {
-          blogPosts.forEach(post => {
+          blogPosts.forEach((post: any) => {
             dynamicPages.push({
               url: `${baseUrl}/blog/${post.slug}`,
               lastModified: post.updated_at || post.created_at,
