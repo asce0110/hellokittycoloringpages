@@ -397,12 +397,11 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       {/* Main Drawing Area */}
       <div className="flex-1 flex flex-col relative min-h-0">
         {/* Canvas Container */}
-        <div className="flex-1 flex items-center justify-center bg-gray-50 p-2 overflow-hidden">
+        <div className="flex items-center justify-center bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '50vh' }}>
           <div className="w-full h-full max-w-sm flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
-              className="w-full h-full relative" 
-              style={{ maxHeight: 'calc(100vh - 300px)' }}
+              className="w-full h-full relative"
             >
               {/* 交互模式指示器 */}
               {(interactionMode === 'pan' || isPanning) && (
@@ -451,39 +450,32 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
         {/* Bottom Action Bar - Scrollable */}
         {showUI && !isFullscreen && (
-          <div className="bg-white dark:bg-gray-900 border-t dark:border-gray-700 flex-shrink-0 max-h-[40vh] overflow-y-auto" 
-               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          <div className="bg-white dark:bg-gray-900 border-t dark:border-gray-700 flex-shrink-0 overflow-y-auto" 
+               style={{ height: 'calc(50vh - 80px)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <div className="p-4 space-y-4">
-              {/* Current color indicator */}
-              <div className="flex items-center justify-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-600">
+            <div className="p-3 space-y-3">
+              {/* Current color indicator - compact */}
+              <div className="flex items-center justify-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div 
-                  className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-500 flex-shrink-0"
+                  className="w-5 h-5 rounded-full border border-gray-300 dark:border-gray-500 flex-shrink-0"
                   style={{ backgroundColor: selectedColor }}
                 />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-                  Current: {selectedColor}
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                  {selectedColor}
                 </span>
               </div>
-
-              {/* Progress info bar */}
-              {hasSavedProgress && lastSaveTime && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/30 p-2 rounded text-center">
-                  Last saved: {new Date(lastSaveTime).toLocaleString()}
-                </div>
-              )}
               
-              {/* Quick color selection bar */}
-              <div className="flex justify-center gap-1 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {quickColors.map((color) => (
+              {/* Quick color selection bar - compact */}
+              <div className="flex justify-center gap-1 p-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {quickColors.slice(0, 4).map((color) => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
                     className={cn(
-                      "w-8 h-8 rounded-full border-2 transition-all shadow-sm",
+                      "w-6 h-6 rounded-full border transition-all",
                       selectedColor === color 
-                        ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
-                        : "border-white hover:border-gray-300"
+                        ? "border-blue-500 ring-1 ring-blue-200 scale-110" 
+                        : "border-gray-300"
                     )}
                     style={{ backgroundColor: color }}
                     title={`Select ${color}`}
@@ -491,119 +483,97 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                 ))}
                 <button
                   onClick={() => setShowColorPicker(true)}
-                  className="w-8 h-8 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-gray-400 transition-all"
+                  className="w-6 h-6 rounded-full border border-gray-300 bg-white flex items-center justify-center"
                   title="More colors"
                 >
-                  <Palette className="h-4 w-4 text-gray-600" />
+                  <Palette className="h-3 w-3 text-gray-600" />
                 </button>
               </div>
 
-              {/* Mode Toggle - Quick Access */}
-              <div className="flex justify-center">
-                <Button
-                  variant={interactionMode === 'draw' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={toggleInteractionMode}
-                  className={cn(
-                    "flex items-center gap-2 px-4",
-                    interactionMode === 'draw' 
-                      ? "bg-purple-600 text-white hover:bg-purple-700" 
-                      : "bg-orange-600 text-white hover:bg-orange-700"
-                  )}
-                >
-                  {interactionMode === 'draw' ? (
-                    <>
-                      <Palette className="h-4 w-4" />
-                      <span>Draw Mode</span>
-                    </>
-                  ) : (
-                    <>
-                      <Move className="h-4 w-4" />
-                      <span>Pan Mode</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Main action buttons */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* Main action buttons - compact */}
+              <div className="grid grid-cols-4 gap-1">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowColorPicker(true)}
-                  className="flex flex-col items-center gap-1 h-16"
-                  style={{ 
-                    backgroundColor: selectedColor === '#000000' ? '#f3f4f6' : 'transparent',
-                    borderColor: selectedColor,
-                    borderWidth: '2px'
-                  }}
+                  className="flex flex-col items-center gap-1 h-12 text-xs"
                   disabled={interactionMode === 'pan'}
                 >
-                  <Palette className="h-4 w-4" />
-                  <span className="text-xs">Colors</span>
+                  <Palette className="h-3 w-3" />
+                  Colors
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleDownload}
-                  className="flex flex-col items-center gap-1 h-16"
+                  className="flex flex-col items-center gap-1 h-12 text-xs"
                 >
-                  <Download className="h-4 w-4" />
-                  <span className="text-xs">Export</span>
+                  <Download className="h-3 w-3" />
+                  Export
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleShare}
-                  className="flex flex-col items-center gap-1 h-16"
+                  className="flex flex-col items-center gap-1 h-12 text-xs"
                 >
-                  <Share2 className="h-4 w-4" />
-                  <span className="text-xs">Share</span>
+                  <Share2 className="h-3 w-3" />
+                  Share
+                </Button>
+                <Button
+                  variant={interactionMode === 'draw' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={toggleInteractionMode}
+                  className={cn(
+                    "flex flex-col items-center gap-1 h-12 text-xs",
+                    interactionMode === 'draw' 
+                      ? "bg-purple-600 text-white hover:bg-purple-700" 
+                      : "bg-orange-600 text-white hover:bg-orange-700"
+                  )}
+                >
+                  <Move className="h-3 w-3" />
+                  {interactionMode === 'draw' ? 'Draw' : 'Pan'}
                 </Button>
               </div>
               
-              {/* Progress management buttons */}
+              {/* Progress management buttons - compact */}
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant="default"
                   size="sm"
                   onClick={handleSaveProgress}
-                  className="flex flex-col items-center gap-1 h-16 bg-purple-600 text-white hover:bg-purple-700"
+                  className="flex flex-col items-center gap-1 h-12 bg-purple-600 text-white hover:bg-purple-700 text-xs"
                 >
-                  <Save className="h-4 w-4" />
-                  <span className="text-xs">Save</span>
+                  <Save className="h-3 w-3" />
+                  Save
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleLoadProgress}
                   disabled={!hasSavedProgress}
-                  className="flex flex-col items-center gap-1 h-16 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 disabled:opacity-50"
+                  className="flex flex-col items-center gap-1 h-12 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 disabled:opacity-50 text-xs"
                 >
-                  <FolderOpen className="h-4 w-4" />
-                  <span className="text-xs">Load</span>
+                  <FolderOpen className="h-3 w-3" />
+                  Load
                 </Button>
-                {hasSavedProgress && (
+                {hasSavedProgress ? (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearProgress}
-                    className="flex flex-col items-center gap-1 h-16 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="flex flex-col items-center gap-1 h-12 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
                   >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="text-xs">Clear</span>
+                    <Trash2 className="h-3 w-3" />
+                    Clear
                   </Button>
-                )}
-                {!hasSavedProgress && (
-                  <div className="flex flex-col items-center gap-1 h-16 opacity-30">
-                    <Trash2 className="h-4 w-4 text-gray-400" />
-                    <span className="text-xs text-gray-400">Clear</span>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 h-12 opacity-30 text-xs">
+                    <Trash2 className="h-3 w-3 text-gray-400" />
+                    Clear
                   </div>
                 )}
               </div>
-
-              {/* Extra bottom padding for safe area */}
-              <div className="h-4"></div>
             </div>
           </div>
         )}
