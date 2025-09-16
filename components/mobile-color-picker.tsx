@@ -141,6 +141,38 @@ export function MobileColorPicker({
     }
   }, [supportsEyedropper, handleColorSelect])
 
+  // Force Custom tab visibility in dark mode
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        const customTab = document.querySelector('[data-value="custom"]') as HTMLElement
+        if (customTab) {
+          // Force visible colors
+          const isDark = document.documentElement.classList.contains('dark') || 
+                         document.documentElement.getAttribute('data-theme') === 'dark' ||
+                         window.matchMedia('(prefers-color-scheme: dark)').matches
+          
+          if (isDark) {
+            customTab.style.setProperty('color', '#f9fafb', 'important')
+            customTab.style.setProperty('background-color', 'transparent', 'important')
+          } else {
+            customTab.style.setProperty('color', '#111827', 'important')
+            customTab.style.setProperty('background-color', 'transparent', 'important')
+          }
+          console.log('🎨 Forced Custom tab styling:', {
+            isDark,
+            color: customTab.style.color,
+            element: customTab,
+            classes: customTab.className,
+            computedStyle: window.getComputedStyle(customTab).color
+          })
+        }
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen])
+
   // Handle swipe to close
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0]
@@ -252,9 +284,16 @@ export function MobileColorPicker({
                   Favorites
                 </TabsTrigger>
               )}
-              <TabsTrigger value="custom" className="flex items-center gap-2 px-3 py-2 text-sm !text-gray-900 dark:!text-gray-100 data-[state=active]:!bg-blue-100 dark:data-[state=active]:!bg-blue-900 data-[state=active]:!text-blue-900 dark:data-[state=active]:!text-blue-100 hover:!bg-gray-100 dark:hover:!bg-gray-800">
+              <TabsTrigger 
+                value="custom" 
+                className="flex items-center gap-2 px-3 py-2 text-sm"
+                style={{
+                  color: 'var(--foreground)',
+                  backgroundColor: 'transparent'
+                }}
+              >
                 <Palette className="h-4 w-4" />
-                Custom
+                <span style={{ color: 'inherit' }}>Custom</span>
               </TabsTrigger>
             </TabsList>
 
