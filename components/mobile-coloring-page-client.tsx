@@ -328,7 +328,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     }
   }, [isAuthenticated, coloringPage, isFavorite, addToFavorites, removeFromFavorites])
 
-  // Safe area padding for devices with notches and mobile browser bars
+  // Safe area padding for devices with notches
   useEffect(() => {
     const updateSafeArea = () => {
       const safeAreaTop = getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0px'
@@ -336,16 +336,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       
       document.documentElement.style.setProperty('--safe-area-top', safeAreaTop)
       document.documentElement.style.setProperty('--safe-area-bottom', safeAreaBottom)
-      
-      // Dynamic viewport height calculation for mobile browsers
-      const vh = window.innerHeight * 0.01
-      document.documentElement.style.setProperty('--vh', `${vh}px`)
-      
-      // Additional bottom padding for mobile browser navigation
-      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      if (isMobile) {
-        document.documentElement.style.setProperty('--mobile-bottom-padding', '20px')
-      }
     }
     
     updateSafeArea()
@@ -364,13 +354,12 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   return (
     <div className={cn(
-      "w-full bg-white relative overflow-hidden flex flex-col",
+      "h-screen w-full bg-white relative overflow-hidden flex flex-col",
       "select-none touch-pan-y", // Prevent text selection but allow touch
-      isFullscreen && "fixed inset-0 z-50 h-screen"
+      isFullscreen && "fixed inset-0 z-50"
     )}
     style={{
-      height: isFullscreen ? 'calc(var(--vh, 1vh) * 100)' : 'calc(var(--vh, 1vh) * 100 - env(safe-area-inset-bottom) - var(--mobile-bottom-padding, 20px))',
-      minHeight: isFullscreen ? 'calc(var(--vh, 1vh) * 100)' : 'calc(var(--vh, 1vh) * 100 - env(safe-area-inset-bottom) - var(--mobile-bottom-padding, 20px))'
+      paddingBottom: isFullscreen ? '0' : 'max(20px, env(safe-area-inset-bottom))'
     }}>
       {/* Header - Hidden in fullscreen and minimal modes */}
       {!isFullscreen && !isMinimalMode && (
@@ -449,8 +438,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         {showUI && !isFullscreen && (
           <div className="bg-white border-t flex-shrink-0" 
                style={{ 
-                 paddingBottom: 'max(20px, env(safe-area-inset-bottom), 20px)',
-                 marginBottom: 'max(10px, env(safe-area-inset-bottom))'
+                 paddingBottom: '20px'
                }}
           >
             {/* Main Quick Access Bar - Always Visible */}
@@ -628,9 +616,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
         {/* Fullscreen Mode Bottom Bar */}
         {showUI && isFullscreen && (
-          <div className="absolute left-0 right-0 bg-white border-t p-4 z-30"
+          <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-4 z-30"
                style={{ 
-                 bottom: 'max(20px, env(safe-area-inset-bottom))',
                  paddingBottom: 'max(20px, env(safe-area-inset-bottom))' 
                }}
           >
