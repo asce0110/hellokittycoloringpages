@@ -455,6 +455,35 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                   "w-full h-full transition-opacity duration-200",
                   (interactionMode === 'pan' || isPanning) && "pointer-events-none opacity-75"
                 )}
+                onTouchStart={(e) => {
+                  // 双手指或更多手指时阻止绘画
+                  if (e.touches.length >= 2) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setInteractionMode('pan')
+                    setIsPanning(true)
+                    return false
+                  }
+                }}
+                onTouchMove={(e) => {
+                  // 双手指或平移模式时阻止绘画
+                  if (e.touches.length >= 2 || interactionMode === 'pan' || isPanning) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    return false
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  // 如果是平移结束，延迟恢复绘画模式
+                  if (isPanning || e.touches.length === 0) {
+                    setTimeout(() => {
+                      if (e.touches.length === 0) {
+                        setIsPanning(false)
+                        setInteractionMode('draw')
+                      }
+                    }, 100)
+                  }
+                }}
               >
                 <ColoringCanvas
                   ref={canvasRef}
@@ -491,27 +520,27 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
         {/* Bottom Action Bar */}
         {showUI && !isFullscreen && (
-          <div className="bg-white border-t p-4 flex-shrink-0" 
+          <div className="bg-white dark:bg-gray-900 border-t dark:border-gray-700 p-4 flex-shrink-0" 
                style={{ paddingBottom: 'max(76px, calc(env(safe-area-inset-bottom) + 60px))' }}
           >
             {/* Current color indicator */}
-            <div className="flex items-center justify-center gap-2 mb-2 p-2 bg-white rounded-lg border">
+            <div className="flex items-center justify-center gap-2 mb-2 p-2 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-600">
               <div 
-                className="w-6 h-6 rounded-full border-2 border-gray-300"
+                className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-500"
                 style={{ backgroundColor: selectedColor }}
               />
-              <span className="text-sm font-medium text-gray-700">Current Color: {selectedColor}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Color: {selectedColor}</span>
             </div>
 
             {/* Progress info bar */}
             {hasSavedProgress && lastSaveTime && (
-              <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded mb-2 text-center">
+              <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/30 p-2 rounded mb-2 text-center">
                 Last saved: {new Date(lastSaveTime).toLocaleString()}
               </div>
             )}
             
             {/* Quick color selection bar */}
-            <div className="flex justify-center gap-1 mb-3 p-2 bg-gray-50 rounded-lg">
+            <div className="flex justify-center gap-1 mb-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
               {quickColors.map((color) => (
                 <button
                   key={color}

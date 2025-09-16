@@ -234,23 +234,23 @@ export function MobileColorPicker({
         {/* Color Picker Tabs */}
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="palette" className="h-full">
-            <TabsList className="w-full justify-start px-6 bg-transparent border-b rounded-none h-auto p-0">
-              <TabsTrigger value="palette" className="flex items-center gap-2 px-4 py-3">
+            <TabsList className="w-full justify-start px-6 bg-white dark:bg-gray-800 border-b rounded-none h-auto p-0">
+              <TabsTrigger value="palette" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
                 <SwatchBook className="h-4 w-4" />
                 Palette
               </TabsTrigger>
-              <TabsTrigger value="custom" className="flex items-center gap-2 px-4 py-3">
+              <TabsTrigger value="custom" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
                 <Palette className="h-4 w-4" />
                 Custom
               </TabsTrigger>
               {recentColors.length > 0 && (
-                <TabsTrigger value="recent" className="flex items-center gap-2 px-4 py-3">
+                <TabsTrigger value="recent" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
                   <Clock className="h-4 w-4" />
                   Recent
                 </TabsTrigger>
               )}
               {favoriteColors.length > 0 && (
-                <TabsTrigger value="favorites" className="flex items-center gap-2 px-4 py-3">
+                <TabsTrigger value="favorites" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
                   <Star className="h-4 w-4" />
                   Favorites
                 </TabsTrigger>
