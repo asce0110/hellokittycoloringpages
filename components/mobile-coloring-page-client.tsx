@@ -315,13 +315,13 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   return (
     <div className={cn(
-      "h-screen w-full bg-white relative overflow-hidden",
+      "h-screen w-full bg-white relative overflow-hidden flex flex-col",
       "touch-none select-none", // Prevent text selection and scrolling
       isFullscreen && "fixed inset-0 z-50"
     )}>
       {/* Header - Hidden in fullscreen and minimal modes */}
       {!isFullscreen && !isMinimalMode && (
-        <div className="bg-white border-b px-4 py-3 flex items-center justify-between" 
+        <div className="bg-white border-b px-4 py-3 flex items-center justify-between flex-shrink-0" 
              style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-gray-900 truncate">
@@ -364,20 +364,22 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       )}
 
       {/* Main Drawing Area */}
-      <div className="flex-1 relative" style={{ paddingBottom: '180px' }}>
+      <div className="flex-1 flex flex-col relative min-h-0">
         {/* Canvas Container */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50" style={{ bottom: '180px' }}>
-          <div className="w-full h-full max-w-sm max-h-[65vh] relative">
-            <ColoringCanvas
-              ref={canvasRef}
-              imageUrl={processedImageUrl}
-              activeColor={selectedColor}
-              activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
-              brushSize={brushSize}
-              tonerMode={tonerMode}
-              tonerIntensity={tonerIntensity}
-              onHistoryChange={setCanUndo}
-            />
+        <div className="flex-1 flex items-center justify-center bg-gray-50 p-2">
+          <div className="w-full h-full max-w-sm flex items-center justify-center">
+            <div className="w-full h-full" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+              <ColoringCanvas
+                ref={canvasRef}
+                imageUrl={processedImageUrl}
+                activeColor={selectedColor}
+                activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
+                brushSize={brushSize}
+                tonerMode={tonerMode}
+                tonerIntensity={tonerIntensity}
+                onHistoryChange={setCanUndo}
+              />
+            </div>
           </div>
         </div>
 
@@ -399,12 +401,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
         {/* Bottom Action Bar */}
         {showUI && !isFullscreen && (
-          <div 
-            className="absolute bottom-0 left-0 right-0 bg-white border-t p-4 z-30"
-            style={{ 
-              paddingBottom: 'max(76px, calc(env(safe-area-inset-bottom) + 60px))',
-              marginBottom: '0px'
-            }}
+          <div className="bg-white border-t p-4 flex-shrink-0" 
+               style={{ paddingBottom: 'max(76px, calc(env(safe-area-inset-bottom) + 60px))' }}
           >
             {/* Current color indicator */}
             <div className="flex items-center justify-center gap-2 mb-2 p-2 bg-white rounded-lg border">
@@ -520,20 +518,25 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                 </Button>
               )}
             </div>
-            
-            {isFullscreen && (
-              <div className="flex justify-center mt-2" style={{ marginBottom: 'max(60px, env(safe-area-inset-bottom))' }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleFullscreen}
-                  className="flex-1 max-w-[100px]"
-                >
-                  <Minimize2 className="h-4 w-4 mr-2" />
-                  Exit
-                </Button>
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* Fullscreen Mode Bottom Bar */}
+        {showUI && isFullscreen && (
+          <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-4 z-30"
+               style={{ paddingBottom: 'max(60px, env(safe-area-inset-bottom))' }}
+          >
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleFullscreen}
+                className="flex-1 max-w-[100px]"
+              >
+                <Minimize2 className="h-4 w-4 mr-2" />
+                Exit Fullscreen
+              </Button>
+            </div>
           </div>
         )}
       </div>
