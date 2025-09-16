@@ -19,9 +19,7 @@ import {
   FolderOpen,
   Trash2,
   Brush,
-  Droplets,
-  ChevronUp,
-  ChevronDown
+  Droplets
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -29,7 +27,6 @@ import { useFavorites } from '@/hooks/use-favorites'
 import { useSEOOptimization } from '@/hooks/use-seo-optimization'
 
 type UIMode = 'minimal' | 'standard' | 'fullscreen'
-type ToolbarState = 'collapsed' | 'expanded'
 
 interface MobileColoringPageClientProps {
   coloringPage: ColoringPageData
@@ -104,7 +101,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   
   // UI State
   const [uiMode, setUIMode] = useState<UIMode>('standard')
-  const [toolbarState, setToolbarState] = useState<ToolbarState>('collapsed')
   const [selectedTool, setSelectedTool] = useState<'brush' | 'fill' | 'toner'>('brush')
   const [selectedColor, setSelectedColor] = useState('#000000')
   const [showColorPicker, setShowColorPicker] = useState(false)
@@ -355,7 +351,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const isMinimalMode = uiMode === 'minimal'
   const isFullscreen = uiMode === 'fullscreen'
   const showUI = !isMinimalMode || !isDrawing
-  const isToolbarExpanded = toolbarState === 'expanded'
 
   return (
     <div className={cn(
@@ -514,6 +509,16 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                     <Undo2 className="h-4 w-4" />
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLoadProgress}
+                    disabled={!hasSavedProgress}
+                    className="h-9 px-3 bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 disabled:opacity-50"
+                  >
+                    <FolderOpen className="h-4 w-4 mr-1" />
+                    Load
+                  </Button>
+                  <Button
                     variant="default"
                     size="sm"
                     onClick={handleSaveProgress}
@@ -522,44 +527,53 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                     <Save className="h-4 w-4 mr-1" />
                     Save
                   </Button>
+                </div>
+              </div>
+              
+              {/* Additional Tools Row */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                {/* Secondary Tools */}
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedTool === 'toner' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedTool('toner')}
+                    className="h-8 px-3 text-xs"
+                  >
+                    <Palette className="h-3 w-3 mr-1" />
+                    Toner
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setToolbarState(isToolbarExpanded ? 'collapsed' : 'expanded')}
-                    className="h-9 px-3"
+                    onClick={handleClear}
+                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700"
                   >
-                    {isToolbarExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Clear
                   </Button>
                 </div>
-              </div>
-            </div>
-
-            {/* Expandable Secondary Toolbar */}
-            {isToolbarExpanded && (
-              <div className="border-t bg-gray-50 px-4 py-3 space-y-3">
-                {/* Secondary Tools */}
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Button
-                      variant={selectedTool === 'toner' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedTool('toner')}
-                      className="h-8 px-3 text-xs"
-                    >
-                      <Palette className="h-3 w-3 mr-1" />
-                      Toner
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClear}
-                      className="h-8 px-3 text-xs text-red-600 hover:text-red-700"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Clear
-                    </Button>
-                  </div>
-                  
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownload}
+                    className="h-8 px-3 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Export
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShare}
+                    className="h-8 px-3 text-xs"
+                  >
+                    <Share2 className="h-3 w-3 mr-1" />
+                    Share
+                  </Button>
                   {/* Favorites for authenticated users */}
                   {isAuthenticated && (
                     <Button 
@@ -575,55 +589,23 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                     </Button>
                   )}
                 </div>
-
-                {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-2">
+              </div>
+              
+              {/* Progress Management */}
+              {hasSavedProgress && (
+                <div className="flex justify-center mt-3 pt-3 border-t border-gray-200">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={handleLoadProgress}
-                    disabled={!hasSavedProgress}
-                    className="h-10 text-xs bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 disabled:opacity-50"
+                    onClick={handleClearProgress}
+                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
-                    <FolderOpen className="h-3 w-3 mb-1" />
-                    Load
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownload}
-                    className="h-10 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                  >
-                    <Download className="h-3 w-3 mb-1" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShare}
-                    className="h-10 text-xs"
-                  >
-                    <Share2 className="h-3 w-3 mb-1" />
-                    Share
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Clear Saved Progress
                   </Button>
                 </div>
-                
-                {/* Progress Management */}
-                {hasSavedProgress && (
-                  <div className="flex justify-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearProgress}
-                      className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Clear Saved Progress
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
