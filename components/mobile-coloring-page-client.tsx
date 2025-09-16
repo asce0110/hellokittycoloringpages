@@ -359,7 +359,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       isFullscreen && "fixed inset-0 z-50"
     )}
     style={{
-      paddingBottom: isFullscreen ? '0' : 'max(20px, env(safe-area-inset-bottom))'
+      paddingBottom: isFullscreen ? '0' : 'max(60px, env(safe-area-inset-bottom) + 40px)'
     }}>
       {/* Header - Hidden in fullscreen and minimal modes */}
       {!isFullscreen && !isMinimalMode && (
@@ -438,7 +438,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         {showUI && !isFullscreen && (
           <div className="bg-white border-t flex-shrink-0" 
                style={{ 
-                 paddingBottom: '20px'
+                 paddingBottom: 'max(40px, env(safe-area-inset-bottom) + 20px)',
+                 marginBottom: '20px'
                }}
           >
             {/* Main Quick Access Bar - Always Visible */}
@@ -616,8 +617,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
         {/* Fullscreen Mode Bottom Bar */}
         {showUI && isFullscreen && (
-          <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-4 z-30"
+          <div className="absolute left-0 right-0 bg-white border-t p-4 z-30"
                style={{ 
+                 bottom: 'max(40px, env(safe-area-inset-bottom) + 20px)',
                  paddingBottom: 'max(20px, env(safe-area-inset-bottom))' 
                }}
           >
