@@ -234,24 +234,24 @@ export function MobileColorPicker({
         {/* Color Picker Tabs */}
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="palette" className="h-full">
-            <TabsList className="w-full justify-start px-4 bg-white dark:bg-gray-900 border-b rounded-none h-auto p-0">
-              <TabsTrigger value="palette" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
+            <TabsList className="w-full justify-start px-4 !bg-white dark:!bg-gray-900 border-b rounded-none h-auto p-0">
+              <TabsTrigger value="palette" className="flex items-center gap-2 px-3 py-2 text-sm !text-gray-900 dark:!text-gray-100 data-[state=active]:!bg-blue-100 dark:data-[state=active]:!bg-blue-900 data-[state=active]:!text-blue-900 dark:data-[state=active]:!text-blue-100 hover:!bg-gray-100 dark:hover:!bg-gray-800">
                 <SwatchBook className="h-4 w-4" />
                 Colors
               </TabsTrigger>
               {recentColors.length > 0 && (
-                <TabsTrigger value="recent" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
+                <TabsTrigger value="recent" className="flex items-center gap-2 px-3 py-2 text-sm !text-gray-900 dark:!text-gray-100 data-[state=active]:!bg-blue-100 dark:data-[state=active]:!bg-blue-900 data-[state=active]:!text-blue-900 dark:data-[state=active]:!text-blue-100 hover:!bg-gray-100 dark:hover:!bg-gray-800">
                   <Clock className="h-4 w-4" />
                   Recent
                 </TabsTrigger>
               )}
               {favoriteColors.length > 0 && (
-                <TabsTrigger value="favorites" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
+                <TabsTrigger value="favorites" className="flex items-center gap-2 px-3 py-2 text-sm !text-gray-900 dark:!text-gray-100 data-[state=active]:!bg-blue-100 dark:data-[state=active]:!bg-blue-900 data-[state=active]:!text-blue-900 dark:data-[state=active]:!text-blue-100 hover:!bg-gray-100 dark:hover:!bg-gray-800">
                   <Star className="h-4 w-4" />
                   Favorites
                 </TabsTrigger>
               )}
-              <TabsTrigger value="custom" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
+              <TabsTrigger value="custom" className="flex items-center gap-2 px-3 py-2 text-sm !text-gray-900 dark:!text-gray-100 data-[state=active]:!bg-blue-100 dark:data-[state=active]:!bg-blue-900 data-[state=active]:!text-blue-900 dark:data-[state=active]:!text-blue-100 hover:!bg-gray-100 dark:hover:!bg-gray-800">
                 <Palette className="h-4 w-4" />
                 Custom
               </TabsTrigger>
