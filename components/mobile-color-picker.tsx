@@ -168,7 +168,7 @@ export function MobileColorPicker({
   return (
     <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-end">
       <div 
-        className="w-full bg-white rounded-t-3xl shadow-xl max-h-[80vh] overflow-hidden"
+        className="w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-xl max-h-[80vh] overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -178,8 +178,8 @@ export function MobileColorPicker({
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Choose Color</h2>
+        <div className="flex items-center justify-between px-6 py-3 border-b dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Choose Color</h2>
           <div className="flex items-center gap-2">
             {supportsEyedropper && (
               <Button
@@ -203,15 +203,15 @@ export function MobileColorPicker({
         </div>
 
         {/* Current Color Display */}
-        <div className="px-6 py-4 border-b">
+        <div className="px-6 py-4 border-b dark:border-gray-700">
           <div className="flex items-center gap-4">
             <div
-              className="w-16 h-16 rounded-2xl border-2 border-gray-200 shadow-inner"
+              className="w-16 h-16 rounded-2xl border-2 border-gray-200 dark:border-gray-600 shadow-inner"
               style={{ backgroundColor: selectedColor }}
             />
             <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-1">Selected Color</div>
-              <div className="font-mono text-sm font-medium">{selectedColor.toUpperCase()}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Selected Color</div>
+              <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{selectedColor.toUpperCase()}</div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -234,24 +234,24 @@ export function MobileColorPicker({
         {/* Color Picker Tabs */}
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="palette" className="h-full">
-            <TabsList className="w-full justify-start px-4 bg-white border-b rounded-none h-auto p-0">
-              <TabsTrigger value="palette" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
+            <TabsList className="w-full justify-start px-4 bg-white dark:bg-gray-900 border-b rounded-none h-auto p-0">
+              <TabsTrigger value="palette" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
                 <SwatchBook className="h-4 w-4" />
                 Colors
               </TabsTrigger>
               {recentColors.length > 0 && (
-                <TabsTrigger value="recent" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
+                <TabsTrigger value="recent" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
                   <Clock className="h-4 w-4" />
                   Recent
                 </TabsTrigger>
               )}
               {favoriteColors.length > 0 && (
-                <TabsTrigger value="favorites" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
+                <TabsTrigger value="favorites" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
                   <Star className="h-4 w-4" />
                   Favorites
                 </TabsTrigger>
               )}
-              <TabsTrigger value="custom" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
+              <TabsTrigger value="custom" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900 data-[state=active]:text-blue-900 dark:data-[state=active]:text-blue-100">
                 <Palette className="h-4 w-4" />
                 Custom
               </TabsTrigger>
@@ -261,8 +261,8 @@ export function MobileColorPicker({
             <TabsContent value="palette" className="px-4 py-3 overflow-auto max-h-[50vh]">
               <div className="space-y-3">
                 {Object.entries(colorPalettes).map(([name, colors]) => (
-                  <div key={name} className="bg-gray-50 rounded-lg p-3">
-                    <h3 className="text-xs font-medium text-gray-700 mb-2 capitalize">
+                  <div key={name} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                    <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">
                       {name === 'primary' ? 'Essential' : 
                        name === 'secondary' ? 'Popular' : 
                        name === 'pastels' ? 'Pastels' : 
@@ -296,18 +296,18 @@ export function MobileColorPicker({
             <TabsContent value="custom" className="px-4 py-3">
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Color Picker
                   </label>
                   <input
                     type="color"
                     value={customColor}
                     onChange={(e) => handleCustomColorChange(e.target.value)}
-                    className="w-full h-16 rounded-lg border-2 border-gray-200 cursor-pointer"
+                    className="w-full h-16 rounded-lg border-2 border-gray-200 dark:border-gray-600 cursor-pointer"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Hex Code
                   </label>
                   <div className="flex gap-2">
@@ -319,7 +319,7 @@ export function MobileColorPicker({
                       className="font-mono text-sm"
                     />
                     <div
-                      className="w-12 h-10 rounded-lg border-2 border-gray-200 flex-shrink-0"
+                      className="w-12 h-10 rounded-lg border-2 border-gray-200 dark:border-gray-600 flex-shrink-0"
                       style={{ backgroundColor: customColor }}
                     />
                   </div>
