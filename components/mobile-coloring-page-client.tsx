@@ -354,12 +354,12 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   return (
     <div className={cn(
-      "h-screen w-full bg-white relative overflow-hidden flex flex-col",
-      "select-none touch-pan-y", // Prevent text selection but allow touch
-      isFullscreen && "fixed inset-0 z-50"
+      "min-h-screen w-full bg-white relative flex flex-col",
+      "select-none", // Prevent text selection
+      isFullscreen && "fixed inset-0 z-50 h-screen overflow-hidden"
     )}
     style={{
-      paddingBottom: isFullscreen ? '0' : 'max(30px, env(safe-area-inset-bottom) + 10px)'
+      paddingBottom: isFullscreen ? '0' : 'max(80px, env(safe-area-inset-bottom) + 60px)'
     }}>
       {/* Header - Hidden in fullscreen and minimal modes */}
       {!isFullscreen && !isMinimalMode && (
@@ -405,15 +405,18 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
       )}
 
-      {/* Main Drawing Area - Maximized */}
-      <div className="flex-1 flex flex-col relative min-h-0">
-        {/* Canvas Container - 65vh for better image visibility */}
-        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '65vh' }}>
-          <div className="w-full h-full flex items-center justify-center">
+      {/* Main Drawing Area */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Canvas Container - Auto height to fit content */}
+        <div className={cn(
+          "bg-gray-50 p-2 flex items-center justify-center",
+          isFullscreen ? "h-screen" : "min-h-[70vh]"
+        )}>
+          <div className="w-full max-w-full">
             <div 
               ref={canvasContainerRef}
-              className="w-full h-full relative"
-              style={{ maxWidth: '100%', maxHeight: '100%' }}
+              className="w-full relative aspect-square max-h-[80vh]"
+              style={{ maxWidth: '100%' }}
             >
               <div 
                 className="w-full h-full rounded-xl overflow-hidden shadow-lg bg-white"
@@ -436,9 +439,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
         {/* Compact Bottom Toolbar */}
         {showUI && !isFullscreen && (
-          <div className="bg-white border-t flex-shrink-0" 
+          <div className="bg-white border-t flex-shrink-0 mt-4" 
                style={{ 
-                 paddingBottom: 'max(30px, env(safe-area-inset-bottom) + 10px)'
+                 paddingBottom: 'max(40px, env(safe-area-inset-bottom) + 20px)'
                }}
           >
             {/* Main Quick Access Bar - Always Visible */}
