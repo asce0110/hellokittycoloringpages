@@ -174,15 +174,15 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         if (success) {
           setHasSavedProgress(true)
           setLastSaveTime(new Date().toISOString())
-          alert('✅ 着色进度已保存！下次打开时可以继续着色。')
+          alert('✅ Progress saved! You can continue coloring next time.')
           trackUserEngagement('progress_saved', { pageTitle: actualTitle })
         } else {
           // 检查控制台错误并提供更具体的错误信息
-          alert('❌ 保存失败！可能原因:\n• 着色内容过多导致文件过大\n• 浏览器存储空间不足\n• 请尝试清理浏览器缓存或在着色较少时保存')
+          alert('❌ Save failed! Possible reasons:\n• Too much coloring content (file too large)\n• Insufficient browser storage space\n• Try clearing browser cache or save with less coloring')
         }
       } catch (error) {
         console.error('保存进度时发生错误:', error)
-        alert('❌ 保存失败！请检查浏览器控制台查看详细错误信息。')
+        alert('❌ Save failed! Please check the browser console for detailed error information.')
       }
     }
   }, [actualTitle, trackUserEngagement])
@@ -190,12 +190,12 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   // 加载进度处理函数
   const handleLoadProgress = useCallback(() => {
     if (canvasRef.current) {
-      if (confirm('确定要加载之前的着色进度吗？当前的着色内容将被替换。')) {
+      if (confirm('Are you sure you want to load previous progress? Current coloring will be replaced.')) {
         const success = canvasRef.current.loadProgress()
         if (success) {
-          alert('✅ 着色进度已恢复！')
+          alert('✅ Progress restored!')
         } else {
-          alert('❌ 加载失败，可能没有保存的进度或数据已损坏。')
+          alert('❌ Load failed. No saved progress found or data is corrupted.')
         }
       }
     }
@@ -203,11 +203,11 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   // 清除进度处理函数
   const handleClearProgress = useCallback(() => {
-    if (canvasRef.current && confirm('确定要清除保存的进度吗？此操作不可撤销。')) {
+    if (canvasRef.current && confirm('Are you sure you want to clear saved progress? This action cannot be undone.')) {
       canvasRef.current.clearProgress()
       setHasSavedProgress(false)
       setLastSaveTime(null)
-      alert('🗑️ 保存的进度已清除。')
+      alert('🗑️ Saved progress cleared.')
     }
   }, [])
   
@@ -312,7 +312,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   const handleFavoriteToggle = useCallback(async () => {
     if (!isAuthenticated) {
-      alert('请先登录才能收藏页面')
+      alert('Please login to favorite this page')
       return
     }
     
@@ -328,7 +328,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       }
     } catch (error) {
       console.error('收藏操作失败:', error)
-      alert('收藏操作失败，请稍后再试')
+      alert('Favorite operation failed, please try again later')
     }
   }, [isAuthenticated, coloringPage, isFavorite, addToFavorites, removeFromFavorites])
 
