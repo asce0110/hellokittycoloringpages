@@ -67,7 +67,7 @@ const jsonLd = {
   },
   mainEntity: {
     "@type": "CreativeWork",
-    name: "Color Spark Creative Collection",
+    name: "Coloreveal Creative Collection",
     description: "Curated themes and AI-generated printable coloring pages designed to spark creativity"
   }
 }
@@ -97,7 +97,7 @@ export default function RootLayout({
                 <Navigation />
                 <main className="flex-1">{children}</main>
                 <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-muted">
-                  <p className="text-xs text-muted-foreground">&copy; 2025 Color Spark. All rights reserved.</p>
+                  <p className="text-xs text-muted-foreground">&copy; 2025 Coloreveal. All rights reserved.</p>
                   <nav className="sm:ml-auto flex gap-4 sm:gap-6">
                     <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/unsubscribe">
                       Unsubscribe

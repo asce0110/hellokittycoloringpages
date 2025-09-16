@@ -20,13 +20,13 @@ import {
   Trash2,
   Brush,
   Droplets,
-  Settings,
   ChevronUp,
   ChevronDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useFavorites } from '@/hooks/use-favorites'
+import { useSEOOptimization } from '@/hooks/use-seo-optimization'
 
 type UIMode = 'minimal' | 'standard' | 'fullscreen'
 type ToolbarState = 'collapsed' | 'expanded'
@@ -38,6 +38,7 @@ interface MobileColoringPageClientProps {
 export function MobileColoringPageClient({ coloringPage }: MobileColoringPageClientProps) {
   const { user, isAuthenticated } = useAuth()
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites()
+  const { trackUserEngagement } = useSEOOptimization(coloringPage)
   
   // Get URL params and localStorage data (same logic as desktop)
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
@@ -165,7 +166,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     }
   }, [processedImageUrl])
 
-  // 保存进度处理函数
+  // 保存进度处理函数 - 与桌面端同步
   const handleSaveProgress = useCallback(() => {
     if (canvasRef.current) {
       try {
@@ -174,6 +175,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
           setHasSavedProgress(true)
           setLastSaveTime(new Date().toISOString())
           alert('✅ 着色进度已保存！下次打开时可以继续着色。')
+          trackUserEngagement('progress_saved', { pageTitle: actualTitle })
         } else {
           // 检查控制台错误并提供更具体的错误信息
           alert('❌ 保存失败！可能原因:\n• 着色内容过多导致文件过大\n• 浏览器存储空间不足\n• 请尝试清理浏览器缓存或在着色较少时保存')
@@ -183,7 +185,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         alert('❌ 保存失败！请检查浏览器控制台查看详细错误信息。')
       }
     }
-  }, [])
+  }, [actualTitle, trackUserEngagement])
 
   // 加载进度处理函数
   const handleLoadProgress = useCallback(() => {
@@ -512,13 +514,21 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                     <Undo2 className="h-4 w-4" />
                   </Button>
                   <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSaveProgress}
+                    className="h-9 px-3 bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setToolbarState(isToolbarExpanded ? 'collapsed' : 'expanded')}
                     className="h-9 px-3"
                   >
-                    <Settings className="h-4 w-4 mr-1" />
-                    {isToolbarExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+                    {isToolbarExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
@@ -567,16 +577,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-4 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSaveProgress}
-                    className="h-10 text-xs bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
-                  >
-                    <Save className="h-3 w-3 mb-1" />
-                    Save
-                  </Button>
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
