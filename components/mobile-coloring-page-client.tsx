@@ -103,6 +103,11 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const [selectedTool, setSelectedTool] = useState<'brush' | 'fill' | 'toner'>('brush')
   const [selectedColor, setSelectedColor] = useState('#000000')
   const [showColorPicker, setShowColorPicker] = useState(false)
+  
+  // Debug state changes
+  useEffect(() => {
+    console.log('🎨 Mobile coloring showColorPicker state changed:', showColorPicker)
+  }, [showColorPicker])
   const [isDrawing, setIsDrawing] = useState(false)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
@@ -359,10 +364,10 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       )}
 
       {/* Main Drawing Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" style={{ paddingBottom: '180px' }}>
         {/* Canvas Container */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-          <div className="w-full h-full max-w-sm max-h-[70vh] relative">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50" style={{ bottom: '180px' }}>
+          <div className="w-full h-full max-w-sm max-h-[65vh] relative">
             <ColoringCanvas
               ref={canvasRef}
               imageUrl={processedImageUrl}
@@ -395,9 +400,21 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         {/* Bottom Action Bar */}
         {showUI && !isFullscreen && (
           <div 
-            className="absolute bottom-0 left-0 right-0 bg-white border-t p-4"
-            style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+            className="absolute bottom-0 left-0 right-0 bg-white border-t p-4 z-30"
+            style={{ 
+              paddingBottom: 'max(76px, calc(env(safe-area-inset-bottom) + 60px))',
+              marginBottom: '0px'
+            }}
           >
+            {/* Current color indicator */}
+            <div className="flex items-center justify-center gap-2 mb-2 p-2 bg-white rounded-lg border">
+              <div 
+                className="w-6 h-6 rounded-full border-2 border-gray-300"
+                style={{ backgroundColor: selectedColor }}
+              />
+              <span className="text-sm font-medium text-gray-700">Current Color: {selectedColor}</span>
+            </div>
+
             {/* Progress info bar */}
             {hasSavedProgress && lastSaveTime && (
               <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded mb-2 text-center">
@@ -405,13 +422,47 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               </div>
             )}
             
+            {/* Quick color selection bar */}
+            <div className="flex justify-center gap-1 mb-3 p-2 bg-gray-50 rounded-lg">
+              {quickColors.map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setSelectedColor(color)}
+                  className={cn(
+                    "w-8 h-8 rounded-full border-2 transition-all shadow-sm",
+                    selectedColor === color 
+                      ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
+                      : "border-white hover:border-gray-300"
+                  )}
+                  style={{ backgroundColor: color }}
+                  title={`Select ${color}`}
+                />
+              ))}
+              <button
+                onClick={() => setShowColorPicker(true)}
+                className="w-8 h-8 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-gray-400 transition-all"
+                title="More colors"
+              >
+                <Palette className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+
             {/* Main action buttons - first row */}
             <div className="flex justify-center gap-2 mb-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowColorPicker(true)}
-                className="flex-1 max-w-[80px]"
+                onClick={() => {
+                  console.log('Opening color picker...')
+                  setShowColorPicker(true)
+                }}
+                className="flex-1 max-w-[80px] relative"
+                style={{ 
+                  backgroundColor: selectedColor, 
+                  color: selectedColor === '#000000' ? 'white' : 'black',
+                  borderColor: selectedColor,
+                  borderWidth: '2px'
+                }}
               >
                 <Palette className="h-4 w-4 mr-1" />
                 Colors
@@ -471,7 +522,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             </div>
             
             {isFullscreen && (
-              <div className="flex justify-center mt-2">
+              <div className="flex justify-center mt-2" style={{ marginBottom: 'max(60px, env(safe-area-inset-bottom))' }}>
                 <Button
                   variant="outline"
                   size="sm"

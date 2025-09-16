@@ -7,103 +7,39 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Heart, Wand2, Download, Printer, Star, Palette, Smile } from "lucide-react"
+import { supabaseAdmin } from '@/lib/supabase'
 
-// Tooth Fairy Images Data (专门针对牙仙子主题)
-interface ToothFairyImage {
-  slug: string
+// Database Library Image interface
+interface LibraryImage {
+  id: string
   title: string
   description: string
-  imageUrl: string
-  category: 'lost-tooth' | 'fairy-pillow' | 'tooth-castle' | 'fairy-wand' | 'tooth-collection' | 'magical'
-  difficulty: 'easy' | 'medium' | 'complex'
+  image_url: string
+  thumbnail_url?: string
+  tags: string[]
+  category: string
+  difficulty: string
+  is_active: boolean
+  created_at: string
+  updated_at?: string
 }
 
-// 10张Tooth Fairy主题的着色图片
-const toothFairyImages: ToothFairyImage[] = [
-  {
-    slug: "tooth-fairy-lost-tooth-coloring-pages",
-    title: "Lost Tooth Fairy Adventure",
-    description: "Cute tooth fairy collecting a lost tooth under the pillow - perfect for kids losing their first tooth",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "lost-tooth",
-    difficulty: "easy"
-  },
-  {
-    slug: "tooth-fairy-pillow-coloring-pages", 
-    title: "Tooth Fairy Pillow Magic",
-    description: "Magical tooth fairy placing coins under a child's pillow while they sleep",
-    imageUrl: "/cute-kitty-coloring-page.png",
-    category: "fairy-pillow",
-    difficulty: "medium"
-  },
-  {
-    slug: "tooth-fairy-castle-coloring-pages",
-    title: "Tooth Fairy Castle",
-    description: "Enchanted tooth fairy castle made of sparkling teeth and magical elements",
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    category: "tooth-castle",
-    difficulty: "complex"
-  },
-  {
-    slug: "tooth-fairy-wand-coloring-pages",
-    title: "Tooth Fairy Magic Wand",
-    description: "Beautiful tooth fairy holding a sparkly magic wand with tooth-shaped star",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "fairy-wand",
-    difficulty: "medium"
-  },
-  {
-    slug: "tooth-fairy-collection-coloring-pages",
-    title: "Tooth Fairy Collection Bag",
-    description: "Tooth fairy with her special collection bag full of shiny lost teeth",
-    imageUrl: "/cute-kitty-coloring-page.png", 
-    category: "tooth-collection",
-    difficulty: "easy"
-  },
-  {
-    slug: "flying-tooth-fairy-coloring-pages",
-    title: "Flying Tooth Fairy",
-    description: "Graceful tooth fairy flying through the night sky with sparkly wings",
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    category: "magical",
-    difficulty: "medium"
-  },
-  {
-    slug: "tooth-fairy-coins-coloring-pages", 
-    title: "Tooth Fairy Golden Coins",
-    description: "Tooth fairy exchanging lost teeth for shiny golden coins under the pillow",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "lost-tooth",
-    difficulty: "easy"
-  },
-  {
-    slug: "smiling-tooth-fairy-coloring-pages",
-    title: "Smiling Tooth Fairy",
-    description: "Happy tooth fairy with a bright smile encouraging good dental hygiene",
-    imageUrl: "/cute-kitty-coloring-page.png",
-    category: "magical",
-    difficulty: "easy"
-  },
-  {
-    slug: "tooth-fairy-doorway-coloring-pages",
-    title: "Tooth Fairy Secret Doorway",
-    description: "Tiny magical doorway where the tooth fairy enters children's bedrooms",
-    imageUrl: "/astronaut-cat-coloring-page.png",
-    category: "tooth-castle",
-    difficulty: "complex"
-  },
-  {
-    slug: "tooth-fairy-friends-coloring-pages",
-    title: "Tooth Fairy and Friends",
-    description: "Tooth fairy with her animal friends helping collect lost teeth from children",
-    imageUrl: "/hello-kitty-coloring-page.png",
-    category: "magical",
-    difficulty: "medium"
-  }
-]
+// SEO slug generation helper
+function generateSEOSlug(title: string, id: string): string {
+  const baseSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+    .substring(0, 60)
+  
+  return `${baseSlug}-coloring-pages`.replace(/^-+|-+$/g, '')
+}
 
 export default function ToothFairyColoringPagesPage() {
   const [loading, setLoading] = React.useState(true)
+  const [fairyImages, setFairyImages] = React.useState<LibraryImage[]>([])
   
   // FAQ Schema for tooth fairy coloring questions
   const faqSchema = {
@@ -155,13 +91,31 @@ export default function ToothFairyColoringPagesPage() {
     }
   }
   
-  // 模拟加载状态
+  // 从数据库获取fairy相关的图片
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 800)
-    
-    return () => clearTimeout(timer)
+    async function fetchFairyImages() {
+      try {
+        if (supabaseAdmin) {
+          const { data, error } = await supabaseAdmin
+            .from('library_images')
+            .select('id, title, description, image_url, thumbnail_url, tags, category, difficulty, is_active, created_at, updated_at')
+            .eq('is_active', true)
+            .eq('category', 'fairy')
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (!error && data) {
+            setFairyImages(data)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching fairy images:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFairyImages()
   }, [])
   
   // 获取难度对应的颜色和图标
@@ -372,14 +326,15 @@ export default function ToothFairyColoringPagesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-              {toothFairyImages.map((image, index) => {
-                const difficultyBadge = getDifficultyBadge(image.difficulty)
+              {fairyImages.length > 0 ? fairyImages.map((image, index) => {
+                const slug = generateSEOSlug(image.title, image.id)
+                const difficultyBadge = getDifficultyBadge(image.difficulty as 'easy' | 'medium' | 'complex')
                 const categoryEmoji = getCategoryEmoji(image.category)
                 
                 return (
                   <Link 
-                    key={`tooth-fairy-${image.slug}`} 
-                    href={`/${image.slug}`}
+                    key={`tooth-fairy-${image.id}`} 
+                    href={`/${slug}`}
                     className="group block"
                   >
                     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer">
@@ -387,8 +342,8 @@ export default function ToothFairyColoringPagesPage() {
                         {/* 真实的tooth fairy图片 */}
                         <div className="w-full aspect-square relative overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
                           <Image
-                            src={image.imageUrl}
-                            alt={`${image.title} - Free printable ${image.category} tooth fairy coloring page for kids | Coloreveal`}
+                            src={image.thumbnail_url || image.image_url}
+                            alt={`${image.title} - Free printable tooth fairy coloring page for kids | Coloreveal`}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-110"
                             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
@@ -440,13 +395,25 @@ export default function ToothFairyColoringPagesPage() {
                     </Card>
                   </Link>
                 )
-              })}
+              }) : (
+                // 没有数据时显示空状态
+                <div className="col-span-full text-center py-12">
+                  <div className="text-6xl mb-4">🦷</div>
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Tooth Fairy Images Available</h3>
+                  <p className="text-gray-500 mb-4">We're working on adding more magical tooth fairy coloring pages!</p>
+                  <Button asChild variant="outline">
+                    <Link href="/library">
+                      Browse All Coloring Pages
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           
           <div className="text-center mt-12">
             <Button asChild size="lg" variant="outline">
-              <Link href="/library?category=tooth-fairy">
+              <Link href="/library?category=fairy&subcategory=tooth-fairy">
                 <Star className="mr-2 h-5 w-5" />
                 View All Tooth Fairy Coloring Pages
               </Link>

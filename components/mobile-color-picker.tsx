@@ -163,8 +163,10 @@ export function MobileColorPicker({
 
   if (!isOpen) return null
 
+  console.log('🎨 MobileColorPicker rendering, isOpen:', isOpen)
+
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end">
+    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-end">
       <div 
         className="w-full bg-white rounded-t-3xl shadow-xl max-h-[85vh] overflow-hidden"
         onTouchStart={handleTouchStart}
