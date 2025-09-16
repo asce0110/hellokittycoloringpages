@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { ColoringPageData } from '@/lib/coloring-data'
-import { MobileFloatingToolbar } from './mobile-floating-toolbar'
 import { MobileColorPicker } from './mobile-color-picker'
 import { ColoringCanvas } from './coloring-canvas'
 import { Button } from '@/components/ui/button'
@@ -12,24 +11,25 @@ import {
   Palette, 
   Share2, 
   Undo2, 
-  Redo2, 
   RotateCcw,
   Maximize2,
   Minimize2,
   Heart,
-  Star,
   Save,
   FolderOpen,
   Trash2,
-  Move,
   Brush,
-  Droplets
+  Droplets,
+  Settings,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useFavorites } from '@/hooks/use-favorites'
 
-type UIMode = 'minimal' | 'standard' | 'fullscreen' | 'expanded'
+type UIMode = 'minimal' | 'standard' | 'fullscreen'
+type ToolbarState = 'collapsed' | 'expanded'
 
 interface MobileColoringPageClientProps {
   coloringPage: ColoringPageData
@@ -103,9 +103,11 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   
   // UI State
   const [uiMode, setUIMode] = useState<UIMode>('standard')
+  const [toolbarState, setToolbarState] = useState<ToolbarState>('collapsed')
   const [selectedTool, setSelectedTool] = useState<'brush' | 'fill' | 'toner'>('brush')
   const [selectedColor, setSelectedColor] = useState('#000000')
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false)
   
   // Debug state changes
   useEffect(() => {
@@ -217,16 +219,16 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     cool: ['#4682B4', '#2E8B57', '#708090', '#483D8B', '#5F9EA0', '#6495ED']
   }
   
-  // Quick access colors for mobile - exclude white
+  // Quick access colors for mobile - most commonly used
   const quickColors = [
     '#000000', // black
     '#FF0000', // red  
-    '#00FF00', // green
     '#0000FF', // blue
+    '#00AA00', // green
+    '#FFAA00', // orange
+    '#AA00AA', // purple
     '#FFFF00', // yellow
-    '#FF00FF', // magenta
-    '#FFA500', // orange
-    '#800080'  // purple
+    '#8B4513'  // brown
   ]
 
   // 简化的手势处理 - 仅在canvas上应用
@@ -351,11 +353,12 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const isMinimalMode = uiMode === 'minimal'
   const isFullscreen = uiMode === 'fullscreen'
   const showUI = !isMinimalMode || !isDrawing
+  const isToolbarExpanded = toolbarState === 'expanded'
 
   return (
     <div className={cn(
       "h-screen w-full bg-white relative overflow-hidden flex flex-col",
-      "select-none", // Prevent text selection but allow touch
+      "select-none touch-pan-y", // Prevent text selection but allow touch
       isFullscreen && "fixed inset-0 z-50"
     )}>
       {/* Header - Hidden in fullscreen and minimal modes */}
@@ -402,18 +405,18 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
       )}
 
-      {/* Main Drawing Area */}
+      {/* Main Drawing Area - Maximized */}
       <div className="flex-1 flex flex-col relative min-h-0">
-        {/* Canvas Container */}
-        <div className="flex items-center justify-center bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '50vh' }}>
-          <div className="w-full h-full max-w-sm flex items-center justify-center">
+        {/* Canvas Container - 75vh for optimal drawing space */}
+        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '75vh' }}>
+          <div className="w-full h-full flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
               className="w-full h-full relative"
+              style={{ maxWidth: '100%', maxHeight: '100%' }}
             >
-              
               <div 
-                className="w-full h-full"
+                className="w-full h-full rounded-xl overflow-hidden shadow-lg bg-white"
                 onTouchStart={handleCanvasTouchStart}
                 onTouchEnd={handleCanvasTouchEnd}
               >
@@ -431,168 +434,195 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             </div>
           </div>
         </div>
-
-
-
-        {/* Bottom Action Bar - Scrollable */}
+        {/* Compact Bottom Toolbar */}
         {showUI && !isFullscreen && (
-          <div className="bg-white dark:bg-gray-900 border-t dark:border-gray-700 flex-shrink-0 overflow-y-auto" 
-               style={{ height: 'calc(50vh - 80px)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          <div className="bg-white border-t flex-shrink-0" 
+               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <div className="p-3 space-y-3">
-              
-              {/* Quick color selection bar - compact */}
-              <div className="flex justify-center gap-1 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {quickColors.slice(0, 8).map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => {
-                      console.log('🎨 Quick color selected:', color)
-                      setSelectedColor(color)
-                    }}
-                    className={cn(
-                      "w-6 h-6 rounded-full border-2 transition-all touch-manipulation",
-                      selectedColor === color 
-                        ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
-                        : "border-gray-300 hover:border-gray-400"
-                    )}
-                    style={{ backgroundColor: color }}
-                    title={`Select ${color}`}
-                  />
-                ))}
-                <button
-                  onClick={() => {
-                    console.log('🎨 Opening color picker from quick bar...')
-                    setShowColorPicker(true)
-                  }}
-                  className="w-6 h-6 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-gray-400 touch-manipulation"
-                  title="More colors"
-                >
-                  <Palette className="h-3 w-3 text-gray-600" />
-                </button>
-              </div>
-
-              {/* Tool selection row */}
-              <div className="grid grid-cols-3 gap-1">
-                <Button
-                  variant={selectedTool === 'brush' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTool('brush')}
-                  className="flex flex-col items-center gap-1 h-10 text-xs"
-                >
-                  <Brush className="h-3 w-3" />
-                  Brush
-                </Button>
-                <Button
-                  variant={selectedTool === 'fill' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTool('fill')}
-                  className="flex flex-col items-center gap-1 h-10 text-xs"
-                >
-                  <Droplets className="h-3 w-3" />
-                  Fill
-                </Button>
-                <Button
-                  variant={selectedTool === 'toner' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTool('toner')}
-                  className="flex flex-col items-center gap-1 h-10 text-xs"
-                >
-                  <Palette className="h-3 w-3" />
-                  Toner
-                </Button>
-              </div>
-              
-              {/* Action buttons row */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUndo}
-                  disabled={!canUndo}
-                  className="flex flex-col items-center gap-1 h-10 text-xs"
-                >
-                  <Undo2 className="h-3 w-3" />
-                  Undo
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClear}
-                  className="flex flex-col items-center gap-1 h-10 text-xs text-red-600 hover:text-red-700"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  Clear
-                </Button>
-              </div>
-
-              {/* Main action buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownload}
-                  className="flex flex-col items-center gap-1 h-12 text-xs"
-                >
-                  <Download className="h-3 w-3" />
-                  Export
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleShare}
-                  className="flex flex-col items-center gap-1 h-12 text-xs"
-                >
-                  <Share2 className="h-3 w-3" />
-                  Share
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleSaveProgress}
-                  className="flex flex-col items-center gap-1 h-12 bg-purple-600 text-white hover:bg-purple-700 text-xs"
-                >
-                  <Save className="h-3 w-3" />
-                  Save
-                </Button>
-              </div>
-              
-              {/* Last row - Colors, Load, and Progress Clear */}
-              <div className="grid grid-cols-3 gap-2">
+            {/* Main Quick Access Bar - Always Visible */}
+            <div className="px-4 py-3">
+              {/* Color Selection Row */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex gap-2">
+                  {quickColors.slice(0, 6).map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => {
+                        console.log('🎨 Quick color selected:', color)
+                        setSelectedColor(color)
+                      }}
+                      className={cn(
+                        "w-8 h-8 rounded-full border-2 transition-all touch-manipulation",
+                        selectedColor === color 
+                          ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
+                          : "border-gray-300 hover:border-gray-400"
+                      )}
+                      style={{ backgroundColor: color }}
+                      title={`Select ${color}`}
+                    />
+                  ))}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    console.log('🎨 Opening color picker from button...')
+                    console.log('🎨 Opening color picker...')
                     setShowColorPicker(true)
                   }}
-                  className="flex flex-col items-center gap-1 h-12 text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                  className="h-8 px-3 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
                 >
-                  <Palette className="h-3 w-3" />
-                  Colors
+                  <Palette className="h-4 w-4 mr-1" />
+                  More
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLoadProgress}
-                  disabled={!hasSavedProgress}
-                  className="flex flex-col items-center gap-1 h-12 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 disabled:opacity-50 text-xs"
-                >
-                  <FolderOpen className="h-3 w-3" />
-                  Load
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearProgress}
-                  disabled={!hasSavedProgress}
-                  className="flex flex-col items-center gap-1 h-12 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30 text-xs"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Clear
-                </Button>
+              </div>
+
+              {/* Primary Tools Row */}
+              <div className="flex items-center justify-between">
+                {/* Tool Selection */}
+                <div className="flex gap-1">
+                  <Button
+                    variant={selectedTool === 'brush' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedTool('brush')}
+                    className="h-9 px-3"
+                  >
+                    <Brush className="h-4 w-4 mr-1" />
+                    Brush
+                  </Button>
+                  <Button
+                    variant={selectedTool === 'fill' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedTool('fill')}
+                    className="h-9 px-3"
+                  >
+                    <Droplets className="h-4 w-4 mr-1" />
+                    Fill
+                  </Button>
+                </div>
+
+                {/* Core Actions */}
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUndo}
+                    disabled={!canUndo}
+                    className="h-9 px-3"
+                  >
+                    <Undo2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setToolbarState(isToolbarExpanded ? 'collapsed' : 'expanded')}
+                    className="h-9 px-3"
+                  >
+                    <Settings className="h-4 w-4 mr-1" />
+                    {isToolbarExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+                  </Button>
+                </div>
               </div>
             </div>
+
+            {/* Expandable Secondary Toolbar */}
+            {isToolbarExpanded && (
+              <div className="border-t bg-gray-50 px-4 py-3 space-y-3">
+                {/* Secondary Tools */}
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Button
+                      variant={selectedTool === 'toner' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedTool('toner')}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Palette className="h-3 w-3 mr-1" />
+                      Toner
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClear}
+                      className="h-8 px-3 text-xs text-red-600 hover:text-red-700"
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
+                  
+                  {/* Favorites for authenticated users */}
+                  {isAuthenticated && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleFavoriteToggle}
+                      className="h-8 px-3"
+                    >
+                      <Heart className={cn(
+                        "h-4 w-4",
+                        isFavorite((coloringPage as any).libraryImageId || coloringPage.id) ? "fill-red-500 text-red-500" : "text-gray-500"
+                      )} />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-4 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveProgress}
+                    className="h-10 text-xs bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+                  >
+                    <Save className="h-3 w-3 mb-1" />
+                    Save
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLoadProgress}
+                    disabled={!hasSavedProgress}
+                    className="h-10 text-xs bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 disabled:opacity-50"
+                  >
+                    <FolderOpen className="h-3 w-3 mb-1" />
+                    Load
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownload}
+                    className="h-10 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                  >
+                    <Download className="h-3 w-3 mb-1" />
+                    Export
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleShare}
+                    className="h-10 text-xs"
+                  >
+                    <Share2 className="h-3 w-3 mb-1" />
+                    Share
+                  </Button>
+                </div>
+                
+                {/* Progress Management */}
+                {hasSavedProgress && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearProgress}
+                      className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Clear Saved Progress
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

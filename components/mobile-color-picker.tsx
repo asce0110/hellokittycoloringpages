@@ -168,7 +168,7 @@ export function MobileColorPicker({
   return (
     <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-end">
       <div 
-        className="w-full bg-white rounded-t-3xl shadow-xl max-h-[85vh] overflow-hidden"
+        className="w-full bg-white rounded-t-3xl shadow-xl max-h-[80vh] overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -234,42 +234,41 @@ export function MobileColorPicker({
         {/* Color Picker Tabs */}
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="palette" className="h-full">
-            <TabsList className="w-full justify-start px-6 bg-white dark:bg-gray-800 border-b rounded-none h-auto p-0">
-              <TabsTrigger value="palette" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
+            <TabsList className="w-full justify-start px-4 bg-white border-b rounded-none h-auto p-0">
+              <TabsTrigger value="palette" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
                 <SwatchBook className="h-4 w-4" />
-                Palette
-              </TabsTrigger>
-              <TabsTrigger value="custom" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
-                <Palette className="h-4 w-4" />
-                Custom
+                Colors
               </TabsTrigger>
               {recentColors.length > 0 && (
-                <TabsTrigger value="recent" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
+                <TabsTrigger value="recent" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
                   <Clock className="h-4 w-4" />
                   Recent
                 </TabsTrigger>
               )}
               {favoriteColors.length > 0 && (
-                <TabsTrigger value="favorites" className="flex items-center gap-2 px-4 py-3 text-gray-900 dark:text-gray-100 data-[state=active]:bg-blue-100 dark:data-[state=active]:bg-blue-900">
+                <TabsTrigger value="favorites" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
                   <Star className="h-4 w-4" />
                   Favorites
                 </TabsTrigger>
               )}
+              <TabsTrigger value="custom" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 data-[state=active]:bg-blue-100">
+                <Palette className="h-4 w-4" />
+                Custom
+              </TabsTrigger>
             </TabsList>
 
-            {/* Palette Tab */}
-            <TabsContent value="palette" className="px-4 py-4 overflow-auto max-h-[55vh]">
-              <div className="space-y-4">
+            {/* Palette Tab - Optimized Layout */}
+            <TabsContent value="palette" className="px-4 py-3 overflow-auto max-h-[50vh]">
+              <div className="space-y-3">
                 {Object.entries(colorPalettes).map(([name, colors]) => (
-                  <div key={name} className="bg-gray-50 rounded-xl p-3">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3 capitalize flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[0] }}></div>
+                  <div key={name} className="bg-gray-50 rounded-lg p-3">
+                    <h3 className="text-xs font-medium text-gray-700 mb-2 capitalize">
                       {name === 'primary' ? 'Essential' : 
                        name === 'secondary' ? 'Popular' : 
                        name === 'pastels' ? 'Pastels' : 
                        name === 'vibrant' ? 'Vibrant' : 
                        name === 'earth' ? 'Earth Tones' : 
-                       'Cool Tones'} Colors
+                       'Cool Tones'}
                     </h3>
                     <div className="grid grid-cols-6 gap-2">
                       {colors.map((color) => (
@@ -277,10 +276,10 @@ export function MobileColorPicker({
                           key={color}
                           onClick={() => handleColorSelect(color)}
                           className={cn(
-                            "w-11 h-11 rounded-lg border-2 shadow-sm transition-all",
-                            "touch-manipulation active:scale-95 hover:scale-105",
+                            "w-10 h-10 rounded-lg border-2 shadow-sm transition-all",
+                            "touch-manipulation active:scale-95",
                             selectedColor === color 
-                              ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
+                              ? "border-blue-500 ring-2 ring-blue-200 scale-105" 
                               : "border-gray-300 hover:border-gray-400"
                           )}
                           style={{ backgroundColor: color }}
@@ -294,40 +293,40 @@ export function MobileColorPicker({
             </TabsContent>
 
             {/* Custom Color Tab */}
-            <TabsContent value="custom" className="px-6 py-4">
-              <div className="space-y-4">
+            <TabsContent value="custom" className="px-4 py-3">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hex Color
-                  </label>
-                  <div className="flex gap-3">
-                    <Input
-                      type="text"
-                      value={customColor}
-                      onChange={(e) => handleCustomColorChange(e.target.value)}
-                      placeholder="#000000"
-                      className="font-mono"
-                    />
-                    <div
-                      className="w-12 h-12 rounded-lg border-2 border-gray-200 flex-shrink-0"
-                      style={{ backgroundColor: customColor }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
                     Color Picker
                   </label>
                   <input
                     type="color"
                     value={customColor}
                     onChange={(e) => handleCustomColorChange(e.target.value)}
-                    className="w-full h-12 rounded-lg border-0 cursor-pointer"
+                    className="w-full h-16 rounded-lg border-2 border-gray-200 cursor-pointer"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Hex Code
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={customColor}
+                      onChange={(e) => handleCustomColorChange(e.target.value)}
+                      placeholder="#000000"
+                      className="font-mono text-sm"
+                    />
+                    <div
+                      className="w-12 h-10 rounded-lg border-2 border-gray-200 flex-shrink-0"
+                      style={{ backgroundColor: customColor }}
+                    />
+                  </div>
                 </div>
                 <Button
                   onClick={() => handleColorSelect(customColor)}
-                  className="w-full"
+                  className="w-full h-10"
                   disabled={!/^#[0-9A-F]{6}$/i.test(customColor)}
                 >
                   Use This Color
@@ -337,14 +336,14 @@ export function MobileColorPicker({
 
             {/* Recent Colors Tab */}
             {recentColors.length > 0 && (
-              <TabsContent value="recent" className="px-6 py-4">
-                <div className="grid grid-cols-6 gap-3">
+              <TabsContent value="recent" className="px-4 py-3">
+                <div className="grid grid-cols-8 gap-2">
                   {recentColors.map((color, index) => (
                     <button
                       key={`${color}-${index}`}
                       onClick={() => handleColorSelect(color)}
                       className={cn(
-                        "w-12 h-12 rounded-xl border-2 shadow-sm transition-all",
+                        "w-10 h-10 rounded-lg border-2 shadow-sm transition-all",
                         "touch-manipulation active:scale-95",
                         selectedColor === color 
                           ? "border-blue-500 ring-2 ring-blue-200" 
@@ -360,14 +359,14 @@ export function MobileColorPicker({
 
             {/* Favorites Tab */}
             {favoriteColors.length > 0 && (
-              <TabsContent value="favorites" className="px-6 py-4">
-                <div className="grid grid-cols-6 gap-3">
+              <TabsContent value="favorites" className="px-4 py-3">
+                <div className="grid grid-cols-8 gap-2">
                   {favoriteColors.map((color, index) => (
                     <button
                       key={`${color}-${index}`}
                       onClick={() => handleColorSelect(color)}
                       className={cn(
-                        "w-12 h-12 rounded-xl border-2 shadow-sm transition-all relative",
+                        "w-10 h-10 rounded-lg border-2 shadow-sm transition-all relative",
                         "touch-manipulation active:scale-95",
                         selectedColor === color 
                           ? "border-blue-500 ring-2 ring-blue-200" 
