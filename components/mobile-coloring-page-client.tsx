@@ -21,7 +21,9 @@ import {
   Save,
   FolderOpen,
   Trash2,
-  Move
+  Move,
+  Brush,
+  Droplets
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -215,10 +217,16 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     cool: ['#4682B4', '#2E8B57', '#708090', '#483D8B', '#5F9EA0', '#6495ED']
   }
   
-  // Quick access colors for right panel
+  // Quick access colors for mobile - exclude white
   const quickColors = [
-    ...colorPalette.primary.slice(0, 4),
-    ...colorPalette.secondary.slice(0, 2)
+    '#000000', // black
+    '#FF0000', // red  
+    '#00FF00', // green
+    '#0000FF', // blue
+    '#FFFF00', // yellow
+    '#FF00FF', // magenta
+    '#FFA500', // orange
+    '#800080'  // purple
   ]
 
   // 简化的手势处理 - 仅在canvas上应用
@@ -431,22 +439,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
 
 
-        {/* Floating Toolbar - Left side */}
-        {showUI && (
-          <MobileFloatingToolbar
-            selectedTool={selectedTool}
-            onToolChange={setSelectedTool}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onClear={handleClear}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            brushSize={brushSize}
-            onBrushSizeChange={setBrushSize}
-            interactionMode={interactionMode}
-            onToggleInteractionMode={toggleInteractionMode}
-          />
-        )}
 
         {/* Bottom Action Bar - Scrollable */}
         {showUI && !isFullscreen && (
@@ -456,8 +448,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             <div className="p-3 space-y-3">
               
               {/* Quick color selection bar - compact */}
-              <div className="flex justify-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {quickColors.slice(0, 6).map((color) => (
+              <div className="flex justify-center gap-1 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {quickColors.slice(0, 8).map((color) => (
                   <button
                     key={color}
                     onClick={() => {
@@ -465,7 +457,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                       setSelectedColor(color)
                     }}
                     className={cn(
-                      "w-8 h-8 rounded-full border-2 transition-all touch-manipulation",
+                      "w-6 h-6 rounded-full border-2 transition-all touch-manipulation",
                       selectedColor === color 
                         ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
                         : "border-gray-300 hover:border-gray-400"
@@ -479,14 +471,55 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                     console.log('🎨 Opening color picker from quick bar...')
                     setShowColorPicker(true)
                   }}
-                  className="w-8 h-8 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-gray-400 touch-manipulation"
+                  className="w-6 h-6 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-gray-400 touch-manipulation"
                   title="More colors"
                 >
-                  <Palette className="h-4 w-4 text-gray-600" />
+                  <Palette className="h-3 w-3 text-gray-600" />
                 </button>
               </div>
 
-              {/* Main action buttons - first row */}
+              {/* Tool selection row */}
+              <div className="grid grid-cols-4 gap-1">
+                <Button
+                  variant={selectedTool === 'brush' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTool('brush')}
+                  className="flex flex-col items-center gap-1 h-10 text-xs"
+                >
+                  <Brush className="h-3 w-3" />
+                  Brush
+                </Button>
+                <Button
+                  variant={selectedTool === 'fill' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTool('fill')}
+                  className="flex flex-col items-center gap-1 h-10 text-xs"
+                >
+                  <Droplets className="h-3 w-3" />
+                  Fill
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className="flex flex-col items-center gap-1 h-10 text-xs"
+                >
+                  <Undo2 className="h-3 w-3" />
+                  Undo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClear}
+                  className="flex flex-col items-center gap-1 h-10 text-xs text-red-600 hover:text-red-700"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Clear
+                </Button>
+              </div>
+
+              {/* Main action buttons */}
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant="outline"
