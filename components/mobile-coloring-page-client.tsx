@@ -20,7 +20,8 @@ import {
   Star,
   Save,
   FolderOpen,
-  Trash2
+  Trash2,
+  Move
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -114,6 +115,13 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const [brushSize, setBrushSize] = useState(5)
   const [tonerMode, setTonerMode] = useState<'darken' | 'lighten'>('darken')
   const [tonerIntensity, setTonerIntensity] = useState(0.3)
+  
+  // 手势和交互模式状态
+  const [interactionMode, setInteractionMode] = useState<'draw' | 'pan'>('draw')
+  const [isPanning, setIsPanning] = useState(false)
+  const touchStartTime = useRef<number>(0)
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null)
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
   
   // 进度保存相关状态
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
@@ -212,6 +220,65 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
     ...colorPalette.primary.slice(0, 4),
     ...colorPalette.secondary.slice(0, 2)
   ]
+
+  // 手势处理函数
+  const handleCanvasTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    if (!touch) return
+
+    touchStartTime.current = Date.now()
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
+    
+    // 双手指触摸启用平移模式
+    if (e.touches.length >= 2) {
+      setInteractionMode('pan')
+      setIsPanning(true)
+      e.preventDefault()
+      return
+    }
+    
+    // 单手指长按判断
+    setTimeout(() => {
+      const timeDiff = Date.now() - touchStartTime.current
+      if (timeDiff >= 500 && !isDrawing && interactionMode === 'draw') {
+        // 长按超过500ms且没有绘画，切换到平移模式
+        setInteractionMode('pan')
+        setIsPanning(true)
+      }
+    }, 500)
+  }, [isDrawing, interactionMode])
+
+  const handleCanvasTouchMove = useCallback((e: React.TouchEvent) => {
+    if (interactionMode === 'pan' || isPanning || e.touches.length >= 2) {
+      e.preventDefault()
+      e.stopPropagation()
+      return false
+    }
+  }, [interactionMode, isPanning])
+
+  const handleCanvasTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchEndTime = Date.now()
+    const touchDuration = touchEndTime - touchStartTime.current
+    
+    // 重置平移状态
+    if (isPanning || interactionMode === 'pan') {
+      setIsPanning(false)
+      // 短暂延迟后回到绘画模式
+      setTimeout(() => {
+        setInteractionMode('draw')
+      }, 100)
+      return
+    }
+    
+    // 清除引用
+    touchStartPos.current = null
+  }, [isPanning, interactionMode])
+
+  // 切换交互模式的函数
+  const toggleInteractionMode = useCallback(() => {
+    setInteractionMode(prev => prev === 'draw' ? 'pan' : 'draw')
+    setIsPanning(false)
+  }, [])
 
   // Handle drawing state changes
   const handleDrawingStart = useCallback(() => {
@@ -368,17 +435,38 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         {/* Canvas Container */}
         <div className="flex-1 flex items-center justify-center bg-gray-50 p-2">
           <div className="w-full h-full max-w-sm flex items-center justify-center">
-            <div className="w-full h-full" style={{ maxHeight: 'calc(100vh - 250px)' }}>
-              <ColoringCanvas
-                ref={canvasRef}
-                imageUrl={processedImageUrl}
-                activeColor={selectedColor}
-                activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
-                brushSize={brushSize}
-                tonerMode={tonerMode}
-                tonerIntensity={tonerIntensity}
-                onHistoryChange={setCanUndo}
-              />
+            <div 
+              ref={canvasContainerRef}
+              className="w-full h-full relative" 
+              style={{ maxHeight: 'calc(100vh - 250px)' }}
+              onTouchStart={handleCanvasTouchStart}
+              onTouchMove={handleCanvasTouchMove}
+              onTouchEnd={handleCanvasTouchEnd}
+            >
+              {/* 交互模式指示器 */}
+              {(interactionMode === 'pan' || isPanning) && (
+                <div className="absolute top-2 left-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                  Pan Mode - 🤏 Pinch/Move Image
+                </div>
+              )}
+              
+              <div 
+                className={cn(
+                  "w-full h-full transition-opacity duration-200",
+                  (interactionMode === 'pan' || isPanning) && "pointer-events-none opacity-75"
+                )}
+              >
+                <ColoringCanvas
+                  ref={canvasRef}
+                  imageUrl={processedImageUrl}
+                  activeColor={selectedColor}
+                  activeTool={selectedTool === 'fill' ? 'dropper' : selectedTool === 'toner' ? 'toner' : 'brush'}
+                  brushSize={brushSize}
+                  tonerMode={tonerMode}
+                  tonerIntensity={tonerIntensity}
+                  onHistoryChange={setCanUndo}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -396,6 +484,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             canRedo={canRedo}
             brushSize={brushSize}
             onBrushSizeChange={setBrushSize}
+            interactionMode={interactionMode}
+            onToggleInteractionMode={toggleInteractionMode}
           />
         )}
 
@@ -445,6 +535,33 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               </button>
             </div>
 
+            {/* Mode Toggle - Quick Access */}
+            <div className="flex justify-center mb-3">
+              <Button
+                variant={interactionMode === 'draw' ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleInteractionMode}
+                className={cn(
+                  "flex items-center gap-2 px-4",
+                  interactionMode === 'draw' 
+                    ? "bg-purple-600 text-white hover:bg-purple-700" 
+                    : "bg-orange-600 text-white hover:bg-orange-700"
+                )}
+              >
+                {interactionMode === 'draw' ? (
+                  <>
+                    <Palette className="h-4 w-4" />
+                    <span>Draw Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Move className="h-4 w-4" />
+                    <span>Pan Mode - 🤏 Move Image</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
             {/* Main action buttons - first row */}
             <div className="flex justify-center gap-2 mb-2">
               <Button
@@ -461,6 +578,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                   borderColor: selectedColor,
                   borderWidth: '2px'
                 }}
+                disabled={interactionMode === 'pan'}
               >
                 <Palette className="h-4 w-4 mr-1" />
                 Colors

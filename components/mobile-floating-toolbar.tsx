@@ -25,6 +25,9 @@ interface MobileFloatingToolbarProps {
   brushSize: number
   onBrushSizeChange: (size: number) => void
   className?: string
+  // 新增手势相关props
+  interactionMode?: 'draw' | 'pan'
+  onToggleInteractionMode?: () => void
 }
 
 export function MobileFloatingToolbar({
@@ -37,7 +40,9 @@ export function MobileFloatingToolbar({
   canRedo,
   brushSize,
   onBrushSizeChange,
-  className
+  className,
+  interactionMode = 'draw',
+  onToggleInteractionMode
 }: MobileFloatingToolbarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [position, setPosition] = useState({ x: 16, y: 80 })
@@ -284,7 +289,7 @@ export function MobileFloatingToolbar({
             <div className="h-px bg-gray-600 mx-2 my-2" />
             
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col items-center gap-1">
                 <Button
                   variant="ghost"
@@ -306,6 +311,30 @@ export function MobileFloatingToolbar({
                   Undo
                 </span>
               </div>
+
+              {/* Gesture Mode Toggle */}
+              {onToggleInteractionMode && (
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onToggleInteractionMode}
+                    className={cn(
+                      "w-12 h-12 p-0 rounded-xl transition-all shadow-lg border-2",
+                      "touch-manipulation",
+                      interactionMode === 'pan'
+                        ? "bg-orange-600 text-white hover:bg-orange-500 hover:scale-105 border-orange-500"
+                        : "bg-purple-600 text-white hover:bg-purple-500 hover:scale-105 border-purple-500"
+                    )}
+                    title={interactionMode === 'draw' ? 'Switch to Pan Mode' : 'Switch to Draw Mode'}
+                  >
+                    <Move className="h-5 w-5" />
+                  </Button>
+                  <span className="text-xs font-bold text-white px-2 py-0.5 bg-black/50 rounded-full border border-gray-600">
+                    {interactionMode === 'draw' ? 'Draw' : 'Pan'}
+                  </span>
+                </div>
+              )}
               
               <div className="flex flex-col items-center gap-1">
                 <Button
