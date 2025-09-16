@@ -354,13 +354,10 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   return (
     <div className={cn(
-      "min-h-screen w-full bg-white relative flex flex-col",
-      "select-none", // Prevent text selection
-      isFullscreen && "fixed inset-0 z-50 h-screen overflow-hidden"
-    )}
-    style={{
-      paddingBottom: isFullscreen ? '0' : 'max(80px, env(safe-area-inset-bottom) + 60px)'
-    }}>
+      "h-screen w-full bg-white relative overflow-hidden flex flex-col",
+      "select-none touch-pan-y", // Prevent text selection but allow touch
+      isFullscreen && "fixed inset-0 z-50"
+    )}>
       {/* Header - Hidden in fullscreen and minimal modes */}
       {!isFullscreen && !isMinimalMode && (
         <div className="bg-white border-b px-4 py-3 flex items-center justify-between flex-shrink-0" 
@@ -405,18 +402,15 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
       )}
 
-      {/* Main Drawing Area */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Canvas Container - Auto height to fit content */}
-        <div className={cn(
-          "bg-gray-50 p-2 flex items-center justify-center",
-          isFullscreen ? "h-screen" : "min-h-[70vh]"
-        )}>
-          <div className="w-full max-w-full">
+      {/* Main Drawing Area - Maximized */}
+      <div className="flex-1 flex flex-col relative min-h-0">
+        {/* Canvas Container - 70vh for optimal drawing space */}
+        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '70vh' }}>
+          <div className="w-full h-full flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
-              className="w-full relative aspect-square max-h-[80vh]"
-              style={{ maxWidth: '100%' }}
+              className="w-full h-full relative"
+              style={{ maxWidth: '100%', maxHeight: '100%' }}
             >
               <div 
                 className="w-full h-full rounded-xl overflow-hidden shadow-lg bg-white"
@@ -439,9 +433,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
         {/* Compact Bottom Toolbar */}
         {showUI && !isFullscreen && (
-          <div className="bg-white border-t flex-shrink-0 mt-4" 
+          <div className="bg-white border-t flex-shrink-0" 
                style={{ 
-                 paddingBottom: 'max(40px, env(safe-area-inset-bottom) + 20px)'
+                 paddingBottom: 'max(20px, env(safe-area-inset-bottom))'
                }}
           >
             {/* Main Quick Access Bar - Always Visible */}
@@ -599,20 +593,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                 </div>
               </div>
               
-              {/* Progress Management */}
-              {hasSavedProgress && (
-                <div className="flex justify-center mt-2 pt-2 border-t border-gray-200">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearProgress}
-                    className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Clear Progress
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
         )}
