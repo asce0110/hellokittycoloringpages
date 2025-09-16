@@ -407,8 +407,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
       {/* Main Drawing Area - Maximized */}
       <div className="flex-1 flex flex-col relative min-h-0">
-        {/* Canvas Container - 60vh to leave space for bottom toolbar */}
-        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '60vh' }}>
+        {/* Canvas Container - 65vh for better image visibility */}
+        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '65vh' }}>
           <div className="w-full h-full flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
@@ -442,9 +442,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                }}
           >
             {/* Main Quick Access Bar - Always Visible */}
-            <div className="px-4 py-3">
+            <div className="px-4 py-2">
               {/* Color Selection Row */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex gap-2">
                   {quickColors.slice(0, 6).map((color) => (
                     <button
@@ -536,7 +536,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               </div>
               
               {/* Additional Tools Row */}
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
                 {/* Secondary Tools */}
                 <div className="flex gap-2">
                   <Button
@@ -598,15 +598,15 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               
               {/* Progress Management */}
               {hasSavedProgress && (
-                <div className="flex justify-center mt-3 pt-3 border-t border-gray-200">
+                <div className="flex justify-center mt-2 pt-2 border-t border-gray-200">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearProgress}
-                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
-                    Clear Saved Progress
+                    Clear Progress
                   </Button>
                 </div>
               )}
