@@ -411,12 +411,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               ref={canvasContainerRef}
               className="w-full h-full relative"
             >
-              {/* 交互模式指示器 */}
-              {(interactionMode === 'pan' || isPanning) && (
-                <div className="absolute top-2 left-2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs">
-                  Pan Mode - 🤏 Pinch/Move Image
-                </div>
-              )}
               
               <div 
                 className="w-full h-full"
@@ -479,7 +473,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
               </div>
 
               {/* Tool selection row */}
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-3 gap-1">
                 <Button
                   variant={selectedTool === 'brush' ? 'default' : 'outline'}
                   size="sm"
@@ -498,6 +492,19 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                   <Droplets className="h-3 w-3" />
                   Fill
                 </Button>
+                <Button
+                  variant={selectedTool === 'toner' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTool('toner')}
+                  className="flex flex-col items-center gap-1 h-10 text-xs"
+                >
+                  <Palette className="h-3 w-3" />
+                  Toner
+                </Button>
+              </div>
+              
+              {/* Action buttons row */}
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -550,7 +557,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                 </Button>
               </div>
               
-              {/* Second row - Colors and Load */}
+              {/* Last row - Colors, Load, and Progress Clear */}
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant="outline"
@@ -574,22 +581,16 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                   <FolderOpen className="h-3 w-3" />
                   Load
                 </Button>
-                {hasSavedProgress ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearProgress}
-                    className="flex flex-col items-center gap-1 h-12 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Clear
-                  </Button>
-                ) : (
-                  <div className="flex flex-col items-center gap-1 h-12 opacity-30 text-xs">
-                    <Trash2 className="h-3 w-3 text-gray-400" />
-                    Clear
-                  </div>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearProgress}
+                  disabled={!hasSavedProgress}
+                  className="flex flex-col items-center gap-1 h-12 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30 text-xs"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Clear
+                </Button>
               </div>
             </div>
           </div>
