@@ -1,0 +1,26 @@
+/* Force Custom tab visibility in dark mode */
+.mobile-color-picker-tabs [data-state="active"][data-value="custom"] {
+  background-color: #dbeafe !important; /* blue-100 */
+  color: #1e3a8a !important; /* blue-900 */
+}
+
+.dark .mobile-color-picker-tabs [data-state="active"][data-value="custom"] {
+  background-color: #1e3a8a !important; /* blue-900 */
+  color: #dbeafe !important; /* blue-100 */
+}
+
+.mobile-color-picker-tabs [data-value="custom"] {
+  color: #111827 !important; /* gray-900 */
+}
+
+.dark .mobile-color-picker-tabs [data-value="custom"] {
+  color: #f9fafb !important; /* gray-100 */
+}
+
+.mobile-color-picker-tabs [data-value="custom"]:hover {
+  background-color: #f3f4f6 !important; /* gray-100 */
+}
+
+.dark .mobile-color-picker-tabs [data-value="custom"]:hover {
+  background-color: #374151 !important; /* gray-800 */
+}

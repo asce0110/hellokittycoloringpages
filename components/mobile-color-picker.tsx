@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from 'react'
+import './mobile-color-picker-fix.css'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -234,7 +235,7 @@ export function MobileColorPicker({
         {/* Color Picker Tabs */}
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="palette" className="h-full">
-            <TabsList className="w-full justify-start px-4 !bg-white dark:!bg-gray-900 border-b rounded-none h-auto p-0">
+            <TabsList className="mobile-color-picker-tabs w-full justify-start px-4 !bg-white dark:!bg-gray-900 border-b rounded-none h-auto p-0">
               <TabsTrigger value="palette" className="flex items-center gap-2 px-3 py-2 text-sm !text-gray-900 dark:!text-gray-100 data-[state=active]:!bg-blue-100 dark:data-[state=active]:!bg-blue-900 data-[state=active]:!text-blue-900 dark:data-[state=active]:!text-blue-100 hover:!bg-gray-100 dark:hover:!bg-gray-800">
                 <SwatchBook className="h-4 w-4" />
                 Colors

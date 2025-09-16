@@ -353,12 +353,12 @@ export function MobileColoringInterface({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-2">Custom Color</label>
+                    <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">Custom Color</label>
                     <input
                       type="color"
                       value={activeColor}
                       onChange={(e) => setActiveColor(e.target.value)}
-                      className="w-full h-12 rounded-lg border-2 border-gray-300"
+                      className="w-full h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600"
                     />
                   </div>
                 </div>
