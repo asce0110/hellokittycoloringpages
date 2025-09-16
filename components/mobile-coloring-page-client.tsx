@@ -454,54 +454,40 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                style={{ height: 'calc(50vh - 80px)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <div className="p-3 space-y-3">
-              {/* Current color indicator - compact */}
-              <div className="flex items-center justify-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div 
-                  className="w-5 h-5 rounded-full border border-gray-300 dark:border-gray-500 flex-shrink-0"
-                  style={{ backgroundColor: selectedColor }}
-                />
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                  {selectedColor}
-                </span>
-              </div>
               
               {/* Quick color selection bar - compact */}
-              <div className="flex justify-center gap-1 p-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {quickColors.slice(0, 4).map((color) => (
+              <div className="flex justify-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {quickColors.slice(0, 6).map((color) => (
                   <button
                     key={color}
-                    onClick={() => setSelectedColor(color)}
+                    onClick={() => {
+                      console.log('🎨 Quick color selected:', color)
+                      setSelectedColor(color)
+                    }}
                     className={cn(
-                      "w-6 h-6 rounded-full border transition-all",
+                      "w-8 h-8 rounded-full border-2 transition-all touch-manipulation",
                       selectedColor === color 
-                        ? "border-blue-500 ring-1 ring-blue-200 scale-110" 
-                        : "border-gray-300"
+                        ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
+                        : "border-gray-300 hover:border-gray-400"
                     )}
                     style={{ backgroundColor: color }}
                     title={`Select ${color}`}
                   />
                 ))}
                 <button
-                  onClick={() => setShowColorPicker(true)}
-                  className="w-6 h-6 rounded-full border border-gray-300 bg-white flex items-center justify-center"
+                  onClick={() => {
+                    console.log('🎨 Opening color picker from quick bar...')
+                    setShowColorPicker(true)
+                  }}
+                  className="w-8 h-8 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-gray-400 touch-manipulation"
                   title="More colors"
                 >
-                  <Palette className="h-3 w-3 text-gray-600" />
+                  <Palette className="h-4 w-4 text-gray-600" />
                 </button>
               </div>
 
-              {/* Main action buttons - compact */}
-              <div className="grid grid-cols-4 gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowColorPicker(true)}
-                  className="flex flex-col items-center gap-1 h-12 text-xs"
-                  disabled={interactionMode === 'pan'}
-                >
-                  <Palette className="h-3 w-3" />
-                  Colors
-                </Button>
+              {/* Main action buttons - first row */}
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -521,24 +507,6 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                   Share
                 </Button>
                 <Button
-                  variant={interactionMode === 'draw' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={toggleInteractionMode}
-                  className={cn(
-                    "flex flex-col items-center gap-1 h-12 text-xs",
-                    interactionMode === 'draw' 
-                      ? "bg-purple-600 text-white hover:bg-purple-700" 
-                      : "bg-orange-600 text-white hover:bg-orange-700"
-                  )}
-                >
-                  <Move className="h-3 w-3" />
-                  {interactionMode === 'draw' ? 'Draw' : 'Pan'}
-                </Button>
-              </div>
-              
-              {/* Progress management buttons - compact */}
-              <div className="grid grid-cols-3 gap-2">
-                <Button
                   variant="default"
                   size="sm"
                   onClick={handleSaveProgress}
@@ -546,6 +514,22 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                 >
                   <Save className="h-3 w-3" />
                   Save
+                </Button>
+              </div>
+              
+              {/* Second row - Colors and Load */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log('🎨 Opening color picker from button...')
+                    setShowColorPicker(true)
+                  }}
+                  className="flex flex-col items-center gap-1 h-12 text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                >
+                  <Palette className="h-3 w-3" />
+                  Colors
                 </Button>
                 <Button
                   variant="outline"
