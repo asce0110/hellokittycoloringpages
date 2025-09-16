@@ -359,7 +359,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       isFullscreen && "fixed inset-0 z-50"
     )}
     style={{
-      paddingBottom: isFullscreen ? '0' : 'max(60px, env(safe-area-inset-bottom) + 40px)'
+      paddingBottom: isFullscreen ? '0' : 'max(30px, env(safe-area-inset-bottom) + 10px)'
     }}>
       {/* Header - Hidden in fullscreen and minimal modes */}
       {!isFullscreen && !isMinimalMode && (
@@ -407,8 +407,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
       {/* Main Drawing Area - Maximized */}
       <div className="flex-1 flex flex-col relative min-h-0">
-        {/* Canvas Container - 75vh for optimal drawing space */}
-        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '75vh' }}>
+        {/* Canvas Container - 60vh to leave space for bottom toolbar */}
+        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '60vh' }}>
           <div className="w-full h-full flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
@@ -438,8 +438,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         {showUI && !isFullscreen && (
           <div className="bg-white border-t flex-shrink-0" 
                style={{ 
-                 paddingBottom: 'max(40px, env(safe-area-inset-bottom) + 20px)',
-                 marginBottom: '20px'
+                 paddingBottom: 'max(30px, env(safe-area-inset-bottom) + 10px)'
                }}
           >
             {/* Main Quick Access Bar - Always Visible */}
