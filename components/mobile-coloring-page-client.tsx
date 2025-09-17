@@ -637,17 +637,16 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             </div>
           </div>
         )}
-      </div>
 
-      {/* Color Picker Modal */}
-      <MobileColorPicker
-        isOpen={showColorPicker}
-        onClose={() => setShowColorPicker(false)}
-        selectedColor={selectedColor}
-        onColorSelect={setSelectedColor}
-        quickColors={quickColors}
-        colorPalette={colorPalette}
-      />
-    </div>
+        {/* Color Picker Modal */}
+        <MobileColorPicker
+          isOpen={showColorPicker}
+          onClose={() => setShowColorPicker(false)}
+          selectedColor={selectedColor}
+          onColorSelect={setSelectedColor}
+          quickColors={quickColors}
+          colorPalette={colorPalette}
+        />
+      </div>
   )
 }

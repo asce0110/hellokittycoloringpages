@@ -156,77 +156,41 @@ npm run lint            # ESLint (configured to ignore build errors)
 - **Blog system**: `/content/blog/` directory with frontmatter support
 - **Component integration**: React components usable in MDX content
 - **Syntax highlighting**: Code blocks with rehype-highlight
-- `app/[slug]/` - Dynamic SEO-friendly routes
-- `app/admin/` - Admin dashboard with analytics
-- `app/api/` - Backend API endpoints
-- `app/library/` - Main coloring pages gallery
-- `app/create/` - AI generation interface
 
-### Key Systems
+## Environment Setup
 
-#### AI Content Generation
-- Dual AI provider support (OpenAI DALL-E + Stability AI)
-- Template-based prompt system with variable substitution
-- User limit management (5 free, 50 pro daily)
-- Generated content stored in Supabase with S3 file storage
+### Required Environment Variables
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-#### SEO Architecture  
-- SEO URL generation and reconstruction system
-- Structured JSON-LD schema markup
-- Mobile-first responsive design with dedicated mobile components
-- Content targeting "coloring pages printable" and related keywords
+# AI Service Configuration
+OPENAI_API_KEY=your_openai_key
+STABILITY_API_KEY=your_stability_key
 
-#### User Management
-- Supabase Auth integration
-- Role-based permissions (user/pro/admin)
-- Usage tracking and subscription management
-- Favorites and generation history
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=your_aws_region
+AWS_S3_BUCKET=your_s3_bucket
 
-### Database Schema (Supabase)
-- `users` - User accounts and subscription status
-- `library_images` - Curated coloring page collection
-- `generation_history` - AI-generated user content
-- `user_favorites` - User bookmarking system
-- `analytics_stats` - Usage analytics
-- `prompt_templates` - AI generation templates
+# Cloudflare Configuration (for deployment)
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+```
 
-## Component Organization
+### Development Workflow
+1. **Local Development**: Run `npm run dev` - Next.js development server
+2. **Database Changes**: Update migrations, run `npm run db:migrate`
+3. **Content Updates**: Use `npm run seed:prompts` for AI prompt data
+4. **Testing**: No specific test framework configured - manual testing required
+5. **Deployment**: Use `npm run deploy` for Cloudflare Pages deployment
 
-- `components/ui/` - shadcn/ui components
-- `components/mobile-*` - Mobile-specific layouts
-- `components/blog/` - Blog/MDX components
-- `hooks/` - Custom React hooks
-- `lib/` - Utility functions and configurations
-
-## Special Considerations
-
-### SEO Focus
-- All content should target "coloring pages printable" keywords
-- URLs should be SEO-friendly with proper slug generation
-- Meta descriptions should emphasize "free", "printable", "AI-generated"
-- Keyword density: "coloring pages printable" (1.0-1.5%)
-
-### Image Processing
-- High-resolution print-ready formats required
-- Browser-based image compression with fallbacks
-- S3 integration for file storage and CDN delivery
-
-### Mobile Optimization
-- Dedicated mobile components and layouts
-- Touch-friendly interfaces for generation and browsing
-- Responsive image handling
-
-### Performance
-- Startup preloading system implemented
-- Image optimization and compression
-- CDN integration for static assets
-
-## Business Logic
-
-- Freemium model with daily generation limits
-- User analytics and admin dashboard
-- Multi-difficulty content organization (easy/medium/complex)
-- Print optimization for physical coloring pages
+### Code Quality Standards
+- **Linting**: ESLint configured to ignore build errors (`npm run lint`)
+- **TypeScript**: Strict mode enabled, comprehensive type definitions in `lib/types.ts`
+- **Component Architecture**: shadcn/ui for base components, custom mobile variants
 
 ## SEO关键词策略 (基于真实Google Ads数据)
 
