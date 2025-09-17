@@ -405,10 +405,10 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
         </div>
       )}
 
-      {/* Main Drawing Area - Maximized */}
-      <div className="flex-1 flex flex-col relative min-h-0">
-        {/* Canvas Container - 70vh for optimal drawing space */}
-        <div className="bg-gray-50 p-2" style={{ height: isFullscreen ? '100vh' : '70vh' }}>
+      {/* Main Drawing Area - Fills remaining space */}
+      <div className="flex-1 flex flex-col relative overflow-hidden">
+        {/* Canvas Container - Takes all available space */}
+        <div className="flex-1 bg-gray-50 p-2">
           <div className="w-full h-full flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
