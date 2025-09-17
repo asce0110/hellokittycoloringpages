@@ -354,6 +354,8 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const isMinimalMode = uiMode === 'minimal'
   const isFullscreen = uiMode === 'fullscreen'
   const showUI = !isMinimalMode || !isDrawing
+  
+  console.log('🎨 UI State:', { isMinimalMode, isFullscreen, showUI, isDrawing })
 
   return (
     <div className={cn(
@@ -406,9 +408,9 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
       )}
 
       {/* Main Drawing Area - Fills remaining space */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
-        {/* Canvas Container - Takes all available space */}
-        <div className="flex-1 bg-gray-50 p-2">
+      <div className="flex-1 flex flex-col relative min-h-0">
+        {/* Canvas Container - Takes available space minus toolbar */}
+        <div className="flex-1 bg-gray-50 p-2 min-h-0">
           <div className="w-full h-full flex items-center justify-center">
             <div 
               ref={canvasContainerRef}
@@ -434,13 +436,15 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             </div>
           </div>
         </div>
-        {/* Collapsible Bottom Toolbar */}
-        {showUI && !isFullscreen && (
-          <div className="bg-white border-t flex-shrink-0" 
-               style={{ 
-                 paddingBottom: 'max(20px, env(safe-area-inset-bottom))'
-               }}
-          >
+      </div>
+
+      {/* Collapsible Bottom Toolbar - Outside main area */}
+      {showUI && !isFullscreen && (
+        <div className="bg-white border-t flex-shrink-0" 
+             style={{ 
+               paddingBottom: 'max(20px, env(safe-area-inset-bottom))'
+             }}
+        >
             {/* Always Visible - Minimal Toolbar */}
             <div className="px-4 py-2">
               <div className="flex items-center justify-between">
