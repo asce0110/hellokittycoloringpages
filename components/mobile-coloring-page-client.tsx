@@ -234,15 +234,25 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
 
   // 简化的手势处理 - 仅在canvas上应用
   const handleCanvasTouchStart = useCallback((e: React.TouchEvent) => {
-    // 双手指触摸启用平移模式
+    // 双手指触摸时，让ColoringCanvas处理缩放，不设置平移模式
     if (e.touches.length >= 2) {
-      setInteractionMode('pan')
-      setIsPanning(true)
+      console.log('🤏 检测到双指触摸，让ColoringCanvas处理缩放')
+      // 不阻止事件冒泡，让ColoringCanvas接收到双指事件
+      return
     }
-  }, [])
+    // 单指触摸时设置绘图模式
+    if (interactionMode !== 'draw') {
+      setInteractionMode('draw')
+    }
+  }, [interactionMode])
 
-  const handleCanvasTouchEnd = useCallback(() => {
-    // 重置平移状态
+  const handleCanvasTouchEnd = useCallback((e: React.TouchEvent) => {
+    // 如果还有触摸点，说明可能是多指操作的一部分，不重置状态
+    if (e.touches.length > 0) {
+      return
+    }
+    
+    // 所有手指离开时，重置到绘图模式
     if (isPanning) {
       setIsPanning(false)
       setTimeout(() => setInteractionMode('draw'), 100)

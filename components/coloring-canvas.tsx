@@ -1180,7 +1180,62 @@ export const ColoringCanvas = React.forwardRef<
     }
   }
 
+  // 双指缩放相关状态
+  const [pinchState, setPinchState] = useState<{
+    isActive: boolean
+    initialDistance: number
+    initialScale: number
+    centerX: number
+    centerY: number
+  }>({
+    isActive: false,
+    initialDistance: 0,
+    initialScale: 1,
+    centerX: 0,
+    centerY: 0
+  })
+
+  // 计算两点之间的距离
+  const getDistance = (touch1: Touch, touch2: Touch) => {
+    const dx = touch1.clientX - touch2.clientX
+    const dy = touch1.clientY - touch2.clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  // 计算两点的中心点
+  const getCenter = (touch1: Touch, touch2: Touch) => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    }
+  }
+
   const handleInteractionStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    // 检查是否为双指触摸
+    if ("touches" in e.nativeEvent && e.nativeEvent.touches.length === 2) {
+      e.preventDefault()
+      const touch1 = e.nativeEvent.touches[0]
+      const touch2 = e.nativeEvent.touches[1]
+      const distance = getDistance(touch1, touch2)
+      const center = getCenter(touch1, touch2)
+      
+      setPinchState({
+        isActive: true,
+        initialDistance: distance,
+        initialScale: scale,
+        centerX: center.x,
+        centerY: center.y
+      })
+      
+      console.log('🤏 双指缩放开始', { distance, center, currentScale: scale })
+      return // 双指操作时不执行绘图
+    }
+    
+    // 如果是单指触摸但双指状态还活跃，重置双指状态
+    if (pinchState.isActive) {
+      setPinchState(prev => ({ ...prev, isActive: false }))
+    }
+
     const coords = getCoords(e)
     if (!coords) return
     
@@ -1381,6 +1436,51 @@ export const ColoringCanvas = React.forwardRef<
   const handleInteractionMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault()
     
+    // 处理双指缩放
+    if ("touches" in e.nativeEvent && e.nativeEvent.touches.length === 2 && pinchState.isActive) {
+      const touch1 = e.nativeEvent.touches[0]
+      const touch2 = e.nativeEvent.touches[1]
+      const distance = getDistance(touch1, touch2)
+      const center = getCenter(touch1, touch2)
+      
+      // 计算缩放比例
+      const scaleChange = distance / pinchState.initialDistance
+      const newScale = Math.max(0.5, Math.min(3, pinchState.initialScale * scaleChange))
+      
+      // 获取容器信息
+      const container = containerRef.current
+      if (!container) return
+      
+      const rect = container.getBoundingClientRect()
+      
+      // 计算缩放中心点相对于容器的位置
+      const pinchCenterX = center.x - rect.left
+      const pinchCenterY = center.y - rect.top
+      
+      // 计算变换，保持缩放中心点位置不变
+      const beforeZoomPointX = (pinchCenterX - translateX) / scale
+      const beforeZoomPointY = (pinchCenterY - translateY) / scale
+      
+      const afterZoomPointX = beforeZoomPointX * newScale
+      const afterZoomPointY = beforeZoomPointY * newScale
+      
+      const newTranslateX = pinchCenterX - afterZoomPointX
+      const newTranslateY = pinchCenterY - afterZoomPointY
+      
+      setScale(newScale)
+      setTranslateX(newTranslateX)
+      setTranslateY(newTranslateY)
+      
+      console.log('🤏 双指缩放中', { 
+        distance, 
+        scaleChange: scaleChange.toFixed(2), 
+        newScale: newScale.toFixed(2),
+        center: { x: pinchCenterX, y: pinchCenterY }
+      })
+      
+      return // 双指操作时不执行绘图
+    }
+    
     const coords = getCoords(e)
     if (!coords) return
     
@@ -1389,6 +1489,13 @@ export const ColoringCanvas = React.forwardRef<
   }
 
   const handleInteractionEnd = () => {
+    // 重置双指缩放状态
+    if (pinchState.isActive) {
+      setPinchState(prev => ({ ...prev, isActive: false }))
+      console.log('🤏 双指缩放结束')
+      return
+    }
+    
     if (activeTool === "dropper") {
       // 清除所有定时器
       if (dragFillTimeout.current) {
