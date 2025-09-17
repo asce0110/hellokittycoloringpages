@@ -38,35 +38,72 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
   // 获取URL参数以检查是否有保存的作品
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   
-  // 检查是否有保存的作品
+  // 检查是否有保存的作品 - 兼容桌面端存储格式
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedData = localStorage.getItem(`coloring-page-${coloringPage.slug}`)
+      // 尝试两种存储键格式
+      const desktopKey = `coloring-progress-${coloringPage.imageUrl}`
+      const mobileKey = `coloring-page-${coloringPage.slug}`
+      
+      let storedData = localStorage.getItem(desktopKey) || localStorage.getItem(mobileKey)
+      
       if (storedData) {
         try {
           const data = JSON.parse(storedData)
-          if (data.imageData) {
+          // 检查桌面端格式 (dataURL 或 legacy data)
+          if (data.dataURL || data.data || data.imageData) {
             setHasLocalSave(true)
-            // 不自动加载，等用户点击按钮
+            console.log('Found saved work from desktop:', data)
           }
         } catch (error) {
           console.warn('Failed to check saved work:', error)
         }
       }
     }
-  }, [coloringPage.slug])
+  }, [coloringPage.slug, coloringPage.imageUrl])
 
-  // 加载保存的作品
+  // 加载保存的作品 - 兼容桌面端存储格式
   const handleLoadSavedWork = useCallback(() => {
     if (typeof window !== 'undefined') {
-      const storedData = localStorage.getItem(`coloring-page-${coloringPage.slug}`)
+      // 尝试两种存储键格式
+      const desktopKey = `coloring-progress-${coloringPage.imageUrl}`
+      const mobileKey = `coloring-page-${coloringPage.slug}`
+      
+      let storedData = localStorage.getItem(desktopKey) || localStorage.getItem(mobileKey)
+      
       if (storedData) {
         try {
           const data = JSON.parse(storedData)
-          if (data.imageData) {
-            setSavedWork(data.imageData)
+          let imageDataUrl = null
+          
+          // 检查桌面端新格式 (dataURL)
+          if (data.dataURL) {
+            imageDataUrl = data.dataURL
+          }
+          // 检查桌面端旧格式 (legacy data array) 
+          else if (data.data && Array.isArray(data.data) && data.width && data.height) {
+            // 将旧格式转换为canvas dataURL
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              canvas.width = data.width
+              canvas.height = data.height
+              const imageData = new ImageData(new Uint8ClampedArray(data.data), data.width, data.height)
+              ctx.putImageData(imageData, 0, 0)
+              imageDataUrl = canvas.toDataURL('image/png')
+            }
+          }
+          // 检查移动端格式
+          else if (data.imageData) {
+            imageDataUrl = data.imageData
+          }
+          
+          if (imageDataUrl) {
+            setSavedWork(imageDataUrl)
             showToast.success('Loaded saved colored work!')
             trackUserEngagement('load_saved_work', 'mobile')
+          } else {
+            showToast.error('Invalid saved data format')
           }
         } catch (error) {
           console.warn('Failed to load saved work:', error)
@@ -74,33 +111,51 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
         }
       }
     }
-  }, [coloringPage.slug, trackUserEngagement])
+  }, [coloringPage.slug, coloringPage.imageUrl, trackUserEngagement])
 
   // SEO标题处理
   const actualTitle = coloringPage.title
   const displayImageUrl = savedWork || coloringPage.imageUrl
 
-  // 分享功能
+  // 分享功能 - 改进错误处理和备用方案
   const handleShare = useCallback(async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `${actualTitle} - Coloring Page`,
-          text: `Check out this ${actualTitle.toLowerCase()} coloring page!`,
-          url: window.location.href,
-        })
+      const shareData = {
+        title: `${actualTitle} - Coloring Page`,
+        text: `Check out this beautiful ${actualTitle.toLowerCase()} coloring page! ${savedWork ? 'I\'ve already colored it!' : 'Perfect for printing and coloring.'}`,
+        url: window.location.href,
+      }
+      
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
         trackUserEngagement('share', 'native')
-      } else {
+        showToast.success('Shared successfully!')
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
         // 降级到复制链接
         await navigator.clipboard.writeText(window.location.href)
         showToast.success('Link copied to clipboard')
         trackUserEngagement('share', 'clipboard')
+      } else {
+        // 最后的备用方案 - 手动选择文本
+        const textArea = document.createElement('textarea')
+        textArea.value = window.location.href
+        document.body.appendChild(textArea)
+        textArea.select()
+        try {
+          document.execCommand('copy')
+          showToast.success('Link copied to clipboard')
+          trackUserEngagement('share', 'fallback')
+        } catch (err) {
+          showToast.error('Please manually copy the URL from your browser')
+        }
+        document.body.removeChild(textArea)
       }
     } catch (error) {
-      console.error('分享失败:', error)
-      showToast.error('Share failed, please try again')
+      console.error('Share failed:', error)
+      // 如果所有方法都失败，提供手动分享提示
+      showToast.warning('Please manually copy and share the page URL')
     }
-  }, [actualTitle, trackUserEngagement])
+  }, [actualTitle, savedWork, trackUserEngagement])
 
   // 下载功能
   const handleDownload = useCallback(() => {
@@ -135,12 +190,15 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
     }, 'image/png')
   }, [coloringPage.slug, trackUserEngagement])
 
-  // 打印功能
+  // 打印功能 - 支持数据URL和常规图片
   const handlePrint = useCallback(() => {
     if (!imageRef.current) return
     
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
+    
+    // 如果是data URL，直接使用；否则使用原图片URL
+    const printImageUrl = savedWork || displayImageUrl
     
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -148,28 +206,29 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
         <head>
           <title>Print: ${actualTitle}</title>
           <style>
-            body { margin: 0; padding: 20px; text-align: center; }
-            img { max-width: 100%; height: auto; }
-            .title { font-family: Arial, sans-serif; margin-bottom: 20px; }
+            body { margin: 0; padding: 20px; text-align: center; font-family: Arial, sans-serif; }
+            img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+            .title { margin-bottom: 20px; }
             @media print {
               body { padding: 0; }
-              .title { page-break-inside: avoid; }
+              .title { page-break-inside: avoid; margin-bottom: 10px; }
             }
           </style>
         </head>
         <body>
           <div class="title">
             <h2>${actualTitle}</h2>
-            <p>Coloring Page - Print and Color</p>
+            <p>${savedWork ? 'Colored Work - Ready to Print' : 'Coloring Page - Print and Color'}</p>
           </div>
-          <img src="${displayImageUrl}" alt="${actualTitle}" onload="window.print(); window.close();" />
+          <img src="${printImageUrl}" alt="${actualTitle}" onload="setTimeout(() => { window.print(); setTimeout(() => window.close(), 100); }, 100);" onerror="alert('Failed to load image for printing'); window.close();" />
         </body>
       </html>
     `)
     printWindow.document.close()
     
     trackUserEngagement('print', 'mobile')
-  }, [actualTitle, displayImageUrl, trackUserEngagement])
+    showToast.success('Opening print dialog...')
+  }, [actualTitle, displayImageUrl, savedWork, trackUserEngagement])
 
   // 收藏功能
   const handleFavoriteToggle = useCallback(async () => {
