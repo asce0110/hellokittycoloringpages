@@ -19,7 +19,9 @@ import {
   FolderOpen,
   Trash2,
   Brush,
-  Droplets
+  Droplets,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -105,6 +107,7 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
   const [selectedColor, setSelectedColor] = useState('#000000')
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showAdvancedTools, setShowAdvancedTools] = useState(false)
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(true)
   
   // Debug state changes
   useEffect(() => {
@@ -431,19 +434,19 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
             </div>
           </div>
         </div>
-        {/* Compact Bottom Toolbar */}
+        {/* Collapsible Bottom Toolbar */}
         {showUI && !isFullscreen && (
           <div className="bg-white border-t flex-shrink-0" 
                style={{ 
                  paddingBottom: 'max(20px, env(safe-area-inset-bottom))'
                }}
           >
-            {/* Main Quick Access Bar - Always Visible */}
+            {/* Always Visible - Minimal Toolbar */}
             <div className="px-4 py-2">
-              {/* Color Selection Row */}
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between">
+                {/* Quick Colors */}
                 <div className="flex gap-2">
-                  {quickColors.slice(0, 6).map((color) => (
+                  {quickColors.slice(0, 4).map((color) => (
                     <button
                       key={color}
                       onClick={() => {
@@ -461,139 +464,151 @@ export function MobileColoringPageClient({ coloringPage }: MobileColoringPageCli
                     />
                   ))}
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    console.log('🎨 Opening color picker...')
-                    setShowColorPicker(true)
-                  }}
-                  className="h-8 px-3 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                >
-                  <Palette className="h-4 w-4 mr-1" />
-                  More
-                </Button>
-              </div>
-
-              {/* Primary Tools Row */}
-              <div className="flex items-center justify-between">
-                {/* Tool Selection */}
-                <div className="flex gap-1">
-                  <Button
-                    variant={selectedTool === 'brush' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedTool('brush')}
-                    className="h-9 px-3"
-                  >
-                    <Brush className="h-4 w-4 mr-1" />
-                    Brush
-                  </Button>
-                  <Button
-                    variant={selectedTool === 'fill' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedTool('fill')}
-                    className="h-9 px-3"
-                  >
-                    <Droplets className="h-4 w-4 mr-1" />
-                    Fill
-                  </Button>
-                </div>
 
                 {/* Core Actions */}
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleUndo}
-                    disabled={!canUndo}
-                    className="h-9 px-3"
-                  >
-                    <Undo2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLoadProgress}
-                    disabled={!hasSavedProgress}
-                    className="h-9 px-3 bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 disabled:opacity-50"
-                  >
-                    <FolderOpen className="h-4 w-4 mr-1" />
-                    Load
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
                     onClick={handleSaveProgress}
-                    className="h-9 px-3 bg-purple-600 text-white hover:bg-purple-700"
+                    className="h-9 px-3 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
                   >
                     <Save className="h-4 w-4 mr-1" />
                     Save
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)}
+                    className="h-9 px-3"
+                  >
+                    {isToolbarCollapsed ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
-              
-              {/* Additional Tools Row */}
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
-                {/* Secondary Tools */}
-                <div className="flex gap-2">
-                  <Button
-                    variant={selectedTool === 'toner' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedTool('toner')}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Palette className="h-3 w-3 mr-1" />
-                    Toner
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClear}
-                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Clear
-                  </Button>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownload}
-                    className="h-8 px-3 text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShare}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Share2 className="h-3 w-3 mr-1" />
-                    Share
-                  </Button>
-                  {/* Favorites for authenticated users */}
-                  {isAuthenticated && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={handleFavoriteToggle}
-                      className="h-8 px-3"
-                    >
-                      <Heart className={cn(
-                        "h-4 w-4",
-                        isFavorite((coloringPage as any).libraryImageId || coloringPage.id) ? "fill-red-500 text-red-500" : "text-gray-500"
-                      )} />
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
             </div>
+
+            {/* Expandable Full Toolbar */}
+            {!isToolbarCollapsed && (
+              <div className="px-4 pb-2 border-t border-gray-200">
+                {/* Color Selection Row */}
+                <div className="flex items-center justify-between mb-2 pt-2">
+                  <div className="flex gap-2">
+                    {quickColors.slice(4, 8).map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          console.log('🎨 Quick color selected:', color)
+                          setSelectedColor(color)
+                        }}
+                        className={cn(
+                          "w-8 h-8 rounded-full border-2 transition-all touch-manipulation",
+                          selectedColor === color 
+                            ? "border-blue-500 ring-2 ring-blue-200 scale-110" 
+                            : "border-gray-300 hover:border-gray-400"
+                        )}
+                        style={{ backgroundColor: color }}
+                        title={`Select ${color}`}
+                      />
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      console.log('🎨 Opening color picker...')
+                      setShowColorPicker(true)
+                    }}
+                    className="h-8 px-3 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Palette className="h-4 w-4 mr-1" />
+                    More
+                  </Button>
+                </div>
+
+                {/* Tools Row */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex gap-1">
+                    <Button
+                      variant={selectedTool === 'brush' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedTool('brush')}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Brush className="h-3 w-3 mr-1" />
+                      Brush
+                    </Button>
+                    <Button
+                      variant={selectedTool === 'fill' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedTool('fill')}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Droplets className="h-3 w-3 mr-1" />
+                      Fill
+                    </Button>
+                    <Button
+                      variant={selectedTool === 'toner' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedTool('toner')}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Palette className="h-3 w-3 mr-1" />
+                      Toner
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUndo}
+                      disabled={!canUndo}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Undo2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLoadProgress}
+                      disabled={!hasSavedProgress}
+                      className="h-8 px-3 text-xs bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 disabled:opacity-50"
+                    >
+                      <FolderOpen className="h-3 w-3 mr-1" />
+                      Load
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClear}
+                      className="h-8 px-3 text-xs text-red-600 hover:text-red-700"
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      Clear
+                    </Button>
+                    {/* Favorites for authenticated users */}
+                    {isAuthenticated && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleFavoriteToggle}
+                        className="h-8 px-3"
+                      >
+                        <Heart className={cn(
+                          "h-3 w-3",
+                          isFavorite((coloringPage as any).libraryImageId || coloringPage.id) ? "fill-red-500 text-red-500" : "text-gray-500"
+                        )} />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
