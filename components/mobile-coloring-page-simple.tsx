@@ -11,7 +11,8 @@ import {
   Save,
   FolderOpen,
   ArrowLeft,
-  Printer
+  Printer,
+  Upload
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -31,12 +32,13 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
   // 基础状态
   const [imageLoaded, setImageLoaded] = useState(false)
   const [savedWork, setSavedWork] = useState<string | null>(null)
+  const [hasLocalSave, setHasLocalSave] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
   
   // 获取URL参数以检查是否有保存的作品
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   
-  // 从localStorage加载保存的作品
+  // 检查是否有保存的作品
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedData = localStorage.getItem(`coloring-page-${coloringPage.slug}`)
@@ -44,14 +46,35 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
         try {
           const data = JSON.parse(storedData)
           if (data.imageData) {
-            setSavedWork(data.imageData)
+            setHasLocalSave(true)
+            // 不自动加载，等用户点击按钮
           }
         } catch (error) {
-          console.warn('Failed to load saved work:', error)
+          console.warn('Failed to check saved work:', error)
         }
       }
     }
   }, [coloringPage.slug])
+
+  // 加载保存的作品
+  const handleLoadSavedWork = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const storedData = localStorage.getItem(`coloring-page-${coloringPage.slug}`)
+      if (storedData) {
+        try {
+          const data = JSON.parse(storedData)
+          if (data.imageData) {
+            setSavedWork(data.imageData)
+            showToast.success('Loaded saved colored work!')
+            trackUserEngagement('load_saved_work', 'mobile')
+          }
+        } catch (error) {
+          console.warn('Failed to load saved work:', error)
+          showToast.error('Failed to load saved work')
+        }
+      }
+    }
+  }, [coloringPage.slug, trackUserEngagement])
 
   // SEO标题处理
   const actualTitle = coloringPage.title
@@ -70,12 +93,12 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
       } else {
         // 降级到复制链接
         await navigator.clipboard.writeText(window.location.href)
-        showToast.success('链接已复制到剪贴板')
+        showToast.success('Link copied to clipboard')
         trackUserEngagement('share', 'clipboard')
       }
     } catch (error) {
       console.error('分享失败:', error)
-      showToast.error('分享失败，请稍后再试')
+      showToast.error('Share failed, please try again')
     }
   }, [actualTitle, trackUserEngagement])
 
@@ -108,7 +131,7 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
       URL.revokeObjectURL(url)
       
       trackUserEngagement('download', 'mobile')
-      showToast.success('图片已下载')
+      showToast.success('Image downloaded')
     }, 'image/png')
   }, [coloringPage.slug, trackUserEngagement])
 
@@ -151,7 +174,7 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
   // 收藏功能
   const handleFavoriteToggle = useCallback(async () => {
     if (!isAuthenticated) {
-      showToast.warning('请先登录后收藏')
+      showToast.warning('Please login to add favorites')
       return
     }
 
@@ -159,14 +182,14 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
       const isCurrentlyFavorite = isFavorite(coloringPage.id, 'library')
       if (isCurrentlyFavorite) {
         await removeFromFavorites(coloringPage.id, 'library')
-        showToast.success('已从收藏中移除')
+        showToast.success('Removed from favorites')
       } else {
         await addToFavorites(coloringPage.id, 'library')
-        showToast.success('已添加到收藏')
+        showToast.success('Added to favorites')
       }
     } catch (error) {
       console.error('收藏操作失败:', error)
-      showToast.error('操作失败，请稍后再试')
+      showToast.error('Operation failed, please try again')
     }
   }, [isAuthenticated, isFavorite, addToFavorites, removeFromFavorites, coloringPage.id])
 
@@ -198,7 +221,7 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
           </h1>
           {savedWork && (
             <p className="text-xs text-blue-600 text-center mt-1">
-              已着色作品
+              Colored Work
             </p>
           )}
         </div>
@@ -234,7 +257,7 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
           
           {!imageLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
-              <div className="text-gray-500">加载中...</div>
+              <div className="text-gray-500">Loading...</div>
             </div>
           )}
         </div>
@@ -242,35 +265,49 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
 
       {/* 简化的底部操作栏 */}
       <div className="bg-white border-t p-4 flex-shrink-0">
-        <div className="flex justify-center gap-4">
+        {/* Load saved work button */}
+        {hasLocalSave && !savedWork && (
+          <div className="mb-3">
+            <Button
+              onClick={handleLoadSavedWork}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
+            >
+              <FolderOpen className="h-4 w-4 mr-2" />
+              Load Saved Colored Work
+            </Button>
+          </div>
+        )}
+        
+        <div className="flex justify-center gap-3">
           <Button
             variant="outline"
             size="sm"
             onClick={handleShare}
-            className="flex-1 max-w-[100px]"
+            className="flex-1 max-w-[90px]"
           >
-            <Share2 className="h-4 w-4 mr-2" />
-            分享
+            <Share2 className="h-4 w-4 mr-1" />
+            Share
           </Button>
           
           <Button
             variant="outline"
             size="sm"
             onClick={handleDownload}
-            className="flex-1 max-w-[100px]"
+            className="flex-1 max-w-[90px]"
           >
-            <Download className="h-4 w-4 mr-2" />
-            下载
+            <Download className="h-4 w-4 mr-1" />
+            Download
           </Button>
           
           <Button
             variant="outline"
             size="sm"
             onClick={handlePrint}
-            className="flex-1 max-w-[100px]"
+            className="flex-1 max-w-[90px]"
           >
-            <Printer className="h-4 w-4 mr-2" />
-            打印
+            <Printer className="h-4 w-4 mr-1" />
+            Print
           </Button>
         </div>
         
@@ -278,8 +315,10 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
         <div className="mt-3 text-center">
           <p className="text-xs text-gray-500">
             {savedWork 
-              ? "这是您在桌面端保存的着色作品" 
-              : "在桌面端着色后可在此查看作品"
+              ? "This is your colored work saved from desktop" 
+              : hasLocalSave
+                ? "Tap 'Load Saved Colored Work' to view your desktop work"
+                : "Color on desktop to view your work here"
             }
           </p>
         </div>
