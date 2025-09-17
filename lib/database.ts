@@ -10,6 +10,7 @@ import {
   UserFavorite,
   AnalyticsStats,
   DashboardStats,
+  ColoringProgress,
   ApiResponse,
   PaginatedResponse,
   CreateGenerationRequest,
@@ -1028,4 +1029,171 @@ export async function getAnalyticsStats(days = 30): Promise<AnalyticsStats[]> {
   }
   
   return data || []
+}
+
+// ==================== Coloring Progress Operations ====================
+
+export async function saveColoringProgress(
+  userId: string,
+  imageUrl: string,
+  imageSlug: string,
+  progressData: string,
+  progressType: "dataURL" | "pixelData" | "layerData" = "dataURL",
+  deviceType: "desktop" | "mobile" = "desktop"
+): Promise<ColoringProgress | null> {
+  // 首先检查是否已存在该用户的该图片进度
+  const { data: existing } = await supabase
+    .from('coloring_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('image_url', imageUrl)
+    .single()
+
+  const progressRecord = {
+    user_id: userId,
+    image_url: imageUrl,
+    image_slug: imageSlug,
+    progress_data: progressData,
+    progress_type: progressType,
+    device_type: deviceType,
+    last_modified: new Date().toISOString()
+  }
+
+  let result
+  if (existing) {
+    // 更新现有记录
+    const { data, error } = await supabase
+      .from('coloring_progress')
+      .update(progressRecord)
+      .eq('id', existing.id)
+      .select()
+      .single()
+    result = { data, error }
+  } else {
+    // 创建新记录
+    const { data, error } = await supabase
+      .from('coloring_progress')
+      .insert([{
+        ...progressRecord,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single()
+    result = { data, error }
+  }
+
+  if (result.error) {
+    console.error('Error saving coloring progress:', result.error)
+    return null
+  }
+
+  // 转换字段名
+  const data = result.data
+  return {
+    id: data.id,
+    userId: data.user_id,
+    imageUrl: data.image_url,
+    imageSlug: data.image_slug,
+    progressData: data.progress_data,
+    progressType: data.progress_type,
+    deviceType: data.device_type,
+    lastModified: new Date(data.last_modified),
+    createdAt: new Date(data.created_at)
+  }
+}
+
+export async function getColoringProgress(
+  userId: string,
+  imageUrl: string
+): Promise<ColoringProgress | null> {
+  const { data, error } = await supabase
+    .from('coloring_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('image_url', imageUrl)
+    .single()
+
+  if (error) {
+    console.error('Error fetching coloring progress:', error)
+    return null
+  }
+
+  if (!data) return null
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    imageUrl: data.image_url,
+    imageSlug: data.image_slug,
+    progressData: data.progress_data,
+    progressType: data.progress_type,
+    deviceType: data.device_type,
+    lastModified: new Date(data.last_modified),
+    createdAt: new Date(data.created_at)
+  }
+}
+
+export async function deleteColoringProgress(
+  userId: string,
+  imageUrl: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('coloring_progress')
+    .delete()
+    .eq('user_id', userId)
+    .eq('image_url', imageUrl)
+
+  if (error) {
+    console.error('Error deleting coloring progress:', error)
+    return false
+  }
+
+  return true
+}
+
+export async function getUserColoringProgress(
+  userId: string,
+  page = 1,
+  limit = 10
+): Promise<PaginatedResponse<ColoringProgress>> {
+  const offset = (page - 1) * limit
+
+  const { data, error, count } = await supabase
+    .from('coloring_progress')
+    .select('*', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('last_modified', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('Error fetching user coloring progress:', error)
+    return {
+      data: [],
+      pagination: { page, limit, total: 0, totalPages: 0 },
+      success: false
+    }
+  }
+
+  const transformedData = (data || []).map((item: any) => ({
+    id: item.id,
+    userId: item.user_id,
+    imageUrl: item.image_url,
+    imageSlug: item.image_slug,
+    progressData: item.progress_data,
+    progressType: item.progress_type,
+    deviceType: item.device_type,
+    lastModified: new Date(item.last_modified),
+    createdAt: new Date(item.created_at)
+  }))
+
+  return {
+    data: transformedData,
+    pagination: {
+      page,
+      limit,
+      total: count || 0,
+      totalPages: Math.ceil((count || 0) / limit)
+    },
+    success: true
+  }
 }

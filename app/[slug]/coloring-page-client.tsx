@@ -222,49 +222,140 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
     }
   }, [actualImageUrl])
 
-  // 保存进度处理函数
-  const handleSaveProgress = () => {
+  // 保存进度处理函数 - 支持云同步
+  const handleSaveProgress = async () => {
     if (canvasRef.current) {
       try {
-        const success = canvasRef.current.saveProgress()
-        if (success) {
+        // 先保存到本地localStorage (快速反馈)
+        const localSuccess = canvasRef.current.saveProgress()
+        if (localSuccess) {
           setHasSavedProgress(true)
           setLastSaveTime(new Date().toISOString())
-          alert('✅ 着色进度已保存！下次打开时可以继续着色。')
-          trackUserEngagement('progress_saved', { pageTitle: actualTitle })
+          
+          // 如果用户已登录，同时保存到云端
+          if (isAuthenticated && user?.id) {
+            try {
+              // 获取canvas数据
+              const canvas = document.querySelector('canvas')
+              if (canvas) {
+                const dataURL = canvas.toDataURL('image/png')
+                
+                // 保存到云端
+                const response = await fetch('/api/coloring-progress', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    imageUrl: actualImageUrl,
+                    imageSlug: coloringPage.slug,
+                    progressData: dataURL,
+                    progressType: 'dataURL',
+                    deviceType: 'desktop'
+                  })
+                })
+                
+                if (response.ok) {
+                  alert('✅ Coloring progress saved locally and synced to cloud! You can access it from any device.')
+                } else {
+                  alert('✅ Coloring progress saved locally! Cloud sync failed, but you can still continue coloring on this device.')
+                }
+              }
+            } catch (cloudError) {
+              console.warn('Cloud sync failed:', cloudError)
+              alert('✅ Coloring progress saved locally! Cloud sync failed, but you can still continue coloring on this device.')
+            }
+          } else {
+            alert('✅ Coloring progress saved locally! Sign in to sync across devices.')
+          }
+          
+          trackUserEngagement('progress_saved', { pageTitle: actualTitle, syncType: isAuthenticated ? 'cloud' : 'local' })
         } else {
-          // 检查控制台错误并提供更具体的错误信息
-          alert('❌ 保存失败！可能原因:\n• 着色内容过多导致文件过大\n• 浏览器存储空间不足\n• 请尝试清理浏览器缓存或在着色较少时保存')
+          alert('❌ Save failed! Possible reasons:\n• Too much coloring content causing large file size\n• Insufficient browser storage space\n• Please clear browser cache or save with less coloring')
         }
       } catch (error) {
-        console.error('保存进度时发生错误:', error)
-        alert('❌ 保存失败！请检查浏览器控制台查看详细错误信息。')
+        console.error('Error saving progress:', error)
+        alert('❌ Save failed! Please check browser console for detailed error information.')
       }
     }
   }
 
-  // 加载进度处理函数
-  const handleLoadProgress = () => {
+  // 加载进度处理函数 - 支持云同步
+  const handleLoadProgress = async () => {
     if (canvasRef.current) {
-      if (confirm('确定要加载之前的着色进度吗？当前的着色内容将被替换。')) {
-        const success = canvasRef.current.loadProgress()
-        if (success) {
-          alert('✅ 着色进度已恢复！')
-          trackUserEngagement('progress_loaded', { pageTitle: actualTitle })
-        } else {
-          alert('❌ 加载失败，可能没有保存的进度或数据已损坏。')
+      if (confirm('Are you sure you want to load previous coloring progress? Current coloring content will be replaced.')) {
+        let loadSuccess = false
+        
+        // 如果用户已登录，优先从云端加载
+        if (isAuthenticated && user?.id) {
+          try {
+            const response = await fetch(`/api/coloring-progress?userId=${user.id}&imageUrl=${encodeURIComponent(actualImageUrl)}`)
+            if (response.ok) {
+              const result = await response.json()
+              if (result.success && result.data) {
+                // 从云端数据恢复
+                const canvas = document.querySelector('canvas')
+                const ctx = canvas?.getContext('2d')
+                if (canvas && ctx) {
+                  const img = new Image()
+                  img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                    alert('✅ Coloring progress restored from cloud!')
+                    trackUserEngagement('progress_loaded', { pageTitle: actualTitle, source: 'cloud' })
+                  }
+                  img.src = result.data.progressData
+                  loadSuccess = true
+                }
+              }
+            }
+          } catch (cloudError) {
+            console.warn('Cloud load failed, trying local:', cloudError)
+          }
+        }
+        
+        // 如果云端加载失败或用户未登录，从本地加载
+        if (!loadSuccess) {
+          const localSuccess = canvasRef.current.loadProgress()
+          if (localSuccess) {
+            alert('✅ Coloring progress restored from local storage!')
+            trackUserEngagement('progress_loaded', { pageTitle: actualTitle, source: 'local' })
+          } else {
+            alert('❌ Load failed, there may be no saved progress or data is corrupted.')
+          }
         }
       }
     }
   }
 
-  // 清除进度处理函数
-  const handleClearProgress = () => {
-    if (canvasRef.current && confirm('确定要清除保存的进度吗？此操作不可撤销。')) {
+  // 清除进度处理函数 - 支持云同步
+  const handleClearProgress = async () => {
+    if (canvasRef.current && confirm('Are you sure you want to clear saved progress? This action cannot be undone.')) {
+      // 清除本地进度
       canvasRef.current.clearProgress()
       setHasSavedProgress(false)
       setLastSaveTime(null)
-      alert('🗑️ 保存的进度已清除。')
+      
+      // 如果用户已登录，同时清除云端进度
+      if (isAuthenticated && user?.id) {
+        try {
+          const response = await fetch(`/api/coloring-progress?userId=${user.id}&imageUrl=${encodeURIComponent(actualImageUrl)}`, {
+            method: 'DELETE'
+          })
+          
+          if (response.ok) {
+            alert('🗑️ Saved progress has been cleared from both local and cloud storage.')
+          } else {
+            alert('🗑️ Local progress cleared. Cloud sync failed, but local storage is clean.')
+          }
+        } catch (error) {
+          console.warn('Cloud clear failed:', error)
+          alert('🗑️ Local progress cleared. Cloud sync failed, but local storage is clean.')
+        }
+      } else {
+        alert('🗑️ Saved progress has been cleared from local storage.')
+      }
     }
   }
 

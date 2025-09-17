@@ -153,6 +153,18 @@ export interface PromptTemplate {
   updatedAt: Date
 }
 
+export interface ColoringProgress {
+  id: string
+  userId: string
+  imageUrl: string
+  imageSlug: string
+  progressData: string // Base64 encoded canvas data or JSON data
+  progressType: "dataURL" | "pixelData" | "layerData"
+  deviceType: "desktop" | "mobile"
+  lastModified: Date
+  createdAt: Date
+}
+
 export interface DashboardStats {
   totalUsers: number
   totalGenerations: number

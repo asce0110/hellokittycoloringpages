@@ -33,85 +33,132 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
   const [imageLoaded, setImageLoaded] = useState(false)
   const [savedWork, setSavedWork] = useState<string | null>(null)
   const [hasLocalSave, setHasLocalSave] = useState(false)
+  const [hasCloudSave, setHasCloudSave] = useState(false)
+  const [isCheckingCloud, setIsCheckingCloud] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
   
   // 获取URL参数以检查是否有保存的作品
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   
-  // 检查是否有保存的作品 - 兼容桌面端存储格式
+  // 检查是否有保存的作品 - 兼容桌面端存储格式和云端同步
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // 尝试两种存储键格式
-      const desktopKey = `coloring-progress-${coloringPage.imageUrl}`
-      const mobileKey = `coloring-page-${coloringPage.slug}`
-      
-      let storedData = localStorage.getItem(desktopKey) || localStorage.getItem(mobileKey)
-      
-      if (storedData) {
-        try {
-          const data = JSON.parse(storedData)
-          // 检查桌面端格式 (dataURL 或 legacy data)
-          if (data.dataURL || data.data || data.imageData) {
-            setHasLocalSave(true)
-            console.log('Found saved work from desktop:', data)
+    const checkSavedProgress = async () => {
+      if (typeof window !== 'undefined') {
+        // 1. 检查本地存储
+        const desktopKey = `coloring-progress-${coloringPage.imageUrl}`
+        const mobileKey = `coloring-page-${coloringPage.slug}`
+        
+        let storedData = localStorage.getItem(desktopKey) || localStorage.getItem(mobileKey)
+        
+        if (storedData) {
+          try {
+            const data = JSON.parse(storedData)
+            if (data.dataURL || data.data || data.imageData) {
+              setHasLocalSave(true)
+              console.log('Found local saved work:', data)
+            }
+          } catch (error) {
+            console.warn('Failed to check local saved work:', error)
           }
-        } catch (error) {
-          console.warn('Failed to check saved work:', error)
+        }
+        
+        // 2. 如果用户已登录，检查云端存储
+        if (isAuthenticated && user?.id) {
+          setIsCheckingCloud(true)
+          try {
+            const response = await fetch(`/api/coloring-progress?userId=${user.id}&imageUrl=${encodeURIComponent(coloringPage.imageUrl)}`)
+            if (response.ok) {
+              const result = await response.json()
+              if (result.success && result.data) {
+                setHasCloudSave(true)
+                console.log('Found cloud saved work:', result.data)
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to check cloud saved work:', error)
+          } finally {
+            setIsCheckingCloud(false)
+          }
         }
       }
     }
-  }, [coloringPage.slug, coloringPage.imageUrl])
+    
+    checkSavedProgress()
+  }, [coloringPage.slug, coloringPage.imageUrl, isAuthenticated, user?.id])
 
-  // 加载保存的作品 - 兼容桌面端存储格式
-  const handleLoadSavedWork = useCallback(() => {
+  // 加载保存的作品 - 云端优先，本地降级
+  const handleLoadSavedWork = useCallback(async () => {
     if (typeof window !== 'undefined') {
-      // 尝试两种存储键格式
-      const desktopKey = `coloring-progress-${coloringPage.imageUrl}`
-      const mobileKey = `coloring-page-${coloringPage.slug}`
+      let loadSuccess = false
       
-      let storedData = localStorage.getItem(desktopKey) || localStorage.getItem(mobileKey)
-      
-      if (storedData) {
+      // 1. 如果用户已登录且有云端保存，优先从云端加载
+      if (isAuthenticated && user?.id && hasCloudSave) {
         try {
-          const data = JSON.parse(storedData)
-          let imageDataUrl = null
-          
-          // 检查桌面端新格式 (dataURL)
-          if (data.dataURL) {
-            imageDataUrl = data.dataURL
-          }
-          // 检查桌面端旧格式 (legacy data array) 
-          else if (data.data && Array.isArray(data.data) && data.width && data.height) {
-            // 将旧格式转换为canvas dataURL
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            if (ctx) {
-              canvas.width = data.width
-              canvas.height = data.height
-              const imageData = new ImageData(new Uint8ClampedArray(data.data), data.width, data.height)
-              ctx.putImageData(imageData, 0, 0)
-              imageDataUrl = canvas.toDataURL('image/png')
+          const response = await fetch(`/api/coloring-progress?userId=${user.id}&imageUrl=${encodeURIComponent(coloringPage.imageUrl)}`)
+          if (response.ok) {
+            const result = await response.json()
+            if (result.success && result.data && result.data.progressData) {
+              setSavedWork(result.data.progressData)
+              showToast.success('Loaded saved work from cloud!')
+              trackUserEngagement('load_saved_work', 'mobile_cloud')
+              loadSuccess = true
             }
           }
-          // 检查移动端格式
-          else if (data.imageData) {
-            imageDataUrl = data.imageData
-          }
-          
-          if (imageDataUrl) {
-            setSavedWork(imageDataUrl)
-            showToast.success('Loaded saved colored work!')
-            trackUserEngagement('load_saved_work', 'mobile')
-          } else {
-            showToast.error('Invalid saved data format')
-          }
         } catch (error) {
-          console.warn('Failed to load saved work:', error)
-          showToast.error('Failed to load saved work')
+          console.warn('Failed to load from cloud, trying local:', error)
         }
       }
+      
+      // 2. 如果云端加载失败或无云端数据，从本地加载
+      if (!loadSuccess) {
+        const desktopKey = `coloring-progress-${coloringPage.imageUrl}`
+        const mobileKey = `coloring-page-${coloringPage.slug}`
+        
+        let storedData = localStorage.getItem(desktopKey) || localStorage.getItem(mobileKey)
+        
+        if (storedData) {
+          try {
+            const data = JSON.parse(storedData)
+            let imageDataUrl = null
+            
+            // 检查桌面端新格式 (dataURL)
+            if (data.dataURL) {
+              imageDataUrl = data.dataURL
+            }
+            // 检查桌面端旧格式 (legacy data array) 
+            else if (data.data && Array.isArray(data.data) && data.width && data.height) {
+              const canvas = document.createElement('canvas')
+              const ctx = canvas.getContext('2d')
+              if (ctx) {
+                canvas.width = data.width
+                canvas.height = data.height
+                const imageData = new ImageData(new Uint8ClampedArray(data.data), data.width, data.height)
+                ctx.putImageData(imageData, 0, 0)
+                imageDataUrl = canvas.toDataURL('image/png')
+              }
+            }
+            // 检查移动端格式
+            else if (data.imageData) {
+              imageDataUrl = data.imageData
+            }
+            
+            if (imageDataUrl) {
+              setSavedWork(imageDataUrl)
+              showToast.success('Loaded saved work from local storage!')
+              trackUserEngagement('load_saved_work', 'mobile_local')
+              loadSuccess = true
+            }
+          } catch (error) {
+            console.warn('Failed to load from local storage:', error)
+          }
+        }
+      }
+      
+      if (!loadSuccess) {
+        showToast.error('No saved work found or data is corrupted')
+      }
     }
-  }, [coloringPage.slug, coloringPage.imageUrl, trackUserEngagement])
+  }, [coloringPage.slug, coloringPage.imageUrl, trackUserEngagement, isAuthenticated, user?.id, hasCloudSave])
 
   // SEO标题处理
   const actualTitle = coloringPage.title
@@ -325,15 +372,26 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
       {/* 简化的底部操作栏 */}
       <div className="bg-white border-t p-4 flex-shrink-0">
         {/* Load saved work button */}
-        {hasLocalSave && !savedWork && (
+        {(hasLocalSave || hasCloudSave) && !savedWork && (
           <div className="mb-3">
             <Button
               onClick={handleLoadSavedWork}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className={cn(
+                "w-full text-white",
+                hasCloudSave 
+                  ? "bg-green-600 hover:bg-green-700" 
+                  : "bg-blue-600 hover:bg-blue-700"
+              )}
               size="sm"
+              disabled={isCheckingCloud}
             >
               <FolderOpen className="h-4 w-4 mr-2" />
-              Load Saved Colored Work
+              {isCheckingCloud 
+                ? "Checking Cloud..." 
+                : hasCloudSave 
+                  ? "Load from Cloud" 
+                  : "Load Local Work"
+              }
             </Button>
           </div>
         )}
@@ -374,10 +432,18 @@ export function MobileColoringPageSimple({ coloringPage }: MobileColoringPageSim
         <div className="mt-3 text-center">
           <p className="text-xs text-gray-500">
             {savedWork 
-              ? "This is your colored work saved from desktop" 
-              : hasLocalSave
-                ? "Tap 'Load Saved Colored Work' to view your desktop work"
-                : "Color on desktop to view your work here"
+              ? hasCloudSave 
+                ? "This is your colored work synced from cloud" 
+                : "This is your colored work saved locally"
+              : isCheckingCloud
+                ? "Checking for saved work in cloud..."
+                : hasCloudSave
+                  ? "Tap 'Load from Cloud' to view your synced work"
+                  : hasLocalSave
+                    ? "Tap 'Load Local Work' to view your desktop work"
+                    : isAuthenticated
+                      ? "Color on any device and sync across all devices"
+                      : "Color on desktop or sign in to sync across devices"
             }
           </p>
         </div>
