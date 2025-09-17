@@ -12,7 +12,7 @@ import { Droplets, Paintbrush, Download, Printer, Undo, RotateCcw, Palette, Pipe
 import { ColoringCanvas } from "@/components/coloring-canvas"
 import { ReferenceImagePanel } from "@/components/reference-image-panel"
 import { ColoringPageSEOLayout } from "@/components/coloring-page-seo-layout"
-import { MobileColoringPageClient } from "@/components/mobile-coloring-page-client"
+import { MobileColoringPageSimple } from "@/components/mobile-coloring-page-simple"
 import { useSEOOptimization } from "@/hooks/use-seo-optimization"
 import { useViewTracking } from "@/hooks/use-view-tracking"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -335,9 +335,9 @@ export function ColoringPageClient({ coloringPage }: ColoringPageClientProps) {
     }
   }
 
-  // Use mobile-optimized component on mobile devices (after all hooks)
+  // Use simplified mobile component on mobile devices (after all hooks)
   if (isMobile) {
-    return <MobileColoringPageClient coloringPage={coloringPage} />
+    return <MobileColoringPageSimple coloringPage={coloringPage} />
   }
 
   return (
